@@ -1,0 +1,697 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+  background: #7cfc00;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Game root uses CSS grid so canvas + UI occupy the same cell.
+   DOM order decides paint order — canvas first, UI on top. No z-index needed. */
+.game-root {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+.game-canvas,
+.ui-layer {
+  grid-area: 1 / 1;   /* same cell */
+  width: 100%;
+  height: 100%;
+}
+
+/* Canvas fills its grid cell; JS sets the internal buffer size */
+.game-canvas {
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* UI layer sits on top (comes after canvas in DOM) */
+.ui-layer {
+  pointer-events: none;
+  position: relative;  /* establish stacking for children */
+}
+
+.ui-layer > * {
+  pointer-events: auto;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.overlay > * {
+  pointer-events: auto;
+}
+
+/* Start overlay: full-screen, centred panel on top of canvas */
+.start-overlay {
+  justify-content: center;
+  align-items: center;
+  padding: 20px 16px;
+  background: rgba(255, 255, 200, 0.88);
+  pointer-events: auto;
+}
+
+.title-shake {
+  font-size: clamp(2.5rem, 10vw, 4.5rem);
+  font-weight: 700;
+  color: #ffe135;
+  -webkit-text-stroke: 4px #000;
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 #000;
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-1deg);
+  }
+  50% {
+    transform: translate(3px, -2px) rotate(1deg);
+  }
+}
+
+.tagline {
+  font-size: 1.2rem;
+  margin: 8px 0 4px;
+  color: #000;
+}
+
+.sub-tagline {
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.btn {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 12px 24px;
+  border: 4px solid #000;
+  cursor: pointer;
+  text-decoration: none;
+  color: #000;
+  display: inline-block;
+  margin: 4px;
+  box-shadow: 4px 4px 0 #000;
+  transition: transform 0.05s;
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.btn-primary {
+  background: #ffe135;
+  font-size: 1.3rem;
+  padding: 16px 32px;
+}
+
+.btn-secondary {
+  background: #fff;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.footer-links {
+  margin-top: 20px;
+  font-size: 0.9rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  color: #000;
+}
+
+.tilt-hint,
+.tilt-msg {
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: #660000;
+}
+
+/* HUD pins its content to a centred column so it never hugs screen edges on desktop */
+.hud-overlay {
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 10px 12px 14px;
+  pointer-events: none;
+}
+
+.hud-overlay > * {
+  pointer-events: auto;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hud-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: #ffe135;
+  border: 3px solid #000;
+  padding: 4px 10px;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.mute-btn {
+  font-family: inherit;
+  font-weight: 700;
+  background: #fff;
+  border: 3px solid #000;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.hud-stats {
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.85);
+  border: 3px solid #000;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  box-shadow: 3px 3px 0 #000;
+  max-width: 260px;
+}
+
+.hud-stats p {
+  margin: 2px 0;
+}
+
+.hud-event {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: #ff0;
+  border: 4px solid #000;
+  padding: 8px 16px;
+  animation: shake 0.3s infinite;
+}
+
+.death-overlay {
+  justify-content: flex-start;
+  align-items: center;
+  padding: 16px 12px 24px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.death-overlay.juicing .juiced-title {
+  animation: spin-pulse 0.3s infinite;
+}
+
+.death-overlay.visible {
+  background: rgba(80, 0, 0, 0.75);
+}
+
+.juiced-title {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  color: #ffe135;
+  -webkit-text-stroke: 3px #000;
+  text-shadow: 4px 4px 0 #f00;
+  margin-bottom: 16px;
+}
+
+@keyframes spin-pulse {
+  0% {
+    transform: scale(1) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(-5deg);
+  }
+}
+
+.death-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  max-width: 340px;
+  width: 100%;
+}
+
+.death-stats {
+  background: #fff;
+  border: 4px solid #000;
+  padding: 16px 24px;
+  font-size: 1.1rem;
+  box-shadow: 6px 6px 0 #000;
+  width: 100%;
+}
+
+.death-stats p {
+  margin: 4px 0;
+}
+
+.fake-error {
+  width: 100%;
+  border: 2px solid #000;
+  font-family: Tahoma, 'MS Sans Serif', sans-serif;
+  font-size: 0.8rem;
+  box-shadow: 4px 4px 0 #000;
+  background: #c0c0c0;
+}
+
+.fake-error-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #000080;
+  color: #fff;
+  padding: 4px 8px;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.fake-error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #ffcc00;
+  color: #000;
+  border: 1px solid #000;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.fake-error-body {
+  padding: 12px 14px 10px;
+  border-top: 2px solid #808080;
+}
+
+.fake-error-msg {
+  margin-bottom: 8px;
+  line-height: 1.35;
+  color: #000;
+}
+
+.fake-error-detail {
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #800000;
+}
+
+.fake-error-ok {
+  display: block;
+  margin-left: auto;
+  min-width: 75px;
+  padding: 4px 16px;
+  border: 2px solid #000;
+  background: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff;
+}
+
+.fake-error-ok:active {
+  box-shadow: inset 1px 1px 0 #808080;
+}
+
+.share-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.share-menu {
+  background: #ffffcc;
+  border: 5px solid #000;
+  box-shadow: 8px 8px 0 #000;
+  padding: 20px;
+  max-width: 320px;
+  width: 100%;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive;
+}
+
+.share-menu h3 {
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.share-menu-hint {
+  font-size: 0.75rem;
+  text-align: center;
+  color: #555;
+  margin-bottom: 14px;
+}
+
+.share-option {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 3px solid #000;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+  background: #fff;
+}
+
+.share-option:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}
+
+.share-x {
+  background: #000;
+  color: #fff;
+}
+
+.share-tt {
+  background: #00f2ea;
+}
+
+.share-ig {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  color: #fff;
+}
+
+.share-copy {
+  background: #ffe135;
+}
+
+.share-close {
+  background: #ddd;
+  font-size: 0.9rem;
+}
+
+/* Live step-by-step flow shown after clicking a platform */
+.share-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.share-flow-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: center;
+  margin: 0 0 14px;
+}
+
+.share-flow-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-flow-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border: 2px solid #000;
+  background: #fff;
+}
+
+.share-flow-steps li.done {
+  background: #d4f7d4;
+}
+
+.share-flow-steps li.pending {
+  opacity: 0.6;
+}
+
+.share-flow-steps li.manual {
+  background: #ffe135;
+  font-size: 0.95rem;
+  border-width: 3px;
+}
+
+.share-flow-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.share-card-hidden {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  pointer-events: none;
+}
+
+.share-preview-label {
+  font-size: 0.85rem;
+  color: #ffe135;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.share-preview-scaler {
+  width: 100%;
+  max-width: 360px;
+  height: 189px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  background: #fff9e6;
+  border-radius: 4px;
+}
+
+.share-preview-scaler .share-card {
+  transform: scale(0.3);
+  transform-origin: top left;
+  width: 1200px;
+  height: 630px;
+}
+
+.share-card {
+  width: 1200px;
+  height: 630px;
+  background: #fff9e6;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive;
+  padding: 28px 64px 24px;
+  overflow: hidden;
+  text-align: center;
+  color: #000;
+  gap: 0;
+}
+
+/* Thin accent bar across the top — no road stripe */
+.share-card-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  background: #FFE135;
+  border-bottom: 5px solid #000;
+}
+
+.share-card-brand {
+  font-size: 96px;
+  font-weight: 700;
+  color: #ffe135;
+  -webkit-text-stroke: 5px #000;
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 #000;
+  line-height: 1;
+  margin: 16px 0 4px;
+}
+
+.share-card-sub {
+  font-size: 24px;
+  margin: 0 0 14px;
+  color: #333;
+}
+
+.share-card-hook {
+  font-size: 48px;
+  font-weight: 700;
+  color: #cc0000;
+  -webkit-text-stroke: 2px #000;
+  margin: 0 0 10px;
+}
+
+.share-card-challenge {
+  font-size: 28px;
+  margin: 0 0 8px;
+  max-width: 900px;
+  color: #222;
+}
+
+.share-card-cta-text {
+  font-size: 34px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: #000;
+}
+
+.share-card-play-btn {
+  font-size: 44px;
+  font-weight: 700;
+  background: #ffe135;
+  border: 6px solid #000;
+  padding: 14px 56px;
+  box-shadow: 8px 8px 0 #000;
+  margin-bottom: 20px;
+  color: #000;
+}
+
+/* Link row — clean white pill */
+.share-card-link-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 5px solid #000;
+  border-radius: 12px;
+  padding: 10px 36px;
+  box-shadow: 5px 5px 0 #000;
+  margin-bottom: 16px;
+}
+
+.share-card-link-arrow {
+  font-size: 38px;
+  font-weight: 700;
+}
+
+.share-card-url {
+  font-size: 38px;
+  font-weight: 700;
+  color: #000;
+  word-break: break-all;
+}
+
+.share-card-tagline {
+  font-size: 20px;
+  margin: 0 0 4px;
+  color: #555;
+}
+
+.share-card-stats-mini {
+  font-size: 18px;
+  color: #777;
+  margin: 0;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-panel {
+  background: #fffff0;
+  border: 5px solid #000;
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 10px 10px 0 #000;
+  position: relative;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.modal-panel h2 {
+  font-family: 'Comic Neue', cursive;
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.modal-disclaimer {
+  font-style: italic;
+  color: #660000;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.modal-fine {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.fake-list {
+  list-style: square;
+  padding-left: 24px;
+}
+
+.fake-list li {
+  margin: 10px 0;
+  font-size: 1.05rem;
+}
+
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #000;
+  background: #ffe135;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
