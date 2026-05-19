@@ -1,6 +1,7 @@
 import { toPng } from 'html-to-image';
 import { useRef, useState } from 'react';
 import type { GameSnapshot } from '../game/types';
+import { computeRank } from '../utils/rank';
 import { buildShareCaption } from '../utils/share';
 import { ShareCard } from './ShareCard';
 import { ShareMenu } from './ShareMenu';
@@ -8,10 +9,6 @@ import { ShareMenu } from './ShareMenu';
 interface DeathOverlayProps {
   snapshot: GameSnapshot;
   onRetry: () => void;
-}
-
-function computeRank(distance: number): number {
-  return Math.max(1000, Math.floor(50000 - distance * 42 + Math.random() * 500));
 }
 
 export function DeathOverlay({ snapshot, onRetry }: DeathOverlayProps) {
