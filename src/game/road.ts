@@ -43,14 +43,10 @@ export function appendRoadSegment(
   const prev = segments.find((s) => s.y === topY + SEGMENT_SPACING) ?? segments[0];
   let roadX = prev?.centerX ?? canvasWidth / 2;
 
-  const amplitude = 2 + difficulty * 1.8;
-  roadX += Math.sin(time * 0.002 + segmentIndex * 0.15) * amplitude;
-  roadX += (noise1d(time + segmentIndex * 17) - 0.5) * (3 + difficulty * 2);
-
-  // Sudden snaps — half as frequent and half as violent as before
-  if (Math.random() < 0.004 + difficulty * 0.002) {
-    roadX += (Math.random() > 0.5 ? 1 : -1) * (18 + difficulty * 8);
-  }
+  // Gentle sinusoidal weave + smooth noise — no sudden snaps
+  const amplitude = 1.5 + difficulty * 1.2;
+  roadX += Math.sin(time * 0.002 + segmentIndex * 0.12) * amplitude;
+  roadX += (noise1d(time + segmentIndex * 17) - 0.5) * (2 + difficulty * 1.4);
 
   const margin = 60;
   roadX = Math.max(margin, Math.min(canvasWidth - margin, roadX));

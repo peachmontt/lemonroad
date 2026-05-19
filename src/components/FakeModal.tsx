@@ -40,15 +40,15 @@ export function FakeModal({ tab, onClose }: FakeModalProps) {
           </>
         ) : (
           <>
-            <h2 id="modal-title">$LEMON TOKENOMICS (CLASSIFIED)</h2>
-            <p className="modal-disclaimer">financial pulp · 100% organic volatility</p>
+            <h2 id="modal-title">$LEMON TOKENOMICS</h2>
+            <p className="modal-disclaimer">simple. fair. juiced.</p>
             <ul className="fake-list">
-              <li>40% — road maintenance</li>
-              <li>30% — lemon reserves</li>
-              <li>20% — community squeezing</li>
-              <li>10% — classified pulp operations</li>
+              <li>100% — pumpfun</li>
+              <li>0% — team</li>
+              <li>0% — VCs</li>
+              <li>0% — presale</li>
             </ul>
-            <p className="modal-fine">no utility. only road.</p>
+            <p className="modal-fine">all supply on pumpfun. no utility. only road.</p>
           </>
         )}
       </div>

@@ -25,7 +25,8 @@ export function getRoadMinWidth(canvasWidth: number): number {
 export const COLORS = {
   grass: '#7CFC00',
   grassDark: '#5cb85c',
-  road: '#444444',
+  road: '#4a4a4a',
+  roadEdge: '#e8e8e8',
   roadLine: '#FFFF00',
   outline: '#000000',
   lemon: '#FFE135',

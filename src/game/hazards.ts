@@ -41,7 +41,7 @@ function applyHazardHit(state: GameState, kind: HazardKind): void {
       lemon.vx += pull + (Math.random() - 0.5) * 4;
       state.lemonSquash = 0.55;
       state.lemonSquashVel = -0.12;
-      state.flags.screenShake = Math.max(state.flags.screenShake, 8);
+      state.flags.screenShake = Math.max(state.flags.screenShake, 4);
       break;
     }
     case 'monthly_inflation': {
@@ -57,7 +57,7 @@ function applyHazardHit(state: GameState, kind: HazardKind): void {
       lemon.x += lemon.vx * 0.08;
       state.lemonSquash = 0.55;
       state.lemonSquashVel = -0.10;
-      state.flags.screenShake = Math.max(state.flags.screenShake, 10);
+      state.flags.screenShake = Math.max(state.flags.screenShake, 5);
       state.flags.freezeUntil = Math.max(state.flags.freezeUntil, state.time + 0.08);
       break;
     }

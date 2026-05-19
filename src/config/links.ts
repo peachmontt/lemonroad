@@ -4,4 +4,4 @@ export const SITE_URL =
 
 export const BUY_URL = '#';
 export const CHART_URL = '#';
-export const X_URL = '#';
+export const X_URL = 'https://x.com/multin1x1/status/2056637431659499887/photo/1';

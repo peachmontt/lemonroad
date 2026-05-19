@@ -23,8 +23,6 @@ export function DeathOverlay({ snapshot, onRetry }: DeathOverlayProps) {
     file: File;
     caption: string;
   } | null>(null);
-  const [errorDismissed, setErrorDismissed] = useState(false);
-
   const isDead = snapshot.phase === 'dead';
 
   const handleShare = async () => {
@@ -60,29 +58,6 @@ export function DeathOverlay({ snapshot, onRetry }: DeathOverlayProps) {
               <p>juice level: {snapshot.juiceLevel}</p>
               <p>citric velocity: {snapshot.citricVelocity.toFixed(2)}</p>
             </div>
-
-            {!errorDismissed && (
-              <div className="fake-error" role="alert">
-                <div className="fake-error-titlebar">
-                  <span className="fake-error-icon">!</span>
-                  <span>citric.dll — Application Error</span>
-                </div>
-                <div className="fake-error-body">
-                  <p className="fake-error-msg">
-                    The instruction at 0x00C171C referenced memory at 0x00000000.
-                    The memory could not be &quot;read&quot;.
-                  </p>
-                  <p className="fake-error-detail">citric.dll has stopped working</p>
-                  <button
-                    type="button"
-                    className="fake-error-ok"
-                    onClick={() => setErrorDismissed(true)}
-                  >
-                    OK
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <p className="share-preview-label">this is what your friends will see:</p>
@@ -98,7 +73,11 @@ export function DeathOverlay({ snapshot, onRetry }: DeathOverlayProps) {
           >
             {sharing ? 'SQUEEZING PNG...' : 'SHARE YOUR FAILURE'}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={onRetry}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onRetry}
+          >
             TRY AGAIN
           </button>
         </>

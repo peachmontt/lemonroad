@@ -74,7 +74,7 @@ export function startEvent(state: GameState, id: MemeEventId, now: number): void
       break;
     case 'market_crash':
       f.marketCrashUntil = endsAt;
-      f.screenShake = 18;
+      f.screenShake = 8;
       break;
     case 'bull_run':
       f.bullRunUntil = endsAt;
@@ -113,7 +113,7 @@ export function updateActiveEvent(state: GameState, now: number, dt: number): vo
   }
 
   if (ev.id === 'market_crash') {
-    state.flags.screenShake = 8 + Math.random() * 6;
+    state.flags.screenShake = 4 + Math.random() * 3;
     if (Math.random() < 0.06) {
       state.lemon.vx += (Math.random() - 0.5) * (5 + state.difficulty * 1.5);
       state.lemonSquash = Math.min(state.lemonSquash, 0.8);

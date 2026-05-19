@@ -3,8 +3,13 @@ import { getHazardLabel } from './hazards';
 import { getSegmentAtY } from './road';
 import type { GameState } from './types';
 
-function jitter(amount = 2): number {
-  return (Math.random() - 0.5) * amount * 2;
+let _t = 0;
+function stateTime(): number {
+  return _t;
+}
+
+export function setRenderTime(t: number): void {
+  _t = t;
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): void {
@@ -14,7 +19,9 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
 
   ctx.save();
   if (shake > 0) {
-    ctx.translate(jitter(shake), jitter(shake));
+    const dx = (Math.random() - 0.5) * shake * 0.8;
+    const dy = (Math.random() - 0.5) * shake * 0.8;
+    ctx.translate(dx, dy);
   }
 
   drawGrass(ctx, width, height);
@@ -39,66 +46,89 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
 function drawGrass(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   ctx.fillStyle = COLORS.grass;
   ctx.fillRect(0, 0, w, h);
+  // Smoothly scrolling dark patches — no random jitter so the colour is stable
   ctx.fillStyle = COLORS.grassDark;
-  const patches = Math.min(28, Math.floor(w / 24));
+  const patches = Math.min(32, Math.floor(w / 20));
+  const scrollY = (stateTime() * 50) % h;
   for (let i = 0; i < patches; i++) {
-    const x = (i * 97 + (stateTime() % 100)) % w;
-    const y = (i * 53) % h;
-    ctx.fillRect(x + jitter(1), y, 4, 8);
+    const x = (i * 97) % w;
+    const y = ((i * 53) + scrollY) % h;
+    ctx.fillRect(x, y, 5, 9);
+    // wrap-around second copy so patches appear continuous at bottom edge
+    if (y + 9 > h) ctx.fillRect(x, y - h, 5, 9);
   }
 }
 
-let _t = 0;
-function stateTime(): number {
-  return _t;
-}
-
-export function setRenderTime(t: number): void {
-  _t = t;
-}
-
 function drawRoad(ctx: CanvasRenderingContext2D, state: GameState): void {
-  const segments = [...state.road].sort((a, b) => a.y - b.y);
-  if (segments.length < 2) return;
+  const segs = [...state.road].sort((a, b) => a.y - b.y);
+  if (segs.length < 2) return;
 
   const now = state.time;
   const rugActive = now < state.flags.rugHoleUntil;
 
-  for (let i = 0; i < segments.length - 1; i++) {
-    const a = segments[i];
-    const b = segments[i + 1];
-    if (!a.hasRoad || !b.hasRoad) continue;
-    if (rugActive && i % 7 === 3) continue;
-
-    const halfA = a.width / 2;
-    const halfB = b.width / 2;
-
-    ctx.beginPath();
-    ctx.moveTo(a.centerX - halfA + jitter(), a.y + jitter());
-    ctx.lineTo(b.centerX - halfB + jitter(), b.y + jitter());
-    ctx.lineTo(b.centerX + halfB + jitter(), b.y + jitter());
-    ctx.lineTo(a.centerX + halfA + jitter(), a.y + jitter());
-    ctx.closePath();
-
-    ctx.fillStyle = COLORS.road;
-    ctx.fill();
-    ctx.strokeStyle = COLORS.outline;
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    if (i % 3 === 0) {
-      const mx = (a.centerX + b.centerX) / 2 + jitter(0.5);
-      const my = (a.y + b.y) / 2;
-      ctx.fillStyle = COLORS.roadLine;
-      ctx.fillRect(mx - 2, my - 3, 4, 6);
+  // Collect contiguous runs of road segments and draw each as one smooth path
+  let runStart = -1;
+  for (let i = 0; i <= segs.length; i++) {
+    const inRun =
+      i < segs.length && segs[i].hasRoad && !(rugActive && i % 7 === 3);
+    if (inRun && runStart < 0) {
+      runStart = i;
+    } else if (!inRun && runStart >= 0) {
+      drawRoadRun(ctx, segs, runStart, i);
+      runStart = -1;
     }
   }
+}
 
-  for (const seg of segments) {
-    if (!seg.hasRoad) {
-      ctx.fillStyle = COLORS.void;
-      ctx.fillRect(seg.centerX - seg.width, seg.y - 4, seg.width * 2, 12);
-    }
+function drawRoadRun(
+  ctx: CanvasRenderingContext2D,
+  segs: { centerX: number; y: number; width: number; hasRoad: boolean }[],
+  from: number,
+  toExcl: number,
+): void {
+  const end = toExcl - 1;
+  if (end <= from) return;
+
+  // Single filled shape — no per-segment strokes so there are no horizontal seams
+  ctx.beginPath();
+  ctx.moveTo(segs[from].centerX - segs[from].width / 2, segs[from].y);
+  for (let k = from + 1; k <= end; k++) {
+    ctx.lineTo(segs[k].centerX - segs[k].width / 2, segs[k].y);
+  }
+  for (let k = end; k >= from; k--) {
+    ctx.lineTo(segs[k].centerX + segs[k].width / 2, segs[k].y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = COLORS.road;
+  ctx.fill();
+
+  // Left edge line
+  ctx.beginPath();
+  ctx.moveTo(segs[from].centerX - segs[from].width / 2, segs[from].y);
+  for (let k = from + 1; k <= end; k++) {
+    ctx.lineTo(segs[k].centerX - segs[k].width / 2, segs[k].y);
+  }
+  ctx.strokeStyle = COLORS.roadEdge;
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Right edge line
+  ctx.beginPath();
+  ctx.moveTo(segs[from].centerX + segs[from].width / 2, segs[from].y);
+  for (let k = from + 1; k <= end; k++) {
+    ctx.lineTo(segs[k].centerX + segs[k].width / 2, segs[k].y);
+  }
+  ctx.stroke();
+
+  // Dashed centre line (every ~32 px)
+  ctx.fillStyle = COLORS.roadLine;
+  for (let k = from; k < end - 1; k += 4) {
+    const a = segs[k];
+    const b = segs[k + 1];
+    const mx = (a.centerX + b.centerX) / 2;
+    const my = (a.y + b.y) / 2;
+    ctx.fillRect(mx - 2, my - 4, 4, 8);
   }
 }
 
@@ -153,27 +183,49 @@ function drawSpeedLines(ctx: CanvasRenderingContext2D, state: GameState): void {
 function drawHazards(ctx: CanvasRenderingContext2D, state: GameState): void {
   for (const h of state.hazards) {
     ctx.save();
-    ctx.translate(h.x + jitter(1), h.y);
+    ctx.translate(h.x, h.y);
     ctx.strokeStyle = COLORS.outline;
     ctx.lineWidth = 3;
     ctx.font = 'bold 9px "Comic Neue", Comic Sans MS, cursive';
 
     if (h.kind === 'short_squeeze') {
-      const bw = 14;
-      const gap = 6;
-      for (let i = -2; i <= 2; i++) {
-        const green = i % 2 === 0;
-        ctx.fillStyle = green ? COLORS.candleGreen : COLORS.candleRed;
-        const cx = i * (bw + gap);
-        const bh = green ? 22 + i * 3 : 14;
-        ctx.fillRect(cx - bw / 2, -bh / 2, bw, bh);
-        ctx.strokeRect(cx - bw / 2, -bh / 2, bw, bh);
+      // Candlestick chart background
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(-36, -28, 72, 52);
+      ctx.strokeStyle = COLORS.outline;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-36, -28, 72, 52);
+
+      const bw = 10;
+      const gap = 5;
+      const candleData = [
+        { open: 8, close: 22, high: 26, low: 4, green: true },
+        { open: 20, close: 10, high: 24, low: 6, green: false },
+        { open: 10, close: 24, high: 28, low: 8, green: true },
+        { open: 22, close: 12, high: 25, low: 8, green: false },
+      ];
+      for (let i = 0; i < candleData.length; i++) {
+        const d = candleData[i];
+        const cx = -24 + i * (bw + gap) + bw / 2;
+        const scaleY = 1.5;
+        const top = -d.close / scaleY + 14;
+        const body = (d.close - d.open) / scaleY;
+        ctx.strokeStyle = d.green ? COLORS.candleGreen : COLORS.candleRed;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, -d.high / scaleY + 14);
+        ctx.lineTo(cx, top);
+        ctx.moveTo(cx, top + body);
+        ctx.lineTo(cx, -d.low / scaleY + 14);
+        ctx.stroke();
+        ctx.fillStyle = d.green ? COLORS.candleGreen : COLORS.candleRed;
+        ctx.strokeStyle = COLORS.outline;
+        ctx.lineWidth = 1;
+        ctx.fillRect(cx - bw / 2, top, bw, Math.max(2, body));
+        ctx.strokeRect(cx - bw / 2, top, bw, Math.max(2, body));
       }
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(-28, 18, 56, 14);
-      ctx.strokeRect(-28, 18, 56, 14);
-      ctx.fillStyle = COLORS.outline;
-      ctx.fillText('SQUEEZE', -22, 29);
+      ctx.strokeStyle = COLORS.outline;
+      ctx.lineWidth = 2;
     } else if (h.kind === 'monthly_inflation') {
       ctx.fillStyle = '#fff';
       ctx.fillRect(-26, -24, 52, 48);
@@ -227,10 +279,10 @@ function drawTaxman(ctx: CanvasRenderingContext2D, state: GameState): void {
   if (!state.taxman.active) return;
   const { x, y } = state.taxman;
   ctx.fillStyle = COLORS.suit;
-  ctx.fillRect(x - 18 + jitter(), y - 50, 36, 50);
+  ctx.fillRect(x - 18, y - 50, 36, 50);
   ctx.fillStyle = '#FFCC99';
   ctx.beginPath();
-  ctx.arc(x + jitter(), y - 58, 14, 0, Math.PI * 2);
+  ctx.arc(x, y - 58, 14, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = COLORS.tie;
   ctx.fillRect(x - 4, y - 45, 8, 30);
@@ -247,7 +299,7 @@ function drawLemon(ctx: CanvasRenderingContext2D, state: GameState): void {
   const dancing = state.time < state.flags.dancingUntil;
 
   ctx.save();
-  ctx.translate(lemon.x + jitter(dancing ? 3 : 1), ly + jitter(dancing ? 3 : 1));
+  ctx.translate(lemon.x, ly);
   if (dancing) {
     ctx.translate(0, Math.sin(state.time * 12) * 15);
   }

@@ -304,6 +304,10 @@ export class GameEngine {
             ? 'critical'
             : 'catastrophic';
 
+    // Decay screen shake every frame so it naturally fades out
+    s.flags.screenShake *= 0.85;
+    if (s.flags.screenShake < 0.4) s.flags.screenShake = 0;
+
     if (!s.flags.scrollPaused) {
       const scrollDelta =
         s.scrollSpeed * s.flags.scrollMultiplier * dt * SCROLL_VISUAL_MULT;
@@ -388,7 +392,7 @@ export class GameEngine {
     if (s.phase !== 'playing') return;
     s.phase = 'dying';
     s.deathTime = s.time;
-    s.flags.screenShake = 20;
+    s.flags.screenShake = 8;
     this.audio.play('scream');
     this.audio.play('error');
   }
