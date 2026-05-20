@@ -13,6 +13,9 @@ const bodySchema = z.object({
 
 export default withMethods({
   PATCH: async (req, res) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b93c72'},body:JSON.stringify({sessionId:'b93c72',location:'profile.ts:handler-enter',message:'PATCH /api/profile handler invoked',data:{hasCookie:!!(req.headers.cookie),bodyType:typeof req.body,bodyKeys:req.body && typeof req.body === 'object' ? Object.keys(req.body) : null},hypothesisId:'H4',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     const sessionId = getSessionId(req) ?? req.socket?.remoteAddress ?? 'anon';
     if (!rateLimit(req, res, `profile:${sessionId}`, { max: 5, windowMs: 60 * 60 * 1000 })) {
       return;

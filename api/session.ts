@@ -5,6 +5,9 @@ import { ensureSessionId } from './_lib/session';
 
 export default withMethods({
   POST: async (req, res) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b93c72'},body:JSON.stringify({sessionId:'b93c72',location:'session.ts:handler-enter',message:'POST /api/session handler invoked',hypothesisId:'H1',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     const sessionId = ensureSessionId(req, res);
     const ipHash = hashIp(getClientIp(req));
 
