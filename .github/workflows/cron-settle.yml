@@ -1,0 +1,16 @@
+name: Settle Hour Cron
+
+on:
+  schedule:
+    - cron: '5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  settle:
+    name: Settle previous hour
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call settle-hour endpoint
+        run: |
+          curl --fail -X GET https://www.lemonroad.xyz/api/cron/settle-hour \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
