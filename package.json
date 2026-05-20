@@ -2,7 +2,6 @@
   "name": "lemonroad",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:api": "vercel dev",
