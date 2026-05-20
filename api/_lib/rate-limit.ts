@@ -44,7 +44,7 @@ export function checkRateLimit(
 }
 
 export function rateLimit(
-  req: VercelRequest,
+  _req: VercelRequest,
   res: VercelResponse,
   key: string,
   limit: RateLimit,
