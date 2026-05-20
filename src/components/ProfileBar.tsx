@@ -13,6 +13,7 @@ export function ProfileBar({ player, onSaveName }: ProfileBarProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(player?.displayName ?? '');
   const [saving, setSaving] = useState(false);
+  const sessionReady = player !== null;
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -64,6 +65,7 @@ export function ProfileBar({ player, onSaveName }: ProfileBarProps) {
             <button
               type="button"
               className="link-btn"
+              disabled={!sessionReady}
               onClick={() => {
                 setName(player?.displayName ?? '');
                 setEditing(true);

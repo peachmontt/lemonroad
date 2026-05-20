@@ -33,11 +33,14 @@ export function usePlayer() {
 
   const setDisplayName = useCallback(
     async (displayName: string, walletPubkey?: string) => {
+      if (!player) {
+        await refresh();
+      }
       const updated = await updateProfile({ displayName, walletPubkey });
       setPlayer(updated);
       return updated;
     },
-    [],
+    [player, refresh],
   );
 
   const reloadRuns = useCallback(async () => {
