@@ -5,9 +5,6 @@ import { ensureSessionId } from './_lib/session';
 
 export default withMethods({
   POST: async (req, res) => {
-    // #region agent log
-    console.log('[DEBUG b93c72] session.ts: POST handler entered');
-    // #endregion
     const sessionId = ensureSessionId(req, res);
     const ipHash = hashIp(getClientIp(req));
 

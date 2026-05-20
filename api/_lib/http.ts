@@ -31,9 +31,6 @@ export function withMethods(
       await handler(req, res);
     } catch (err) {
       console.error(err);
-      // #region agent log
-      console.error('[DEBUG b93c72] http.ts: withMethods caught error:', err);
-      // #endregion
       if (!res.writableEnded) {
         res.status(500).json({
           error: err instanceof Error ? err.message : 'Internal server error',

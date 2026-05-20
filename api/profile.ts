@@ -13,9 +13,6 @@ const bodySchema = z.object({
 
 export default withMethods({
   PATCH: async (req, res) => {
-    // #region agent log
-    console.log('[DEBUG b93c72] profile.ts: PATCH handler entered. body type:', typeof req.body, '| cookie present:', !!(req.headers.cookie));
-    // #endregion
     const sessionId = getSessionId(req) ?? req.socket?.remoteAddress ?? 'anon';
     if (!rateLimit(req, res, `profile:${sessionId}`, { max: 5, windowMs: 60 * 60 * 1000 })) {
       return;
