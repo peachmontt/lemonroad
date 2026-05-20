@@ -32,7 +32,7 @@ export function withMethods(
     } catch (err) {
       console.error(err);
       // #region agent log
-      fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b93c72'},body:JSON.stringify({sessionId:'b93c72',location:'http.ts:catch',message:'withMethods caught error',data:{error:String(err),msg:err instanceof Error?err.message:null},hypothesisId:'H2',timestamp:Date.now()})}).catch(()=>{});
+      console.error('[DEBUG b93c72] http.ts: withMethods caught error:', err);
       // #endregion
       if (!res.writableEnded) {
         res.status(500).json({
