@@ -28,3 +28,29 @@ export function ensureSessionId(
   setSessionCookie(res, id);
   return id;
 }
+
+/** Admin cookie helpers */
+const ADMIN_COOKIE = 'lr_admin';
+
+export function getAdminToken(req: VercelRequest): string | null {
+  const cookie = req.headers.cookie ?? '';
+  const match = cookie.match(new RegExp(`${ADMIN_COOKIE}=([^;]+)`));
+  return match?.[1] ?? null;
+}
+
+export function setAdminCookie(res: VercelResponse, token: string) {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader(
+    'Set-Cookie',
+    `${ADMIN_COOKIE}=${token}; Path=/api/admin; HttpOnly; SameSite=Strict; Max-Age=3600${secure}`,
+  );
+}
+
+export function isAdminAuthorized(req: VercelRequest): boolean {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) return false;
+  const header = req.headers.authorization?.replace('Bearer ', '');
+  if (header === secret) return true;
+  const cookie = getAdminToken(req);
+  return cookie === secret;
+}

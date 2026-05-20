@@ -2,6 +2,7 @@ import { toPng } from 'html-to-image';
 import { useEffect, useRef, useState } from 'react';
 import type { GameSnapshot } from '../game/types';
 import { submitRun } from '../lib/api';
+import { trackRunEnd } from '../lib/analytics';
 import type { GameMode } from '../types/game';
 import { computeRank } from '../utils/rank';
 import { buildShareCaption } from '../utils/share';
@@ -42,6 +43,13 @@ export function DeathOverlay({
   useEffect(() => {
     if (!isDead || savedRef.current) return;
     savedRef.current = true;
+
+    trackRunEnd({
+      mode: gameMode,
+      distance: snapshot.distance,
+      durationMs: playDurationMs,
+      juiceLevel: snapshot.juiceLevel,
+    });
 
     void submitRun({
       mode: gameMode,

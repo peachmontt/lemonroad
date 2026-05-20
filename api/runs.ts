@@ -2,13 +2,9 @@ import { z } from 'zod';
 import { getAuthenticatedPlayer } from './_lib/auth';
 import { prisma } from './_lib/db';
 import { currentHourBucket } from './_lib/hour';
-import {
-  badRequest,
-  json,
-  unauthorized,
-  withMethods,
-  parseJsonBody,
-} from './_lib/http';
+import { badRequest, json, unauthorized, withMethods, parseJsonBody } from './_lib/http';
+import { rateLimit } from './_lib/rate-limit';
+import { getSessionId } from './_lib/session';
 import { verifyDepositTransaction } from './_lib/solana';
 import { USDT_PER_ATTEMPT } from './_lib/pool-math';
 
@@ -27,10 +23,7 @@ export default withMethods({
     const player = await getAuthenticatedPlayer(req);
     if (!player) return unauthorized(res);
 
-    const limit = Math.min(
-      100,
-      Number(req.query.limit) || 50,
-    );
+    const limit = Math.min(100, Number(req.query.limit) || 50);
 
     const runs = await prisma.gameRun.findMany({
       where: { playerId: player.id },
@@ -53,13 +46,14 @@ export default withMethods({
   },
 
   POST: async (req, res) => {
+    const sessionId = getSessionId(req) ?? req.socket?.remoteAddress ?? 'anon';
+    if (!rateLimit(req, res, `runs:${sessionId}`, { max: 30, windowMs: 60 * 1000 })) return;
+
     const player = await getAuthenticatedPlayer(req);
     if (!player) return unauthorized(res);
 
     const parsed = postSchema.safeParse(parseJsonBody(req));
-    if (!parsed.success) {
-      return badRequest(res, parsed.error.message);
-    }
+    if (!parsed.success) return badRequest(res, parsed.error.message);
 
     const { mode, distance, juiceLevel, citricVelocity, durationMs, depositTx, walletPubkey } =
       parsed.data;
@@ -83,22 +77,11 @@ export default withMethods({
       }
 
       if (!existingDeposit) {
-        const verification = await verifyDepositTransaction(
-          depositTx,
-          walletPubkey,
-          hourBucket,
-        );
-        if (!verification.ok) {
-          return badRequest(res, verification.error ?? 'Invalid deposit');
-        }
+        const verification = await verifyDepositTransaction(depositTx, walletPubkey, hourBucket);
+        if (!verification.ok) return badRequest(res, verification.error ?? 'Invalid deposit');
 
         await prisma.verifiedDeposit.create({
-          data: {
-            txSignature: depositTx,
-            walletPubkey,
-            hourBucket,
-            amountUsdt: USDT_PER_ATTEMPT,
-          },
+          data: { txSignature: depositTx, walletPubkey, hourBucket, amountUsdt: USDT_PER_ATTEMPT },
         });
       }
 
@@ -106,29 +89,18 @@ export default withMethods({
         where: { txSignature: depositTx },
         data: { usedAt: new Date() },
       });
-
       verifiedTx = depositTx;
 
       const hourStart = new Date(Number(hourBucket) * 3_600_000);
       await prisma.hourlyPool.upsert({
         where: { hourStart },
-        create: {
-          hourStart,
-          depositedUsdt: USDT_PER_ATTEMPT,
-          participantCount: 1,
-        },
-        update: {
-          depositedUsdt: { increment: USDT_PER_ATTEMPT },
-        },
+        create: { hourStart, depositedUsdt: USDT_PER_ATTEMPT, participantCount: 1 },
+        update: { depositedUsdt: { increment: USDT_PER_ATTEMPT } },
       });
 
       const distinctInHour = await prisma.gameRun.groupBy({
         by: ['walletPubkey'],
-        where: {
-          mode: 'paid',
-          hourBucket,
-          walletPubkey: { not: null },
-        },
+        where: { mode: 'paid', hourBucket, walletPubkey: { not: null } },
       });
       const wallets = new Set(distinctInHour.map((d) => d.walletPubkey));
       wallets.add(walletPubkey);
@@ -138,10 +110,7 @@ export default withMethods({
       });
 
       if (!player.walletPubkey) {
-        await prisma.player.update({
-          where: { id: player.id },
-          data: { walletPubkey },
-        });
+        await prisma.player.update({ where: { id: player.id }, data: { walletPubkey } });
       }
     }
 

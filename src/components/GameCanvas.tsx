@@ -1,9 +1,10 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { usePaidAttempt } from '../hooks/usePaidAttempt';
 import { usePlayer } from '../hooks/usePlayer';
 import type { GameMode } from '../types/game';
+import { trackGameStart, trackWalletConnect, trackPaidDeposit, trackPaymentError } from '../lib/analytics';
 import { DeathOverlay } from './DeathOverlay';
 import { FakeModal, type ModalTab } from './FakeModal';
 import { HudOverlay } from './HudOverlay';
@@ -26,6 +27,11 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   const [activeDepositTx, setActiveDepositTx] = useState<string | null>(null);
 
   const { publicKey } = useWallet();
+
+  // Track wallet connects
+  useEffect(() => {
+    if (publicKey) trackWalletConnect(publicKey.toBase58());
+  }, [publicKey]);
   const { player, runs, setDisplayName, reloadRuns } = usePlayer();
   const {
     pending: paidPending,
@@ -52,6 +58,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
       }
     }
     setActiveMode(gameMode);
+    trackGameStart(gameMode);
     start();
   };
 
@@ -65,7 +72,11 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     let tx = depositTx;
     if (!tx) {
       tx = await payForAttempt();
-      if (!tx) return;
+      if (!tx) {
+        if (paidError) trackPaymentError(paidError);
+        return;
+      }
+      trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: publicKey.toBase58() });
     }
 
     setActiveDepositTx(tx);
