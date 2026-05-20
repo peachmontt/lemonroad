@@ -85,6 +85,7 @@ export function submitRun(body: {
   durationMs: number;
   depositTx?: string;
   walletPubkey?: string;
+  paymentChain?: 'solana' | 'evm';
 }) {
   return apiFetch<{ id: string }>('/api/runs', {
     method: 'POST',
@@ -97,7 +98,10 @@ export function fetchLeaderboard(hour?: string) {
   return apiFetch<LeaderboardResponse>(`/api/leaderboard${q}`);
 }
 
-export function preparePaidAttempt(walletPubkey: string) {
+export function preparePaidAttempt(
+  walletPubkey: string,
+  paymentChain: 'solana' | 'evm' = 'solana',
+) {
   return apiFetch<{
     ready: boolean;
     depositTx?: string;
@@ -107,6 +111,6 @@ export function preparePaidAttempt(walletPubkey: string) {
     accounts?: Record<string, string>;
   }>('/api/paid/prepare', {
     method: 'POST',
-    body: JSON.stringify({ walletPubkey }),
+    body: JSON.stringify({ walletPubkey, paymentChain }),
   });
 }

@@ -11,8 +11,8 @@ export function HudOverlay({ snapshot, onToggleMute }: HudOverlayProps) {
     <div className="overlay hud-overlay" aria-live="polite">
       <div className="hud-top">
         <span className="hud-logo">LEMON ROAD</span>
-        <button type="button" className="mute-btn" onClick={onToggleMute}>
-          {snapshot.muted ? 'MUTE' : 'SOUND'}
+        <button type="button" className="mute-btn" onClick={onToggleMute} aria-label={snapshot.muted ? 'Unmute' : 'Mute'}>
+          {snapshot.muted ? '🔇 UNMUTE' : '🔊 MUTE'}
         </button>
       </div>
       <div className="hud-stats">

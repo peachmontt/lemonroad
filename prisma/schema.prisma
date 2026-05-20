@@ -68,12 +68,13 @@ model PrizePayout {
 }
 
 model VerifiedDeposit {
-  txSignature  String   @id @map("tx_signature")
-  walletPubkey String   @map("wallet_pubkey")
-  hourBucket   String   @map("hour_bucket")
-  amountUsdt   BigInt   @map("amount_usdt")
+  txSignature  String    @id @map("tx_signature")
+  walletPubkey String    @map("wallet_pubkey")
+  hourBucket   String    @map("hour_bucket")
+  amountUsdt   BigInt    @map("amount_usdt")
+  paymentChain String    @default("solana") @map("payment_chain")
   usedAt       DateTime? @map("used_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   @@index([walletPubkey, hourBucket, usedAt])
   @@map("verified_deposits")

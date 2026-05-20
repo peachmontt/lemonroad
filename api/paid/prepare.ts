@@ -10,11 +10,13 @@ import {
   vaultAuthorityPda,
   ATTEMPT_AMOUNT,
 } from '../_lib/solana';
+import { getEvmVaultAddress, getEvmChainId } from '../_lib/evm';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 
 const bodySchema = z.object({
   walletPubkey: z.string(),
+  paymentChain: z.enum(['solana', 'evm']).default('solana'),
 });
 
 export default withMethods({
@@ -24,13 +26,14 @@ export default withMethods({
       return badRequest(res, parsed.error.message);
     }
 
-    const { walletPubkey } = parsed.data;
+    const { walletPubkey, paymentChain } = parsed.data;
     const hourBucket = currentHourBucket();
 
     const unused = await prisma.verifiedDeposit.findFirst({
       where: {
         walletPubkey,
         hourBucket,
+        paymentChain,
         usedAt: null,
       },
       orderBy: { createdAt: 'desc' },
@@ -45,6 +48,31 @@ export default withMethods({
       });
     }
 
+    // EVM (MetaMask) payment path
+    if (paymentChain === 'evm') {
+      const evmVault = getEvmVaultAddress();
+      const evmChainId = getEvmChainId();
+      const usdtAddresses: Record<number, string> = {
+        1: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        137: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+        80002: '0x52D800ca262522580CeBAD275395ca6e7598C014',
+      };
+      return json(res, {
+        ready: false,
+        hourBucket,
+        amountUsdt: ATTEMPT_AMOUNT.toString(),
+        amountFormatted: '1 USDT',
+        accounts: evmVault
+          ? {
+              evmVault,
+              evmChainId: String(evmChainId),
+              usdtAddress: usdtAddresses[evmChainId] ?? usdtAddresses[137],
+            }
+          : null,
+      });
+    }
+
+    // Solana payment path
     const programId = getProgramId();
     const usdtMint = getUsdtMint();
     const wallet = new PublicKey(walletPubkey);

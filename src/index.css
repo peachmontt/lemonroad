@@ -67,9 +67,13 @@ body,
 .start-overlay {
   justify-content: center;
   align-items: center;
-  padding: 20px 16px;
+  /* enough top padding to clear the absolute-positioned ProfileBar (≈56px),
+     plus a little breathing room */
+  padding: 68px 16px 24px;
   background: rgba(255, 255, 200, 0.88);
   pointer-events: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .title-shake {
@@ -116,12 +120,24 @@ body,
   display: inline-block;
   margin: 4px;
   box-shadow: 4px 4px 0 #000;
-  transition: transform 0.05s;
+  transition: transform 0.05s, box-shadow 0.05s;
 }
 
-.btn:active {
+.btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #000;
+}
+
+.btn:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 #000;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 4px 4px 0 #000;
 }
 
 .btn-primary {
@@ -154,6 +170,13 @@ body,
   text-decoration: underline;
   cursor: pointer;
   color: #000;
+}
+
+.controls-hint {
+  font-size: 0.78rem;
+  color: #555;
+  margin-bottom: 12px;
+  letter-spacing: 0.03em;
 }
 
 .tilt-hint,
@@ -204,6 +227,7 @@ body,
 
 .hud-stats {
   margin-top: auto;
+  align-self: flex-start;
   background: rgba(255, 255, 255, 0.85);
   border: 3px solid #000;
   padding: 8px 12px;
@@ -234,8 +258,10 @@ body,
   align-items: center;
   padding: 16px 12px 24px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: rgba(0, 0, 0, 0.7);
   pointer-events: auto;
+  transition: background 0.35s ease;
 }
 
 .death-overlay.juicing .juiced-title {
@@ -511,6 +537,10 @@ body,
   flex-shrink: 0;
 }
 
+.share-done-btn {
+  margin-top: 12px;
+}
+
 .share-card-hidden {
   position: fixed;
   left: -9999px;
@@ -534,10 +564,13 @@ body,
   border: 3px solid #000;
   box-shadow: 3px 3px 0 #000;
   background: #fff9e6;
-  border-radius: 4px;
+  position: relative;
 }
 
 .share-preview-scaler .share-card {
+  position: absolute;
+  top: 0;
+  left: 0;
   transform: scale(0.3);
   transform-origin: top left;
   width: 1200px;
@@ -806,6 +839,63 @@ body,
   max-width: 320px;
   text-align: center;
   margin-bottom: 8px;
+}
+
+.payment-method-picker {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 4px;
+  justify-content: center;
+}
+
+.payment-btn {
+  border: 2px solid #000;
+  background: #fff;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.payment-btn.active {
+  background: #ffe135;
+}
+
+.wallet-hint {
+  font-size: 0.78rem;
+  color: #555;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.evm-connect-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #999;
+  color: #666;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-xs {
+  padding: 3px 8px;
+  font-size: 0.7rem;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
 }
 
 .run-history {

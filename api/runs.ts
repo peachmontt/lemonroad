@@ -6,6 +6,7 @@ import { badRequest, json, unauthorized, withMethods, parseJsonBody } from './_l
 import { rateLimit } from './_lib/rate-limit';
 import { getSessionId } from './_lib/session';
 import { verifyDepositTransaction } from './_lib/solana';
+import { verifyEvmDepositTransaction } from './_lib/evm';
 import { USDT_PER_ATTEMPT } from './_lib/pool-math';
 
 const postSchema = z.object({
@@ -16,6 +17,7 @@ const postSchema = z.object({
   durationMs: z.number().int().min(0).max(3_600_000),
   depositTx: z.string().optional(),
   walletPubkey: z.string().optional(),
+  paymentChain: z.enum(['solana', 'evm']).default('solana'),
 });
 
 export default withMethods({
@@ -55,7 +57,7 @@ export default withMethods({
     const parsed = postSchema.safeParse(parseJsonBody(req));
     if (!parsed.success) return badRequest(res, parsed.error.message);
 
-    const { mode, distance, juiceLevel, citricVelocity, durationMs, depositTx, walletPubkey } =
+    const { mode, distance, juiceLevel, citricVelocity, durationMs, depositTx, walletPubkey, paymentChain } =
       parsed.data;
 
     let hourBucket: string | null = null;
@@ -77,11 +79,20 @@ export default withMethods({
       }
 
       if (!existingDeposit) {
-        const verification = await verifyDepositTransaction(depositTx, walletPubkey, hourBucket);
+        const verification =
+          paymentChain === 'evm'
+            ? await verifyEvmDepositTransaction(depositTx, walletPubkey)
+            : await verifyDepositTransaction(depositTx, walletPubkey, hourBucket);
         if (!verification.ok) return badRequest(res, verification.error ?? 'Invalid deposit');
 
         await prisma.verifiedDeposit.create({
-          data: { txSignature: depositTx, walletPubkey, hourBucket, amountUsdt: USDT_PER_ATTEMPT },
+          data: {
+            txSignature: depositTx,
+            walletPubkey,
+            hourBucket,
+            amountUsdt: USDT_PER_ATTEMPT,
+            paymentChain,
+          },
         });
       }
 

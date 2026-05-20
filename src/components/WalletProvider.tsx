@@ -8,6 +8,7 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { useMemo, type ComponentType, type ReactNode } from 'react';
 import { SOLANA_CLUSTER, SOLANA_RPC_URL } from '../config/solana';
+import { EvmProvider } from '../providers/EvmProvider';
 
 interface Props {
   children: ReactNode;
@@ -30,10 +31,12 @@ export function WalletProvider({ children }: Props) {
   }>;
 
   return (
-    <Provider endpoint={SOLANA_RPC_URL}>
-      <SolanaWalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
-      </SolanaWalletProvider>
-    </Provider>
+    <EvmProvider>
+      <Provider endpoint={SOLANA_RPC_URL}>
+        <SolanaWalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>{children}</WalletModalProvider>
+        </SolanaWalletProvider>
+      </Provider>
+    </EvmProvider>
   );
 }

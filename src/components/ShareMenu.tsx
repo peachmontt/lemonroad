@@ -51,7 +51,7 @@ function ActiveFlow({ platform, steps, manualStep, onDone }: ActiveFlowProps) {
           </li>
         )}
       </ul>
-      <button type="button" className="share-option" onClick={onDone} style={{ marginTop: 12 }}>
+      <button type="button" className="share-option share-done-btn" onClick={onDone}>
         DONE
       </button>
     </div>

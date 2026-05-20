@@ -15,6 +15,7 @@ interface DeathOverlayProps {
   playDurationMs: number;
   depositTx: string | null;
   walletPubkey: string | null;
+  paymentChain?: 'solana' | 'evm';
   onRetry: () => void;
   onRunSaved?: () => void;
 }
@@ -25,6 +26,7 @@ export function DeathOverlay({
   playDurationMs,
   depositTx,
   walletPubkey,
+  paymentChain = 'solana',
   onRetry,
   onRunSaved,
 }: DeathOverlayProps) {
@@ -58,7 +60,7 @@ export function DeathOverlay({
       citricVelocity: snapshot.citricVelocity,
       durationMs: playDurationMs,
       ...(gameMode === 'paid' && depositTx && walletPubkey
-        ? { depositTx, walletPubkey }
+        ? { depositTx, walletPubkey, paymentChain }
         : {}),
     })
       .then(() => onRunSaved?.())
@@ -75,6 +77,7 @@ export function DeathOverlay({
     playDurationMs,
     depositTx,
     walletPubkey,
+    paymentChain,
     onRunSaved,
   ]);
 

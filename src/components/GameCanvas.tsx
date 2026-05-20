@@ -1,7 +1,9 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { usePaidAttempt } from '../hooks/usePaidAttempt';
+import { useEvmPaidAttempt } from '../hooks/useEvmPaidAttempt';
 import { usePlayer } from '../hooks/usePlayer';
 import type { GameMode } from '../types/game';
 import { trackGameStart, trackWalletConnect, trackPaidDeposit, trackPaymentError } from '../lib/analytics';
@@ -23,15 +25,23 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     useGameEngine(canvasRef);
   const [tiltMsg, setTiltMsg] = useState<string | null>(null);
   const [gameMode, setGameMode] = useState<GameMode>('free');
+  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'evm'>('solana');
   const [activeMode, setActiveMode] = useState<GameMode>('free');
   const [activeDepositTx, setActiveDepositTx] = useState<string | null>(null);
+  const [activeWalletKey, setActiveWalletKey] = useState<string | null>(null);
+  const [activePaymentChain, setActivePaymentChain] = useState<'solana' | 'evm'>('solana');
 
   const { publicKey } = useWallet();
+  const { address: evmAddress } = useAccount();
 
   // Track wallet connects
   useEffect(() => {
     if (publicKey) trackWalletConnect(publicKey.toBase58());
   }, [publicKey]);
+  useEffect(() => {
+    if (evmAddress) trackWalletConnect(evmAddress);
+  }, [evmAddress]);
+
   const { player, runs, setDisplayName, reloadRuns } = usePlayer();
   const {
     pending: paidPending,
@@ -40,6 +50,13 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     payForAttempt,
     reset: resetPaid,
   } = usePaidAttempt();
+  const {
+    pending: evmPending,
+    depositTx: evmDepositTx,
+    error: evmError,
+    payForAttempt: evmPayForAttempt,
+    reset: evmResetPaid,
+  } = useEvmPaidAttempt();
 
   const onTilt = useCallback(
     (x: number) => setTilt(x, true),
@@ -67,26 +84,49 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   };
 
   const handleStartPaid = async () => {
-    if (!publicKey) return;
+    if (paymentMethod === 'evm') {
+      if (!evmAddress) return;
 
-    let tx = depositTx;
-    if (!tx) {
-      tx = await payForAttempt();
+      let tx = evmDepositTx;
       if (!tx) {
-        if (paidError) trackPaymentError(paidError);
-        return;
+        tx = await evmPayForAttempt();
+        if (!tx) {
+          if (evmError) trackPaymentError(evmError);
+          return;
+        }
+        trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: evmAddress });
       }
-      trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: publicKey.toBase58() });
-    }
 
-    setActiveDepositTx(tx);
-    await beginRun();
+      setActiveDepositTx(tx);
+      setActiveWalletKey(evmAddress);
+      setActivePaymentChain('evm');
+      await beginRun();
+    } else {
+      if (!publicKey) return;
+
+      let tx = depositTx;
+      if (!tx) {
+        tx = await payForAttempt();
+        if (!tx) {
+          if (paidError) trackPaymentError(paidError);
+          return;
+        }
+        trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: publicKey.toBase58() });
+      }
+
+      setActiveDepositTx(tx);
+      setActiveWalletKey(publicKey.toBase58());
+      setActivePaymentChain('solana');
+      await beginRun();
+    }
   };
 
   const handleRetry = () => {
     reset();
     resetPaid();
+    evmResetPaid();
     setActiveDepositTx(null);
+    setActiveWalletKey(null);
     setTiltMsg(null);
   };
 
@@ -102,6 +142,8 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
         <StartOverlay
           gameMode={gameMode}
           onGameModeChange={setGameMode}
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
           onStart={handleStart}
           onStartPaid={() => void handleStartPaid()}
           onOpenModal={onOpenModal}
@@ -110,9 +152,9 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           player={player}
           runs={runs}
           onSaveName={setDisplayName}
-          paidPending={paidPending}
-          paidError={paidError}
-          hasPaidDeposit={!!depositTx}
+          paidPending={paidPending || evmPending}
+          paidError={paidError ?? evmError}
+          hasPaidDeposit={paymentMethod === 'evm' ? !!evmDepositTx : !!depositTx}
         />
       )}
 
@@ -122,12 +164,15 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           gameMode={activeMode}
           playDurationMs={playDurationMs()}
           depositTx={activeDepositTx}
-          walletPubkey={publicKey?.toBase58() ?? null}
+          walletPubkey={activeWalletKey}
+          paymentChain={activePaymentChain}
           onRetry={handleRetry}
           onRunSaved={() => {
             void reloadRuns();
             resetPaid();
+            evmResetPaid();
             setActiveDepositTx(null);
+            setActiveWalletKey(null);
           }}
         />
       )}

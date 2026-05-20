@@ -1,5 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { BUY_URL, CHART_URL, X_URL } from '../config/links';
+import { EVM_CHAIN_NAME, EVM_CHAIN_ID } from '../config/evm';
 import type { GameMode } from '../types/game';
 import type { ModalTab } from './FakeModal';
 import { LeaderboardPanel } from './LeaderboardPanel';
@@ -10,6 +12,8 @@ import type { PlayerResponse, RunRecord } from '../lib/api';
 interface StartOverlayProps {
   gameMode: GameMode;
   onGameModeChange: (mode: GameMode) => void;
+  paymentMethod: 'solana' | 'evm';
+  onPaymentMethodChange: (method: 'solana' | 'evm') => void;
   onStart: () => void;
   onStartPaid: () => void;
   onOpenModal: (tab: ModalTab) => void;
@@ -26,6 +30,8 @@ interface StartOverlayProps {
 export function StartOverlay({
   gameMode,
   onGameModeChange,
+  paymentMethod,
+  onPaymentMethodChange,
   onStart,
   onStartPaid,
   onOpenModal,
@@ -39,6 +45,15 @@ export function StartOverlay({
   hasPaidDeposit,
 }: StartOverlayProps) {
   const { publicKey } = useWallet();
+  const { address: wagmiAddress } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  const evmConnected = !!wagmiAddress;
+  const chainName = EVM_CHAIN_NAME[EVM_CHAIN_ID] ?? 'EVM';
+
+  const isReadyToPay =
+    paymentMethod === 'evm' ? evmConnected : !!publicKey;
 
   const handlePrimary = () => {
     if (gameMode === 'paid') {
@@ -48,6 +63,11 @@ export function StartOverlay({
     }
   };
 
+  const handleEvmConnect = () => {
+    const injector = connectors.find((c) => c.id === 'metaMask') ?? connectors[0];
+    if (injector) connect({ connector: injector });
+  };
+
   return (
     <div className="overlay start-overlay">
       <ProfileBar player={player} onSaveName={onSaveName} />
@@ -55,6 +75,7 @@ export function StartOverlay({
       <h1 className="title-shake">LEMON ROAD</h1>
       <p className="tagline">the future of citrus transportation</p>
       <p className="sub-tagline">No utility. Only road.</p>
+      <p className="controls-hint">mouse / arrows · touch · tilt on mobile</p>
 
       <div className="mode-picker">
         <button
@@ -74,10 +95,59 @@ export function StartOverlay({
       </div>
 
       {gameMode === 'paid' && (
-        <p className="paid-hint">
-          connect wallet · pay 1 USDT to pool · hourly 60/30/10 prizes
-          {hasPaidDeposit && ' · deposit ready'}
-        </p>
+        <>
+          <p className="paid-hint">
+            pay 1 USDT · hourly pool · 60/30/10 prizes
+            {hasPaidDeposit && ' · deposit ready'}
+          </p>
+
+          <div className="payment-method-picker">
+            <button
+              type="button"
+              className={`payment-btn ${paymentMethod === 'solana' ? 'active' : ''}`}
+              onClick={() => onPaymentMethodChange('solana')}
+            >
+              Solana
+            </button>
+            <button
+              type="button"
+              className={`payment-btn ${paymentMethod === 'evm' ? 'active' : ''}`}
+              onClick={() => onPaymentMethodChange('evm')}
+            >
+              MetaMask / EVM
+            </button>
+          </div>
+
+          {paymentMethod === 'solana' && (
+            <p className="wallet-hint">Phantom · Solflare · any Solana wallet</p>
+          )}
+
+          {paymentMethod === 'evm' && (
+            <div className="evm-connect-row">
+              <p className="wallet-hint">
+                {chainName} USDT
+                {wagmiAddress && ` · ${wagmiAddress.slice(0, 6)}…${wagmiAddress.slice(-4)}`}
+              </p>
+              {evmConnected ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => disconnect()}
+                >
+                  disconnect
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleEvmConnect}
+                >
+                  Connect MetaMask
+                </button>
+              )}
+            </div>
+          )}
+        </>
       )}
       {paidError && <p className="tilt-msg">{paidError}</p>}
 
@@ -85,7 +155,7 @@ export function StartOverlay({
         type="button"
         className="btn btn-primary"
         onClick={handlePrimary}
-        disabled={gameMode === 'paid' && (!publicKey || paidPending)}
+        disabled={gameMode === 'paid' && (!isReadyToPay || paidPending)}
       >
         {paidPending
           ? 'PROCESSING PAYMENT...'
