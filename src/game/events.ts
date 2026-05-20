@@ -49,6 +49,7 @@ export function startEvent(state: GameState, id: MemeEventId, now: number): void
   switch (id) {
     case 'rug_pull':
       f.rugHoleUntil = endsAt;
+      f.screenShake = 6;
       for (let i = 0; i < 8; i++) {
         const idx = state.road.length - 1 - i;
         if (idx >= 0) state.road[idx].hasRoad = false;
@@ -119,6 +120,10 @@ export function updateActiveEvent(state: GameState, now: number, dt: number): vo
       state.lemonSquash = Math.min(state.lemonSquash, 0.8);
     }
   }
+
+  if (ev.id === 'rug_pull') {
+    state.flags.screenShake = 3 + Math.random() * 2;
+  }
 }
 
 function endEvent(state: GameState, id: MemeEventId): void {
@@ -146,6 +151,7 @@ function endEvent(state: GameState, id: MemeEventId): void {
       break;
     case 'rug_pull':
       f.rugHoleUntil = 0;
+      f.screenShake = 0;
       break;
     case 'knife':
       f.knifeSlashUntil = 0;

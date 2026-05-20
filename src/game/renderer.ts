@@ -33,6 +33,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
 
   drawSpeedLines(ctx, state);
   drawRoad(ctx, state);
+  drawRugPullFire(ctx, state);
   drawPuddles(ctx, state);
   drawHazards(ctx, state);
   drawTaxman(ctx, state);
@@ -129,6 +130,88 @@ function drawRoadRun(
     const mx = (a.centerX + b.centerX) / 2;
     const my = (a.y + b.y) / 2;
     ctx.fillRect(mx - 2, my - 4, 4, 8);
+  }
+}
+
+function drawRugPullFire(ctx: CanvasRenderingContext2D, state: GameState): void {
+  const { time: now, flags } = state;
+  if (now >= flags.rugHoleUntil) return;
+
+  const segs = [...state.road].sort((a, b) => a.y - b.y);
+
+  // Pulsing orange-red edge vignette
+  const pulse = 0.25 + Math.sin(now * 10) * 0.08;
+  const vgrd = ctx.createRadialGradient(
+    state.width / 2, state.height / 2, state.height * 0.15,
+    state.width / 2, state.height / 2, state.height * 0.85,
+  );
+  vgrd.addColorStop(0, 'rgba(255,60,0,0)');
+  vgrd.addColorStop(1, `rgba(255,30,0,${pulse})`);
+  ctx.fillStyle = vgrd;
+  ctx.fillRect(0, 0, state.width, state.height);
+
+  for (let i = 0; i < segs.length; i++) {
+    const seg = segs[i];
+    const isGap = !seg.hasRoad || (i % 7 === 3);
+    if (!isGap) continue;
+
+    const cx = seg.centerX;
+    const y = seg.y;
+    const w = seg.width;
+
+    // Dark void under the flames
+    ctx.fillStyle = '#1a0505';
+    ctx.fillRect(cx - w / 2, y - 4, w, 10);
+
+    // Fire tongues
+    const tongues = Math.max(5, Math.floor(w / 18));
+    for (let f = 0; f < tongues; f++) {
+      const progress = (f + 0.5) / tongues;
+      const fx = cx - w / 2 + progress * w;
+      const wobble = Math.sin(now * 11 + f * 1.7 + i * 0.9) * 6;
+      const fh = Math.max(8, 22 + Math.sin(now * 8 + f * 2.1 + i * 1.3) * 10);
+
+      ctx.beginPath();
+      ctx.moveTo(fx - 7, y + 5);
+      ctx.bezierCurveTo(fx - 5, y - fh * 0.3, fx + wobble - 3, y - fh * 0.8, fx + wobble, y - fh);
+      ctx.bezierCurveTo(fx + wobble + 3, y - fh * 0.8, fx + 5, y - fh * 0.3, fx + 7, y + 5);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(fx, y + 5, fx, y - fh);
+      grad.addColorStop(0, 'rgba(255,20,0,1)');
+      grad.addColorStop(0.3, 'rgba(255,100,0,0.9)');
+      grad.addColorStop(0.65, 'rgba(255,200,0,0.65)');
+      grad.addColorStop(1, 'rgba(255,255,120,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Inner hot-white core on every other tongue
+      if (f % 2 === 0) {
+        const ch = fh * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(fx - 3, y + 5);
+        ctx.bezierCurveTo(fx - 2, y - ch * 0.5, fx + wobble * 0.4, y - ch, fx + wobble * 0.4, y - ch);
+        ctx.bezierCurveTo(fx + wobble * 0.4 + 2, y - ch * 0.5, fx + 3, y - ch * 0.3, fx + 3, y + 5);
+        ctx.closePath();
+        const cg = ctx.createLinearGradient(fx, y + 5, fx, y - ch);
+        cg.addColorStop(0, 'rgba(255,255,200,0.7)');
+        cg.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = cg;
+        ctx.fill();
+      }
+    }
+
+    // Ember sparks flying upward
+    for (let e = 0; e < 3; e++) {
+      const ex = cx - w / 2 + ((now * (37 + e * 13) + i * 47 + e * 61) % w);
+      const phase = (now * (2 + e * 0.7) + i * 0.4 + e * 1.1) % 1;
+      const ey = y - 10 - phase * 50;
+      const ea = Math.max(0, 0.8 - phase);
+      ctx.fillStyle = `rgba(255,${180 + e * 25},0,${ea})`;
+      ctx.beginPath();
+      ctx.arc(ex, ey, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 
@@ -375,25 +458,57 @@ function drawKnifeSlash(ctx: CanvasRenderingContext2D, state: GameState): void {
 function drawEventBanner(ctx: CanvasRenderingContext2D, state: GameState): void {
   if (!state.activeEvent) return;
   ctx.save();
-  ctx.fillStyle = '#FFFF00';
-  ctx.strokeStyle = COLORS.outline;
-  ctx.lineWidth = 3;
+
+  const isRugPull = state.activeEvent.id === 'rug_pull';
   const text = state.activeEvent.label;
-  ctx.font = 'bold 28px "Comic Neue", Comic Sans MS, cursive';
+  ctx.font = `bold ${isRugPull ? 32 : 28}px "Comic Neue", Comic Sans MS, cursive`;
   const tw = ctx.measureText(text).width;
   const bx = state.width / 2 - tw / 2 - 16;
-  ctx.fillRect(bx, 60, tw + 32, 44);
-  ctx.strokeRect(bx, 60, tw + 32, 44);
-  ctx.fillStyle = COLORS.outline;
-  ctx.fillText(text, state.width / 2 - tw / 2, 92);
-  if (state.activeEvent.id === 'bull_run') {
-    ctx.font = 'bold 16px "Comic Neue", Comic Sans MS, cursive';
-    ctx.fillText('>> NUMBER GO UP', state.width / 2 - 68, 115);
+  const by = 58;
+  const bh = isRugPull ? 48 : 44;
+
+  if (isRugPull) {
+    // Alternating fire-red / orange flash
+    const flash = Math.sin(state.time * 22) > 0;
+    const bgColor = flash ? '#FF2200' : '#FF7700';
+    const borderColor = flash ? '#FF7700' : '#FFDD00';
+
+    // Glow halo behind banner
+    ctx.shadowColor = '#FF4400';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(bx, by, tw + 32, bh);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(bx, by, tw + 32, bh);
+    ctx.fillStyle = '#FFFF99';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, state.width / 2 - tw / 2, by + bh - 10);
+    ctx.fillText(text, state.width / 2 - tw / 2, by + bh - 10);
+    // Sub-text
+    ctx.font = 'bold 13px "Comic Neue", Comic Sans MS, cursive';
+    ctx.fillStyle = '#FFDDAA';
+    ctx.fillText('🔥 LIQUIDITY GONE 🔥', state.width / 2 - 66, by + bh + 18);
+  } else {
+    ctx.fillStyle = '#FFFF00';
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = 3;
+    ctx.fillRect(bx, by, tw + 32, bh);
+    ctx.strokeRect(bx, by, tw + 32, bh);
+    ctx.fillStyle = COLORS.outline;
+    ctx.fillText(text, state.width / 2 - tw / 2, by + bh - 8);
+    if (state.activeEvent.id === 'bull_run') {
+      ctx.font = 'bold 16px "Comic Neue", Comic Sans MS, cursive';
+      ctx.fillText('>> NUMBER GO UP', state.width / 2 - 68, by + bh + 18);
+    }
+    if (state.activeEvent.id === 'dancing') {
+      ctx.font = 'bold 14px "Comic Neue", Comic Sans MS, cursive';
+      ctx.fillText('WAGMI (probably)', state.width / 2 - 55, by + bh + 18);
+    }
   }
-  if (state.activeEvent.id === 'dancing') {
-    ctx.font = 'bold 14px "Comic Neue", Comic Sans MS, cursive';
-    ctx.fillText('WAGMI (probably)', state.width / 2 - 55, 115);
-  }
+
   ctx.restore();
 }
 

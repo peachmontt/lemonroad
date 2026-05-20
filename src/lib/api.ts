@@ -36,7 +36,8 @@ export interface RunRecord {
   hourBucket: string | null;
 }
 
-export interface LeaderboardResponse {
+export interface PoolLeaderboardResponse {
+  scope: 'pool';
   hour: string;
   hourLabel: string;
   participants: number;
@@ -58,6 +59,21 @@ export interface LeaderboardResponse {
   projectedRollover: string;
   previousHour: string;
 }
+
+export interface GlobalLeaderboardResponse {
+  scope: 'global';
+  mode: 'free' | 'paid' | 'all';
+  entries: {
+    rank: number;
+    displayName: string;
+    distance: number;
+    mode: 'free' | 'paid';
+    diedAt: string;
+  }[];
+}
+
+/** @deprecated Use PoolLeaderboardResponse */
+export type LeaderboardResponse = PoolLeaderboardResponse;
 
 export function createSession() {
   return apiFetch<PlayerResponse>('/api/session', { method: 'POST' });
@@ -93,10 +109,21 @@ export function submitRun(body: {
   });
 }
 
-export function fetchLeaderboard(hour?: string) {
+export function fetchPoolLeaderboard(hour?: string) {
   const q = hour ? `?hour=${hour}` : '';
-  return apiFetch<LeaderboardResponse>(`/api/leaderboard${q}`);
+  return apiFetch<PoolLeaderboardResponse>(`/api/leaderboard${q}`);
 }
+
+export function fetchGlobalLeaderboard(
+  mode: 'free' | 'paid' | 'all' = 'free',
+  limit = 50,
+) {
+  const params = new URLSearchParams({ scope: 'global', mode, limit: String(limit) });
+  return apiFetch<GlobalLeaderboardResponse>(`/api/leaderboard?${params}`);
+}
+
+/** @deprecated Use fetchPoolLeaderboard */
+export const fetchLeaderboard = fetchPoolLeaderboard;
 
 export function preparePaidAttempt(
   walletPubkey: string,

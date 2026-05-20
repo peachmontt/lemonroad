@@ -1,24 +1,29 @@
 import { useEffect, useState } from 'react';
-import { fetchLeaderboard, type LeaderboardResponse } from '../lib/api';
+import { fetchPoolLeaderboard, type PoolLeaderboardResponse } from '../lib/api';
 
 interface LeaderboardPanelProps {
   compact?: boolean;
 }
 
 export function LeaderboardPanel({ compact }: LeaderboardPanelProps) {
-  const [data, setData] = useState<LeaderboardResponse | null>(null);
+  const [data, setData] = useState<PoolLeaderboardResponse | null>(null);
   const [hour, setHour] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void fetchLeaderboard(hour)
+    setError(null);
+    void fetchPoolLeaderboard(hour)
       .then((lb) => {
         if (!cancelled) setData(lb);
       })
-      .catch(() => {
-        if (!cancelled) setData(null);
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setData(null);
+          setError(err instanceof Error ? err.message : 'load failed');
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -30,6 +35,10 @@ export function LeaderboardPanel({ compact }: LeaderboardPanelProps) {
 
   if (loading && !data) {
     return <p className="leaderboard-loading">loading pool rankings...</p>;
+  }
+
+  if (error && !data) {
+    return <p className="leaderboard-empty">could not load pool: {error}</p>;
   }
 
   if (!data) return null;

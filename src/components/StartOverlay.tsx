@@ -4,6 +4,7 @@ import { BUY_URL, CHART_URL, X_URL } from '../config/links';
 import { EVM_CHAIN_NAME, EVM_CHAIN_ID } from '../config/evm';
 import type { GameMode } from '../types/game';
 import type { ModalTab } from './FakeModal';
+import { GlobalLeaderboardPanel } from './GlobalLeaderboardPanel';
 import { LeaderboardPanel } from './LeaderboardPanel';
 import { ProfileBar } from './ProfileBar';
 import { RunHistoryPanel } from './RunHistoryPanel';
@@ -172,6 +173,7 @@ export function StartOverlay({
       {tiltMsg && <p className="tilt-msg">{tiltMsg}</p>}
 
       <RunHistoryPanel runs={runs} />
+      <GlobalLeaderboardPanel compact />
       <LeaderboardPanel compact />
 
       <div className="cta-row">
