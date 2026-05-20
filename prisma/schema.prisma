@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id           String    @id @default(uuid())
+  sessionId    String    @unique @map("session_id")
+  ipHash       String    @map("ip_hash")
+  walletPubkey String?   @unique @map("wallet_pubkey")
+  displayName  String    @default("Anonymous Lemon") @map("display_name")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  runs         GameRun[]
+
+  @@index([ipHash])
+  @@map("players")
+}
+
+model GameRun {
+  id             String   @id @default(uuid())
+  playerId       String   @map("player_id")
+  player         Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  mode           String
+  distance       Float
+  juiceLevel     String   @map("juice_level")
+  citricVelocity Float    @map("citric_velocity")
+  durationMs     Int      @map("duration_ms")
+  diedAt         DateTime @default(now()) @map("died_at")
+  depositTx      String?  @map("deposit_tx")
+  hourBucket     String?  @map("hour_bucket")
+  walletPubkey   String?  @map("wallet_pubkey")
+
+  @@index([playerId, diedAt(sort: Desc)])
+  @@index([mode, hourBucket, distance(sort: Desc)])
+  @@index([depositTx])
+  @@map("game_runs")
+}
+
+model HourlyPool {
+  hourStart        DateTime @id @map("hour_start")
+  participantCount Int      @default(0) @map("participant_count")
+  depositedUsdt    BigInt   @default(0) @map("deposited_usdt")
+  rolloverIn       BigInt   @default(0) @map("rollover_in")
+  rolloverOut      BigInt   @default(0) @map("rollover_out")
+  settledAt        DateTime? @map("settled_at")
+  settleTx         String?  @map("settle_tx")
+  payouts          PrizePayout[]
+
+  @@map("hourly_pools")
+}
+
+model PrizePayout {
+  id            String     @id @default(uuid())
+  hourStart     DateTime   @map("hour_start")
+  hour          HourlyPool @relation(fields: [hourStart], references: [hourStart], onDelete: Cascade)
+  place         Int
+  walletPubkey  String     @map("wallet_pubkey")
+  amountUsdt    BigInt     @map("amount_usdt")
+  txSignature   String?    @map("tx_signature")
+
+  @@unique([hourStart, place])
+  @@map("prize_payouts")
+}
+
+model VerifiedDeposit {
+  txSignature  String   @id @map("tx_signature")
+  walletPubkey String   @map("wallet_pubkey")
+  hourBucket   String   @map("hour_bucket")
+  amountUsdt   BigInt   @map("amount_usdt")
+  usedAt       DateTime? @map("used_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([walletPubkey, hourBucket, usedAt])
+  @@map("verified_deposits")
+}

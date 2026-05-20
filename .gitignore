@@ -4,3 +4,8 @@ dist
 *.local
 .env
 .env.*
+.vercel
+
+# Anchor / Rust build output
+programs/**/target/
+

@@ -16,6 +16,7 @@ export function useGameEngine(canvasRef: RefObject<HTMLCanvasElement | null>) {
   const engineRef = useRef<GameEngine | null>(null);
   const audioRef = useRef<AudioManager | null>(null);
   const [snapshot, setSnapshot] = useState<GameSnapshot>(defaultSnapshot);
+  const playStartedAt = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -43,8 +44,18 @@ export function useGameEngine(canvasRef: RefObject<HTMLCanvasElement | null>) {
     engine: engineRef,
     audio: audioRef,
     snapshot,
-    start: () => engineRef.current?.start(),
-    reset: () => engineRef.current?.reset(),
+    playDurationMs: () =>
+      playStartedAt.current != null
+        ? Date.now() - playStartedAt.current
+        : 0,
+    start: () => {
+      playStartedAt.current = Date.now();
+      engineRef.current?.start();
+    },
+    reset: () => {
+      playStartedAt.current = null;
+      engineRef.current?.reset();
+    },
     setTilt: (x: number, granted: boolean) =>
       engineRef.current?.setTilt(x, granted),
     toggleMute: () => {

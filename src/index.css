@@ -731,3 +731,200 @@ body,
   cursor: pointer;
   font-family: inherit;
 }
+
+/* Profile & modes */
+.profile-bar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 2;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-label {
+  font-weight: 700;
+}
+
+.profile-input {
+  border: 2px solid #000;
+  padding: 4px 8px;
+  font-family: inherit;
+  max-width: 160px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+.wallet-btn {
+  font-family: inherit !important;
+  border: 2px solid #000 !important;
+  border-radius: 0 !important;
+  background: #ffe135 !important;
+  color: #000 !important;
+  height: auto !important;
+  line-height: 1.2 !important;
+  padding: 6px 12px !important;
+}
+
+.mode-picker {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mode-btn {
+  border: 3px solid #000;
+  background: #fff;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mode-btn.active {
+  background: #ffe135;
+}
+
+.paid-hint {
+  font-size: 0.85rem;
+  max-width: 320px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.run-history {
+  margin: 16px 0;
+  max-width: 360px;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid #000;
+  padding: 10px;
+}
+
+.run-history-title {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.run-history-best {
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.run-history-list {
+  list-style: none;
+  font-size: 0.8rem;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.run-history-list li {
+  padding: 2px 0;
+  border-bottom: 1px dashed #999;
+}
+
+.mode-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  margin-right: 6px;
+  border: 1px solid #000;
+}
+
+.mode-free {
+  background: #cfc;
+}
+
+.mode-paid {
+  background: #fc6;
+}
+
+.leaderboard-panel {
+  margin: 12px 0;
+  max-width: 360px;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid #000;
+  padding: 10px;
+}
+
+.leaderboard-panel.compact {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.leaderboard-title {
+  font-size: 0.95rem;
+}
+
+.leaderboard-meta,
+.leaderboard-rules,
+.leaderboard-loading,
+.leaderboard-empty {
+  font-size: 0.75rem;
+  margin: 4px 0;
+}
+
+.payout-preview {
+  list-style: none;
+  font-size: 0.75rem;
+  margin: 4px 0;
+}
+
+.leaderboard-list {
+  list-style: none;
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.leaderboard-list li {
+  display: flex;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.lb-rank {
+  font-weight: 700;
+  min-width: 24px;
+}
+
+.lb-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-dist {
+  font-weight: 700;
+}
+
+.leaderboard-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.run-mode-tag {
+  font-size: 0.85rem;
+  font-weight: 700;
+}

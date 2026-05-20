@@ -1,0 +1,20 @@
+# Local Postgres for Lemon Road API + Prisma (optional; use Neon in production)
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: lemonroad
+      POSTGRES_PASSWORD: lemonroad
+      POSTGRES_DB: lemonroad
+    volumes:
+      - lemonroad_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lemonroad -d lemonroad"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  lemonroad_pg:

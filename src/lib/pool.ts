@@ -1,0 +1,84 @@
+import {
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js';
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
+import { PROGRAM_ID, USDT_MINT } from '../config/solana';
+
+/** sha256("global:deposit_attempt")[0..8] */
+const DEPOSIT_DISCRIMINATOR = Buffer.from([
+  70, 138, 37, 174, 207, 144, 1, 228,
+]);
+
+export function globalConfigPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('global_config')],
+    programId,
+  );
+  return pda;
+}
+
+export function hourLedgerPda(programId: PublicKey, hourId: bigint): PublicKey {
+  const buf = Buffer.alloc(8);
+  buf.writeBigInt64LE(hourId);
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('hour'), buf],
+    programId,
+  );
+  return pda;
+}
+
+export function vaultAuthorityPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from('vault_authority')],
+    programId,
+  );
+  return pda;
+}
+
+export function buildDepositAttemptTransaction(
+  wallet: PublicKey,
+  hourId: string,
+): Transaction | null {
+  if (!PROGRAM_ID) return null;
+
+  const hour = BigInt(hourId);
+  const programId = PROGRAM_ID;
+  const config = globalConfigPda(programId);
+  const hourLedger = hourLedgerPda(programId, hour);
+  const vaultAuth = vaultAuthorityPda(programId);
+  const vaultAta = getAssociatedTokenAddressSync(USDT_MINT, vaultAuth, true);
+  const userAta = getAssociatedTokenAddressSync(USDT_MINT, wallet, false);
+
+  const ix = new TransactionInstruction({
+    programId,
+    keys: [
+      { pubkey: wallet, isSigner: true, isWritable: true },
+      { pubkey: config, isSigner: false, isWritable: true },
+      { pubkey: hourLedger, isSigner: false, isWritable: true },
+      { pubkey: userAta, isSigner: false, isWritable: true },
+      { pubkey: vaultAta, isSigner: false, isWritable: true },
+      { pubkey: vaultAuth, isSigner: false, isWritable: false },
+      { pubkey: USDT_MINT, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: DEPOSIT_DISCRIMINATOR,
+  });
+
+  return new Transaction().add(
+    createAssociatedTokenAccountIdempotentInstruction(
+      wallet,
+      userAta,
+      wallet,
+      USDT_MINT,
+    ),
+    ix,
+  );
+}

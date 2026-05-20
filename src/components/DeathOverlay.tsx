@@ -1,6 +1,8 @@
 import { toPng } from 'html-to-image';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GameSnapshot } from '../game/types';
+import { submitRun } from '../lib/api';
+import type { GameMode } from '../types/game';
 import { computeRank } from '../utils/rank';
 import { buildShareCaption } from '../utils/share';
 import { ShareCard } from './ShareCard';
@@ -8,19 +10,65 @@ import { ShareMenu } from './ShareMenu';
 
 interface DeathOverlayProps {
   snapshot: GameSnapshot;
+  gameMode: GameMode;
+  playDurationMs: number;
+  depositTx: string | null;
+  walletPubkey: string | null;
   onRetry: () => void;
+  onRunSaved?: () => void;
 }
 
-export function DeathOverlay({ snapshot, onRetry }: DeathOverlayProps) {
+export function DeathOverlay({
+  snapshot,
+  gameMode,
+  playDurationMs,
+  depositTx,
+  walletPubkey,
+  onRetry,
+  onRunSaved,
+}: DeathOverlayProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rank] = useState(() => computeRank(snapshot.distance));
   const [sharing, setSharing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savedRef = useRef(false);
   const [shareReady, setShareReady] = useState<{
     dataUrl: string;
     file: File;
     caption: string;
   } | null>(null);
   const isDead = snapshot.phase === 'dead';
+
+  useEffect(() => {
+    if (!isDead || savedRef.current) return;
+    savedRef.current = true;
+
+    void submitRun({
+      mode: gameMode,
+      distance: snapshot.distance,
+      juiceLevel: snapshot.juiceLevel,
+      citricVelocity: snapshot.citricVelocity,
+      durationMs: playDurationMs,
+      ...(gameMode === 'paid' && depositTx && walletPubkey
+        ? { depositTx, walletPubkey }
+        : {}),
+    })
+      .then(() => onRunSaved?.())
+      .catch((e) => {
+        setSaveError(e instanceof Error ? e.message : 'Failed to save run');
+        savedRef.current = false;
+      });
+  }, [
+    isDead,
+    gameMode,
+    snapshot.distance,
+    snapshot.juiceLevel,
+    snapshot.citricVelocity,
+    playDurationMs,
+    depositTx,
+    walletPubkey,
+    onRunSaved,
+  ]);
 
   const handleShare = async () => {
     if (!cardRef.current) return;
@@ -54,8 +102,10 @@ export function DeathOverlay({ snapshot, onRetry }: DeathOverlayProps) {
               <p>distance: {Math.floor(snapshot.distance)}m</p>
               <p>juice level: {snapshot.juiceLevel}</p>
               <p>citric velocity: {snapshot.citricVelocity.toFixed(2)}</p>
+              <p className="run-mode-tag">mode: {gameMode}</p>
             </div>
           </div>
+          {saveError && <p className="tilt-msg">{saveError}</p>}
 
           <p className="share-preview-label">this is what your friends will see:</p>
           <div className="share-preview-scaler" aria-hidden="true">

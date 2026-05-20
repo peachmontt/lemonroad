@@ -5,19 +5,38 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "dev:api": "vercel dev",
+    "dev:stack": "bash scripts/dev-stack.sh",
+    "setup:local": "bash scripts/bootstrap-local.sh",
+    "build": "prisma generate && tsc -b && vite build",
+    "preview": "vite preview",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@prisma/client": "^6.2.1",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+    "@solana/web3.js": "^1.98.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/node": "^5.0.2",
+    "bs58": "^6.0.0",
     "html-to-image": "^1.11.13",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "prisma": "^6.2.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }

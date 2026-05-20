@@ -1,0 +1,39 @@
+name: Anchor
+
+on:
+  push:
+    paths:
+      - "programs/**"
+    branches: [main]
+  pull_request:
+    paths:
+      - "programs/**"
+    branches: [main]
+
+jobs:
+  build:
+    name: Anchor build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust deps
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: programs/lemonroad-pool
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Install Anchor CLI
+        run: cargo install --git https://github.com/coral-xyz/anchor avm --force
+          && avm install 0.30.1 && avm use 0.30.1
+
+      - name: Anchor build
+        working-directory: programs/lemonroad-pool
+        run: anchor build
