@@ -40,6 +40,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
   drawLemon(ctx, state);
   drawKnifeSlash(ctx, state);
   drawEventBanner(ctx, state);
+  drawRugBurnIndicator(ctx, state);
 
   ctx.restore();
 }
@@ -64,14 +65,10 @@ function drawRoad(ctx: CanvasRenderingContext2D, state: GameState): void {
   const segs = [...state.road].sort((a, b) => a.y - b.y);
   if (segs.length < 2) return;
 
-  const now = state.time;
-  const rugActive = now < state.flags.rugHoleUntil;
-
   // Collect contiguous runs of road segments and draw each as one smooth path
   let runStart = -1;
   for (let i = 0; i <= segs.length; i++) {
-    const inRun =
-      i < segs.length && segs[i].hasRoad && !(rugActive && i % 7 === 3);
+    const inRun = i < segs.length && segs[i].hasRoad;
     if (inRun && runStart < 0) {
       runStart = i;
     } else if (!inRun && runStart >= 0) {
@@ -135,12 +132,15 @@ function drawRoadRun(
 
 function drawRugPullFire(ctx: CanvasRenderingContext2D, state: GameState): void {
   const { time: now, flags } = state;
-  if (now >= flags.rugHoleUntil) return;
+  if (!flags.rugBurning) return;
 
   const segs = [...state.road].sort((a, b) => a.y - b.y);
+  const hasGaps = segs.some((s) => !s.hasRoad);
+  if (!hasGaps) return;
 
-  // Pulsing orange-red edge vignette
-  const pulse = 0.25 + Math.sin(now * 10) * 0.08;
+  const intense = state.activeEvent?.id === 'rug_pull';
+  // Pulsing orange-red edge vignette (stronger during the initial rug pull burst)
+  const pulse = (intense ? 0.25 : 0.14) + Math.sin(now * 10) * (intense ? 0.08 : 0.04);
   const vgrd = ctx.createRadialGradient(
     state.width / 2, state.height / 2, state.height * 0.15,
     state.width / 2, state.height / 2, state.height * 0.85,
@@ -152,8 +152,7 @@ function drawRugPullFire(ctx: CanvasRenderingContext2D, state: GameState): void 
 
   for (let i = 0; i < segs.length; i++) {
     const seg = segs[i];
-    const isGap = !seg.hasRoad || (i % 7 === 3);
-    if (!isGap) continue;
+    if (seg.hasRoad) continue;
 
     const cx = seg.centerX;
     const y = seg.y;
@@ -452,6 +451,27 @@ function drawKnifeSlash(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.fillStyle = '#ff0';
   ctx.font = 'bold 36px "Comic Neue", Comic Sans MS, cursive';
   ctx.fillText('DUMP -40%', state.width * 0.15, 80);
+  ctx.restore();
+}
+
+function drawRugBurnIndicator(ctx: CanvasRenderingContext2D, state: GameState): void {
+  if (!state.flags.rugBurning) return;
+  if (state.activeEvent?.id === 'rug_pull') return;
+
+  ctx.save();
+  const flash = Math.sin(state.time * 14) > 0;
+  ctx.font = 'bold 14px "Comic Neue", Comic Sans MS, cursive';
+  const text = '🔥 ROAD ON FIRE 🔥';
+  const tw = ctx.measureText(text).width;
+  const bx = state.width / 2 - tw / 2 - 10;
+  const by = 62;
+  ctx.fillStyle = flash ? '#FF2200' : '#FF5500';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.fillRect(bx, by, tw + 20, 26);
+  ctx.strokeRect(bx, by, tw + 20, 26);
+  ctx.fillStyle = '#FFFF99';
+  ctx.fillText(text, state.width / 2 - tw / 2, by + 18);
   ctx.restore();
 }
 

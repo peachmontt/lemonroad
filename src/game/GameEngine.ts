@@ -75,7 +75,7 @@ export class GameEngine {
         screenShake: 0,
         greenTint: 0,
         freezeUntil: 0,
-        rugHoleUntil: 0,
+        rugBurning: false,
         knifeSlashUntil: 0,
         dancingUntil: 0,
         bullRunUntil: 0,
@@ -332,7 +332,7 @@ export class GameEngine {
         if (s.road.length === 0) break;
         const topY = Math.min(...s.road.map((r) => r.y));
         if (topY < 0) break;
-        const rugActive = s.time < s.flags.rugHoleUntil;
+        const rugActive = s.flags.rugBurning;
         const hasRoad = !rugActive || Math.random() > 0.35;
         const seg = appendRoadSegment(
           s.road,
@@ -343,7 +343,7 @@ export class GameEngine {
           s.width,
           hasRoad,
         );
-        if (s.time < s.flags.rugHoleUntil && Math.random() < 0.3) {
+        if (s.flags.rugBurning && Math.random() < 0.3) {
           seg.hasRoad = false;
         }
         s.road.push(seg);

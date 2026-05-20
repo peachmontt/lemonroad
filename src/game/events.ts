@@ -48,7 +48,7 @@ export function startEvent(state: GameState, id: MemeEventId, now: number): void
 
   switch (id) {
     case 'rug_pull':
-      f.rugHoleUntil = endsAt;
+      f.rugBurning = true;
       f.screenShake = 6;
       for (let i = 0; i < 8; i++) {
         const idx = state.road.length - 1 - i;
@@ -150,7 +150,6 @@ function endEvent(state: GameState, id: MemeEventId): void {
       f.marketCrashUntil = 0;
       break;
     case 'rug_pull':
-      f.rugHoleUntil = 0;
       f.screenShake = 0;
       break;
     case 'knife':

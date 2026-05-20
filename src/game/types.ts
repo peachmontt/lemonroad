@@ -51,7 +51,8 @@ export interface GameFlags {
   screenShake: number;
   greenTint: number;
   freezeUntil: number;
-  rugHoleUntil: number;
+  /** Stays true after rug pull until a new run starts */
+  rugBurning: boolean;
   knifeSlashUntil: number;
   dancingUntil: number;
   bullRunUntil: number;
