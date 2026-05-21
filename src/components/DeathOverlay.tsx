@@ -89,6 +89,12 @@ export function DeathOverlay({
   } | null>(null);
   const isDead = snapshot.phase === 'dead';
 
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'095ae7'},body:JSON.stringify({sessionId:'095ae7',location:'DeathOverlay.tsx:mount',message:'DeathOverlay mounted',data:{phase:snapshot.phase,isDead},timestamp:Date.now(),hypothesisId:'H-mount'})}).catch(()=>{});
+  }, []);
+  // #endregion
+
   useEffect(() => {
     if (!isDead || savedRef.current) return;
     savedRef.current = true;
