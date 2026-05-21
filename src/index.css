@@ -131,6 +131,7 @@ body,
 .btn:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 #000;
+  animation: none;
 }
 
 .btn:disabled {
@@ -281,7 +282,7 @@ body,
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 420px;
+  max-width: 520px;
   min-width: 0;
 }
 
@@ -290,8 +291,7 @@ body,
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  width: 100%;
-  max-width: 340px;
+  width: min(92vw, 400px);
 }
 
 .death-actions .btn {
@@ -374,7 +374,7 @@ body,
   border-top: 3px solid #000;
   border-bottom: 3px solid #000;
   padding: 6px 0;
-  opacity: 0.85;
+  opacity: 0.6;
 }
 
 .death-tape span {
@@ -485,7 +485,21 @@ body,
 
 .btn-retry {
   font-weight: 700;
+  font-size: 1.15rem;
+  padding: 15px 24px;
   letter-spacing: 0.5px;
+  animation: retry-nudge 2.2s ease-in-out 2s infinite;
+}
+
+@keyframes retry-nudge {
+  0%, 40%, 100% {
+    transform: scale(1);
+    box-shadow: 3px 3px 0 #000;
+  }
+  20% {
+    transform: scale(1.04);
+    box-shadow: 5px 5px 0 #000;
+  }
 }
 
 .juiced-title {
@@ -513,9 +527,8 @@ body,
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
-  max-width: 340px;
-  width: 100%;
+  margin-bottom: 14px;
+  width: min(92vw, 400px);
 }
 
 .death-stats {
@@ -774,79 +787,167 @@ body,
 
 .share-preview-scaler {
   container-type: inline-size;
-  width: 100%;
-  max-width: 480px;
+  width: min(92vw, 480px);
   aspect-ratio: 1200 / 630;
-  max-height: min(252px, 36dvh);
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   border: 4px solid #000;
   box-shadow: 4px 4px 0 #000;
   background: #fff9e6;
   position: relative;
+  flex-shrink: 0;
 }
 
-.share-preview-scaler .share-card {
+/* ── Responsive share-card preview (visible in result screen) ──────────────
+   Uses cqw units from container-type: inline-size on .share-preview-scaler.
+   The hidden OG card (.share-card) stays at 1200×630 for html-to-image.      */
+.share-card-preview {
+  width: 100%;
+  height: 100%;
+  background: #fff9e6;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', Arial, sans-serif;
+  padding: 1.5cqw 5cqw 1.5cqw;
+  overflow: hidden;
+  text-align: center;
+  color: #000;
+  gap: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.share-card-preview .share-card-top-bar {
   position: absolute;
   top: 0;
   left: 0;
-  width: 1200px;
-  height: 630px;
-  transform: scale(calc(100cqw / 1200px));
-  transform-origin: top left;
+  width: 100%;
+  height: 1.2cqw;
+  background: #ffe135;
+  border-bottom: 0.45cqw solid #000;
 }
 
-@supports not (width: 100cqw) {
-  .share-preview-scaler {
-    height: 252px;
-    aspect-ratio: auto;
-  }
+.share-card-preview .share-card-brand {
+  font-size: 8.5cqw;
+  font-weight: 700;
+  color: #ffe135;
+  -webkit-text-stroke: 0.42cqw #000;
+  paint-order: stroke fill;
+  text-shadow: 0.5cqw 0.5cqw 0 #000;
+  line-height: 1;
+  margin: 0.9cqw 0 0.4cqw;
+  letter-spacing: 0.17cqw;
+  white-space: nowrap;
+}
 
-  .share-preview-scaler .share-card {
-    transform: scale(0.4);
-  }
+.share-card-preview .share-card-hook {
+  font-size: 4.8cqw;
+  font-weight: 700;
+  color: #cc0000;
+  -webkit-text-stroke: 0.17cqw #800000;
+  paint-order: stroke fill;
+  margin: 0 0 0.5cqw;
+  letter-spacing: 0.08cqw;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.share-card-preview .share-card-rank {
+  font-size: 2.8cqw;
+  font-weight: 700;
+  margin: 0 0 0.6cqw;
+  color: #222;
+}
+
+.share-card-preview .share-card-tagline-main {
+  font-size: 2cqw;
+  margin: 0 0 0.5cqw;
+  color: #333;
+  font-weight: 600;
+}
+
+.share-card-preview .share-card-cta-text {
+  font-size: 2.7cqw;
+  font-weight: 700;
+  margin: 0 0 1.2cqw;
+  color: #000;
+}
+
+.share-card-preview .share-card-play-btn {
+  font-size: 4.2cqw;
+  font-weight: 700;
+  background: #ffe135;
+  border: 0.58cqw solid #000;
+  padding: 1cqw 5cqw;
+  box-shadow: 0.67cqw 0.67cqw 0 #000;
+  margin-bottom: 0.9cqw;
+  color: #000;
+  letter-spacing: 0.08cqw;
+}
+
+.share-card-preview .share-card-url-small {
+  font-size: 1.8cqw;
+  font-weight: 700;
+  color: #555;
+  margin: 0;
+  letter-spacing: 0.04cqw;
 }
 
 /* Death screen — phones & short viewports */
-@media (max-width: 420px) {
+@media (max-width: 430px) {
   .death-overlay {
     padding-top: 12px;
   }
 
   .juiced-title {
     font-size: clamp(1.65rem, 8vw, 2.4rem);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .death-roast {
-    margin: 0 8px 6px;
-    font-size: clamp(0.95rem, 4.2vw, 1.15rem);
+    margin: 0 8px 5px;
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
   }
 
   .death-quote {
-    margin: 0 10px 10px;
-    font-size: 0.88rem;
+    margin: 0 10px 8px;
+    font-size: 0.85rem;
+  }
+
+  .death-panel {
+    margin-bottom: 10px;
   }
 
   .death-stats {
-    font-size: 0.95rem;
-    padding: 12px 14px;
+    font-size: 0.92rem;
+    padding: 10px 14px;
+  }
+
+  .share-preview-label {
+    margin-bottom: 5px;
+  }
+
+  .share-preview-scaler {
+    margin-bottom: 10px;
   }
 
   .death-actions .btn-primary {
-    font-size: 1.05rem;
-    padding: 14px 12px;
+    font-size: 1rem;
+    padding: 13px 12px;
   }
 
   .death-actions .btn-secondary {
-    font-size: 0.95rem;
-    padding: 12px 10px;
+    font-size: 1rem;
+    padding: 13px 10px;
   }
 }
 
 @media (max-height: 640px) {
   .share-preview-scaler {
-    max-height: min(200px, 32dvh);
+    width: min(88vw, 380px);
   }
 
   .share-preview-label {
@@ -854,7 +955,7 @@ body,
   }
 
   .death-panel {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 }
 
@@ -879,15 +980,14 @@ body,
   }
 
   .share-preview-scaler {
-    max-height: min(130px, 40dvh);
-    max-width: min(360px, 52vw);
+    width: min(52vw, 340px);
     margin-bottom: 6px;
   }
 
   .death-actions {
     flex-direction: row;
     flex-wrap: wrap;
-    max-width: 100%;
+    width: 100%;
     gap: 6px;
   }
 

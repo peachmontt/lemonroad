@@ -176,14 +176,14 @@ export function DeathOverlay({
                 <p>distance: {meters}m</p>
                 <p>rank: {juiceTitle}</p>
                 <p>cause of juice: {cause}</p>
-                <p className="run-mode-tag">mode: {gameMode}</p>
+                <p className="run-mode-tag">wallet damage: {gameMode === 'free' ? '$0' : '💸'}</p>
               </div>
             </div>
             {saveError && <p className="tilt-msg">{saveError}</p>}
 
             <p className="share-preview-label">this is what your friends will see:</p>
             <div className="share-preview-scaler" aria-hidden="true">
-              <ShareCard snapshot={snapshot} juiceTitle={juiceTitle} />
+              <ShareCard snapshot={snapshot} juiceTitle={juiceTitle} preview />
             </div>
 
             <div className="death-actions">

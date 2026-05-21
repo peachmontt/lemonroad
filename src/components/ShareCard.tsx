@@ -5,15 +5,18 @@ import type { GameSnapshot } from '../game/types';
 interface ShareCardProps {
   snapshot: GameSnapshot;
   juiceTitle: string;
+  /** When true, renders a fully responsive preview variant instead of the fixed 1200×630 OG card. */
+  preview?: boolean;
 }
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ snapshot, juiceTitle }, ref) {
+  function ShareCard({ snapshot, juiceTitle, preview = false }, ref) {
     const meters = Math.floor(snapshot.distance);
     const displayUrl = getDisplayUrl();
+    const cardClass = preview ? 'share-card-preview' : 'share-card';
 
     return (
-      <div ref={ref} className="share-card">
+      <div ref={ref} className={cardClass}>
         <div className="share-card-top-bar" />
 
         <p className="share-card-brand">LEMON ROAD</p>
