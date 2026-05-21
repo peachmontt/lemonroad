@@ -2,7 +2,21 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/how-to-play",       "destination": "/how-to-play.html" },
+    { "source": "/daily-rewards",     "destination": "/daily-rewards.html" },
+    { "source": "/leaderboard",       "destination": "/leaderboard.html" },
+    { "source": "/faq",               "destination": "/faq.html" },
+    { "source": "/reward-rules",      "destination": "/reward-rules.html" },
+    { "source": "/play-to-burn",      "destination": "/play-to-burn.html" },
+    { "source": "/free-browser-game", "destination": "/free-browser-game.html" },
+    { "source": "/about",             "destination": "/about.html" },
+    { "source": "/press",             "destination": "/press.html" },
+    { "source": "/fair-play",         "destination": "/fair-play.html" },
+    { "source": "/terms",             "destination": "/terms.html" },
+    { "source": "/privacy",           "destination": "/privacy.html" },
+    { "source": "/((?!api/)[^.]*)",    "destination": "/index.html" }
   ]
 }

@@ -2,21 +2,228 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>LEMON ROAD — stay on the road</title>
-    <meta name="description" content="No utility. Only road. The future of citrus transportation." />
-    <meta property="og:title" content="LEMON ROAD — stay on the road" />
-    <meta property="og:description" content="100% organic volatility. The stupid lemon game everyone reposts for 48 hours." />
-    <meta property="og:image" content="/og-card.svg" />
+
+    <!-- Primary SEO -->
+    <title>Lemon Road — Free Meme Survival Game with Daily Rewards</title>
+    <meta name="description" content="Play Lemon Road, a free browser-based meme survival game where you guide a lemon down a chaotic road, climb the leaderboard, and compete for daily rewards." />
+    <link rel="canonical" href="https://www.lemonroad.xyz/" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Search Console / Bing Webmaster verification (set env vars to enable) -->
+    <!-- <meta name="google-site-verification" content="VITE_GOOGLE_SITE_VERIFICATION" /> -->
+    <!-- <meta name="msvalidate.01" content="VITE_BING_SITE_VERIFICATION" /> -->
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lemon Road — Free Meme Survival Game with Daily Rewards" />
+    <meta property="og:description" content="Guide the lemon, survive the road, climb the leaderboard, and compete for daily rewards." />
+    <meta property="og:url" content="https://www.lemonroad.xyz/" />
+    <meta property="og:image" content="https://www.lemonroad.xyz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Lemon Road free meme survival game" />
+    <meta property="og:site_name" content="Lemon Road" />
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Lemon Road — Free Meme Survival Game" />
+    <meta name="twitter:description" content="A chaotic lemon survival game with leaderboard and daily rewards." />
+    <meta name="twitter:image" content="https://www.lemonroad.xyz/og-image.png" />
+
+    <!-- PWA / Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#f5d742" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://www.lemonroad.xyz/#website",
+          "name": "Lemon Road",
+          "url": "https://www.lemonroad.xyz/",
+          "description": "Lemon Road is a free browser-based meme survival game with daily leaderboard rewards.",
+          "inLanguage": "en"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.lemonroad.xyz/#organization",
+          "name": "Lemon Road",
+          "url": "https://www.lemonroad.xyz/",
+          "logo": "https://www.lemonroad.xyz/icons/icon-512.png",
+          "sameAs": []
+        },
+        {
+          "@type": "VideoGame",
+          "@id": "https://www.lemonroad.xyz/#game",
+          "name": "Lemon Road",
+          "url": "https://www.lemonroad.xyz/",
+          "description": "A free browser-based meme survival game where players guide a lemon down a chaotic road, climb the leaderboard, and compete for daily rewards.",
+          "genre": ["Browser game", "Meme game", "Survival game", "Casual game"],
+          "gamePlatform": ["Web browser", "Mobile browser", "Desktop browser"],
+          "operatingSystem": "Web",
+          "applicationCategory": "Game",
+          "playMode": "SinglePlayer",
+          "isAccessibleForFree": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://www.lemonroad.xyz/#app",
+          "name": "Lemon Road",
+          "url": "https://www.lemonroad.xyz/",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Web",
+          "isAccessibleForFree": true,
+          "description": "Play Lemon Road free in your browser. Guide the lemon, survive the road, and compete on the daily leaderboard.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Pre-rendered SEO content: visible in HTML source before React mounts.
+         React replaces #root on load; crawlers index this static text. -->
+    <div id="root">
+      <main style="font-family:'Comic Neue','Comic Sans MS',cursive,sans-serif;background:#7cfc00;min-height:100vh;padding:2rem 1rem;color:#1a1a1a;">
+        <header style="margin-bottom:2rem;">
+          <nav aria-label="Main navigation" style="display:flex;flex-wrap:wrap;gap:1rem;">
+            <a href="/" style="font-weight:700;color:#1a1a1a;">Lemon Road</a>
+            <a href="/how-to-play" style="color:#1a1a1a;">How to Play</a>
+            <a href="/daily-rewards" style="color:#1a1a1a;">Daily Rewards</a>
+            <a href="/leaderboard" style="color:#1a1a1a;">Leaderboard</a>
+            <a href="/faq" style="color:#1a1a1a;">FAQ</a>
+          </nav>
+        </header>
+
+        <section aria-label="Hero">
+          <h1 style="font-size:3rem;font-weight:700;margin-bottom:0.5rem;">Lemon Road</h1>
+          <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:1rem;">Free Meme Survival Game with Daily Rewards</h2>
+          <p style="max-width:640px;margin-bottom:1rem;line-height:1.6;">
+            Lemon Road is a free browser-based survival game where you guide a lemon down a chaotic road, avoid obstacles, survive as long as possible, and climb the daily leaderboard. Play on desktop with your mouse or on mobile with touch and motion controls. Top players and lucky free players can compete for daily rewards.
+          </p>
+          <a href="/" style="display:inline-block;background:#f5d742;color:#1a1a1a;padding:0.75rem 2rem;border-radius:8px;font-weight:700;text-decoration:none;font-size:1.1rem;">Play Free</a>
+          <p style="margin-top:0.75rem;font-size:0.85rem;opacity:0.8;">Free to play. No deposit required. Daily rewards are based on gameplay rules and leaderboard results.</p>
+        </section>
+
+        <section aria-labelledby="how-it-works-heading" style="margin-top:3rem;max-width:640px;">
+          <h2 id="how-it-works-heading" style="font-size:1.4rem;font-weight:700;margin-bottom:0.75rem;">How Lemon Road Works</h2>
+          <p style="line-height:1.6;">
+            Start the game, control the lemon, stay on the road, collect points, avoid chaos, and try to survive longer than other players. Your score can place you on the daily leaderboard.
+          </p>
+        </section>
+
+        <section aria-labelledby="daily-rewards-heading" style="margin-top:2.5rem;max-width:640px;">
+          <h2 id="daily-rewards-heading" style="font-size:1.4rem;font-weight:700;margin-bottom:0.75rem;">Daily Rewards</h2>
+          <p style="line-height:1.6;">
+            Lemon Road includes daily rewards for free gameplay. Players can compete through skill, survival time, leaderboard ranking, and daily game rules. Rewards are not guaranteed and may change based on the current reward pool.
+          </p>
+          <a href="/daily-rewards" style="color:#1a1a1a;font-weight:700;">View daily rewards →</a>
+        </section>
+
+        <section aria-labelledby="play-to-burn-heading" style="margin-top:2.5rem;max-width:640px;">
+          <h2 id="play-to-burn-heading" style="font-size:1.4rem;font-weight:700;margin-bottom:0.75rem;">Play to Burn, Survive to Earn</h2>
+          <p style="line-height:1.6;">
+            Lemon Road combines meme-game mechanics with Web3-inspired reward loops. Crashes, leaderboard scores, daily challenges, and reward events create a simple game loop built for repeat play.
+          </p>
+        </section>
+
+        <section aria-labelledby="platforms-heading" style="margin-top:2.5rem;max-width:640px;">
+          <h2 id="platforms-heading" style="font-size:1.4rem;font-weight:700;margin-bottom:0.75rem;">Play on Desktop and Mobile</h2>
+          <p style="line-height:1.6;">
+            Lemon Road works directly in your browser. No app download is required. Play on desktop, tablet, or mobile.
+          </p>
+        </section>
+
+        <section aria-labelledby="faq-heading" style="margin-top:2.5rem;max-width:640px;">
+          <h2 id="faq-heading" style="font-size:1.4rem;font-weight:700;margin-bottom:1rem;">FAQ</h2>
+
+          <details style="margin-bottom:1rem;">
+            <summary style="font-weight:700;cursor:pointer;">What is Lemon Road?</summary>
+            <p style="margin-top:0.5rem;line-height:1.6;">Lemon Road is a free browser-based meme survival game where you guide a lemon down a chaotic road and try to survive as long as possible.</p>
+          </details>
+
+          <details style="margin-bottom:1rem;">
+            <summary style="font-weight:700;cursor:pointer;">Is Lemon Road free to play?</summary>
+            <p style="margin-top:0.5rem;line-height:1.6;">Yes. Lemon Road is free to play in your browser. No app download is required.</p>
+          </details>
+
+          <details style="margin-bottom:1rem;">
+            <summary style="font-weight:700;cursor:pointer;">How do daily rewards work?</summary>
+            <p style="margin-top:0.5rem;line-height:1.6;">Daily rewards may be based on leaderboard ranking, survival score, reward pool rules, or free-player selection. Rewards are not guaranteed and may change.</p>
+          </details>
+
+          <details style="margin-bottom:1rem;">
+            <summary style="font-weight:700;cursor:pointer;">Can I play Lemon Road on mobile?</summary>
+            <p style="margin-top:0.5rem;line-height:1.6;">Yes. Lemon Road is designed for desktop and mobile browsers.</p>
+          </details>
+
+          <details style="margin-bottom:1rem;">
+            <summary style="font-weight:700;cursor:pointer;">Is Lemon Road a play-to-earn game?</summary>
+            <p style="margin-top:0.5rem;line-height:1.6;">Lemon Road is a free meme game with daily rewards. Players can compete through gameplay, but it should not be treated as a guaranteed income source.</p>
+          </details>
+
+          <a href="/faq" style="color:#1a1a1a;font-weight:700;">Read full FAQ →</a>
+        </section>
+
+        <footer style="margin-top:3rem;padding-top:1.5rem;border-top:2px solid rgba(0,0,0,0.15);">
+          <p style="margin-bottom:1rem;line-height:1.6;max-width:640px;font-size:0.9rem;">
+            Lemon Road is a free browser-based meme survival game. Play online, guide the lemon, survive the chaotic road, climb the daily leaderboard, and compete for daily rewards. No download required.
+          </p>
+          <nav aria-label="Footer navigation" style="display:flex;flex-wrap:wrap;gap:1rem;font-size:0.9rem;">
+            <a href="/" style="color:#1a1a1a;">Play Lemon Road</a>
+            <a href="/how-to-play" style="color:#1a1a1a;">How to Play</a>
+            <a href="/daily-rewards" style="color:#1a1a1a;">Daily Rewards</a>
+            <a href="/leaderboard" style="color:#1a1a1a;">Leaderboard</a>
+            <a href="/faq" style="color:#1a1a1a;">FAQ</a>
+            <a href="/about" style="color:#1a1a1a;">About</a>
+            <a href="/press" style="color:#1a1a1a;">Press</a>
+            <a href="/terms" style="color:#1a1a1a;">Terms</a>
+            <a href="/privacy" style="color:#1a1a1a;">Privacy</a>
+            <a href="/reward-rules" style="color:#1a1a1a;">Reward Rules</a>
+          </nav>
+        </footer>
+      </main>
+    </div>
+
+    <!-- Noscript fallback for crawlers and no-JS users -->
+    <noscript>
+      <style>
+        #root { display: none; }
+        .noscript-content { font-family: 'Comic Sans MS', cursive, sans-serif; background: #7cfc00; padding: 2rem; }
+      </style>
+      <div class="noscript-content">
+        <h1>Lemon Road</h1>
+        <p>Lemon Road is a free browser-based meme survival game with daily leaderboard rewards. Enable JavaScript to play the game.</p>
+        <nav>
+          <a href="/how-to-play">How to Play</a> |
+          <a href="/daily-rewards">Daily Rewards</a> |
+          <a href="/leaderboard">Leaderboard</a> |
+          <a href="/faq">FAQ</a>
+        </nav>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

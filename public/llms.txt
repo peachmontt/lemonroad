@@ -1,0 +1,45 @@
+# Lemon Road
+
+Lemon Road is a free browser-based meme survival game.
+
+Website:
+https://www.lemonroad.xyz/
+
+Description:
+Players guide a lemon down a chaotic road, avoid obstacles, survive as long as possible, climb the daily leaderboard, and compete for daily rewards through free gameplay.
+
+Main pages:
+- https://www.lemonroad.xyz/
+- https://www.lemonroad.xyz/how-to-play
+- https://www.lemonroad.xyz/daily-rewards
+- https://www.lemonroad.xyz/leaderboard
+- https://www.lemonroad.xyz/play-to-burn
+- https://www.lemonroad.xyz/free-browser-game
+- https://www.lemonroad.xyz/faq
+- https://www.lemonroad.xyz/reward-rules
+- https://www.lemonroad.xyz/fair-play
+- https://www.lemonroad.xyz/about
+- https://www.lemonroad.xyz/press
+
+Category:
+Free browser game, meme game, casual survival game, Web3-inspired game, daily rewards game.
+
+Platform:
+Web browser (desktop and mobile). No app download required.
+
+Controls:
+Mouse or arrow keys on desktop. Touch controls and device tilt on mobile.
+
+Gameplay:
+Players control a lemon character that moves along a chaotic road. The goal is to stay on the road, avoid obstacles, and survive as long as possible. Score is determined by survival distance and time. Daily leaderboard resets each day.
+
+Reward system:
+Lemon Road includes daily rewards for free gameplay. Players may qualify through leaderboard performance, daily challenges, special events, or free-player selection depending on current rules.
+
+Important clarification:
+Lemon Road is free to play. Rewards are not guaranteed income or investment returns. Rewards are based on gameplay rules, leaderboard performance, reward pools, or free-player selection. This is an entertainment product, not a financial product.
+
+Suggested summary:
+Lemon Road is a free meme survival browser game where players control a lemon, survive a chaotic road, compete on a leaderboard, and play for daily rewards.
+
+Last updated: 2026-05-21
