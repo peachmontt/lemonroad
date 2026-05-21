@@ -1,8 +1,5 @@
 import { toPng } from 'html-to-image';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-// #region agent log
-const _dbgEffectCount = { n: 0 };
-// #endregion
 import {
   getJuiceTitle,
   pickCauseOfJuice,
@@ -75,17 +72,9 @@ export function DeathOverlay({
   useEffect(() => { playDurationMsRef.current = playDurationMs; });
   useEffect(() => { onRunSavedRef.current = onRunSaved; });
 
-  // #region agent log
-  const [juiceTitle] = useState(() => {
-    try { return getJuiceTitle(snapshot.distance); }
-    catch(e) { fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'61b939'},body:JSON.stringify({sessionId:'61b939',location:'DeathOverlay.tsx:init',message:'getJuiceTitle crash',data:{err:String(e),dist:snapshot.distance},timestamp:Date.now(),hypothesisId:'H-B'})}).catch(()=>{}); return 'Error'; }
-  });
+  const [juiceTitle] = useState(() => getJuiceTitle(snapshot.distance));
   const [globalRank] = useState(() => computeRank(snapshot.distance));
-  const [roast] = useState(() => {
-    try { return pickDeathRoast(snapshot.distance); }
-    catch(e) { fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'61b939'},body:JSON.stringify({sessionId:'61b939',location:'DeathOverlay.tsx:init',message:'pickDeathRoast crash',data:{err:String(e),dist:snapshot.distance},timestamp:Date.now(),hypothesisId:'H-B'})}).catch(()=>{}); return 'Error'; }
-  });
-  // #endregion
+  const [roast] = useState(() => pickDeathRoast(snapshot.distance));
   const [quote] = useState(() => pickDeathQuote());
   const [cause] = useState(() => pickCauseOfJuice());
   const [shareLabel] = useState(() => pickShareButtonLabel());
@@ -101,11 +90,6 @@ export function DeathOverlay({
   const isDead = snapshot.phase === 'dead';
 
   useEffect(() => {
-    // #region agent log
-    _dbgEffectCount.n += 1;
-    const callN = _dbgEffectCount.n;
-    fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'61b939'},body:JSON.stringify({sessionId:'61b939',location:'DeathOverlay.tsx:effect',message:'effect fired (post-fix)',data:{callN,isDead,savedRef:savedRef.current},timestamp:Date.now(),hypothesisId:'H-A',runId:'post-fix'})}).catch(()=>{});
-    // #endregion
     if (!isDead || savedRef.current) return;
     savedRef.current = true;
 
@@ -129,15 +113,9 @@ export function DeathOverlay({
         : {}),
     })
       .then(() => {
-        // #region agent log
-        fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'61b939'},body:JSON.stringify({sessionId:'61b939',location:'DeathOverlay.tsx:submitRun',message:'submitRun SUCCESS (post-fix)',data:{durationMs},timestamp:Date.now(),hypothesisId:'H-C',runId:'post-fix'})}).catch(()=>{});
-        // #endregion
         onRunSavedRef.current?.();
       })
       .catch((e) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'61b939'},body:JSON.stringify({sessionId:'61b939',location:'DeathOverlay.tsx:submitRun',message:'submitRun FAILED — savedRef NOT reset (post-fix)',data:{err:String(e),callN},timestamp:Date.now(),hypothesisId:'H-A H-C',runId:'post-fix'})}).catch(()=>{});
-        // #endregion
         setSaveError(e instanceof Error ? e.message : 'Failed to save run');
         // savedRef.current stays true — prevents infinite retry loop on API failure
       });

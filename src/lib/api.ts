@@ -12,11 +12,20 @@ async function apiFetch<T>(
       ...init?.headers,
     },
   });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) {
-    throw new Error(data.error ?? `Request failed: ${res.status}`);
+  const text = await res.text();
+  let data: (T & { error?: string }) | null = null;
+  if (text) {
+    try {
+      data = JSON.parse(text) as T & { error?: string };
+    } catch {
+      if (!res.ok) throw new Error(text);
+      throw new Error('Invalid JSON response');
+    }
   }
-  return data;
+  if (!res.ok) {
+    throw new Error(data?.error ?? (text || `Request failed: ${res.status}`));
+  }
+  return (data ?? {}) as T;
 }
 
 export interface PlayerResponse {

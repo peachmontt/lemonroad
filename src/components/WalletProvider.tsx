@@ -5,7 +5,8 @@ import {
 } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import '@solana/wallet-adapter-react-ui/styles.css';
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
+import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
 import { useMemo, type ComponentType, type ReactNode } from 'react';
 import { SOLANA_CLUSTER, SOLANA_RPC_URL } from '../config/solana';
 import { EvmProvider } from '../providers/EvmProvider';

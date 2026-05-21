@@ -5,7 +5,6 @@ import { currentHourBucket } from './_lib/hour';
 import { badRequest, json, unauthorized, withMethods, parseJsonBody } from './_lib/http';
 import { rateLimit } from './_lib/rate-limit';
 import { getSessionId } from './_lib/session';
-import { verifyDepositTransaction } from './_lib/solana';
 import { verifyEvmDepositTransaction } from './_lib/evm';
 import { USDT_PER_ATTEMPT } from './_lib/pool-math';
 
@@ -82,7 +81,9 @@ export default withMethods({
         const verification =
           paymentChain === 'evm'
             ? await verifyEvmDepositTransaction(depositTx, walletPubkey)
-            : await verifyDepositTransaction(depositTx, walletPubkey, hourBucket);
+            : await (
+                await import('./_lib/solana')
+              ).verifyDepositTransaction(depositTx, walletPubkey, hourBucket);
         if (!verification.ok) return badRequest(res, verification.error ?? 'Invalid deposit');
 
         await prisma.verifiedDeposit.create({
