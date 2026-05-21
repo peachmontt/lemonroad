@@ -1,20 +1,26 @@
 import type { RunRecord } from '../lib/api';
+import { CollapsiblePanel } from './CollapsiblePanel';
 
 interface RunHistoryPanelProps {
   runs: RunRecord[];
+  open: boolean;
+  onToggle: () => void;
 }
 
-export function RunHistoryPanel({ runs }: RunHistoryPanelProps) {
+export function RunHistoryPanel({ runs, open, onToggle }: RunHistoryPanelProps) {
   if (runs.length === 0) return null;
 
   const best = runs.reduce((a, b) => (b.distance > a.distance ? b : a));
+  const subtitle = `best: ${Math.floor(best.distance)}m (${best.mode})`;
 
   return (
-    <div className="run-history">
-      <h3 className="run-history-title">YOUR SQUEEZE LOG</h3>
-      <p className="run-history-best">
-        best: {Math.floor(best.distance)}m ({best.mode})
-      </p>
+    <CollapsiblePanel
+      title="YOUR SQUEEZE LOG"
+      subtitle={subtitle}
+      open={open}
+      onToggle={onToggle}
+      className="run-history"
+    >
       <ul className="run-history-list">
         {runs.slice(0, 8).map((r) => (
           <li key={r.id}>
@@ -23,6 +29,6 @@ export function RunHistoryPanel({ runs }: RunHistoryPanelProps) {
           </li>
         ))}
       </ul>
-    </div>
+    </CollapsiblePanel>
   );
 }

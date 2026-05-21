@@ -4,11 +4,11 @@ import type { GameSnapshot } from '../game/types';
 
 interface ShareCardProps {
   snapshot: GameSnapshot;
-  rank: number;
+  juiceTitle: string;
 }
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ snapshot, rank }, ref) {
+  function ShareCard({ snapshot, juiceTitle }, ref) {
     const meters = Math.floor(snapshot.distance);
     const displayUrl = getDisplayUrl();
 
@@ -17,26 +17,20 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         <div className="share-card-top-bar" />
 
         <p className="share-card-brand">LEMON ROAD</p>
-        <p className="share-card-sub">the future of citrus transportation</p>
 
-        <p className="share-card-hook">YOU GOT JUICED</p>
-        <p className="share-card-challenge">
-          I only survived <strong>{meters}m</strong> before the SEC caught me.
+        <p className="share-card-hook">
+          I GOT JUICED AT <strong>{meters}M</strong>
         </p>
-        <p className="share-card-cta-text">CAN YOU STAY ON THE ROAD LONGER?</p>
 
-        <div className="share-card-play-btn">▶ PLAY NOW — FREE</div>
+        <p className="share-card-rank">Rank: {juiceTitle}</p>
 
-        <div className="share-card-link-box">
-          <span className="share-card-link-arrow">→</span>
-          <span className="share-card-url">{displayUrl}</span>
-        </div>
+        <p className="share-card-tagline-main">No utility. No brakes. Only road.</p>
 
-        <p className="share-card-tagline">No utility. Only road. · $LEMON</p>
+        <p className="share-card-cta-text">Can you out-squeeze me?</p>
 
-        <p className="share-card-stats-mini">
-          juice: {snapshot.juiceLevel} · #{rank.toLocaleString()} juiced globally
-        </p>
+        <div className="share-card-play-btn">PLAY NOW — FREE</div>
+
+        <p className="share-card-url-small">{displayUrl}</p>
       </div>
     );
   },

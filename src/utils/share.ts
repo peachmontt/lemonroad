@@ -23,23 +23,31 @@ export function getDisplayUrl(): string {
   }
 }
 
-export function buildShareCaption(snapshot: GameSnapshot, rank: number): string {
+export function buildShareCaption(
+  snapshot: GameSnapshot,
+  juiceTitle: string,
+  globalRank?: number,
+): string {
   const m = Math.floor(snapshot.distance);
   const url = getPlayUrl();
+  const rankLine = globalRank != null ? `\n(#${globalRank.toLocaleString()} juiced globally)` : '';
   return (
-    `I only survived ${m}m before the SEC caught me on LEMON ROAD 🍋\n\n` +
-    `Can you stay on the road longer?\n` +
+    `I got juiced at ${m}m on LEMON ROAD 🍋\n` +
+    `Rank: ${juiceTitle}\n\n` +
+    `No utility. No brakes. Only road.\n` +
+    `Can you out-squeeze me?\n` +
     `👉 PLAY FREE: ${url}\n\n` +
-    `No utility. Only road. #LEMONROAD #GotJuiced #crypto\n` +
-    `(global rank #${rank.toLocaleString()} juiced)`
+    `#LEMONROAD #GotJuiced #crypto${rankLine}`
   );
 }
 
 export function openTwitterShare(caption: string, siteUrl: string): void {
-  // X has a 280-char limit; use a short focused tweet with the link
+  const dist = caption.match(/juiced at (\d+)m/)?.[1] ?? '??';
+  const rank = caption.match(/Rank: (.+)/)?.[1] ?? 'Kitchen Accident';
   const tweet =
-    `I only survived ${caption.match(/survived (\d+m)/)?.[1] ?? '??'} on LEMON ROAD 🍋\n` +
-    `Can you beat me? Play free 👉 ${siteUrl}\n` +
+    `I got juiced at ${dist}m on LEMON ROAD 🍋\n` +
+    `Rank: ${rank}\n` +
+    `Can you out-squeeze me? 👉 ${siteUrl}\n` +
     `#LEMONROAD #GotJuiced #crypto`;
   const params = new URLSearchParams({ text: tweet });
   window.open(`https://twitter.com/intent/tweet?${params}`, '_blank', 'noopener,noreferrer');
