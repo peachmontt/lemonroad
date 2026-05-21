@@ -8,15 +8,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum DailyRewardStatus {
+  PENDING
+  PAID
+  REJECTED
+}
+
+enum DailyLeaderboardStatus {
+  PENDING
+  AWARDED
+  REJECTED
+}
+
 model Player {
-  id           String    @id @default(uuid())
-  sessionId    String    @unique @map("session_id")
-  ipHash       String    @map("ip_hash")
-  walletPubkey String?   @unique @map("wallet_pubkey")
-  displayName  String    @default("Anonymous Lemon") @map("display_name")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  runs         GameRun[]
+  id                String             @id @default(uuid())
+  sessionId         String             @unique @map("session_id")
+  ipHash            String             @map("ip_hash")
+  walletPubkey      String?            @unique @map("wallet_pubkey")
+  displayName       String             @default("Anonymous Lemon") @map("display_name")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  runs              GameRun[]
+  dailyEntries      DailyLeaderboard[]
+  dailyRewards      DailyReward[]
+  pushSubscriptions PushSubscription[]
 
   @@index([ipHash])
   @@map("players")
@@ -34,12 +49,68 @@ model GameRun {
   diedAt         DateTime @default(now()) @map("died_at")
   depositTx      String?  @map("deposit_tx")
   hourBucket     String?  @map("hour_bucket")
+  dayBucket      String?  @map("day_bucket")
   walletPubkey   String?  @map("wallet_pubkey")
+  deviceType     String?  @map("device_type")
+  antiCheatScore Int      @default(0) @map("anti_cheat_score")
+  isValid        Boolean  @default(true) @map("is_valid")
 
   @@index([playerId, diedAt(sort: Desc)])
   @@index([mode, hourBucket, distance(sort: Desc)])
+  @@index([mode, dayBucket, distance(sort: Desc)])
   @@index([depositTx])
   @@map("game_runs")
+}
+
+model DailyLeaderboard {
+  id           String                 @id @default(uuid())
+  date         DateTime               @db.Date
+  playerId     String                 @map("player_id")
+  player       Player                 @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  bestDistance Float                  @map("best_distance")
+  totalRuns    Int                    @default(1) @map("total_runs")
+  position     Int?
+  rewardStatus DailyLeaderboardStatus @default(PENDING) @map("reward_status")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+
+  @@unique([date, playerId])
+  @@index([date, bestDistance(sort: Desc)])
+  @@index([date, position])
+  @@map("daily_leaderboard")
+}
+
+model DailyReward {
+  id             String            @id @default(uuid())
+  date           DateTime          @db.Date
+  playerId       String            @map("player_id")
+  player         Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  position       Int
+  rewardAmount   String            @map("reward_amount")
+  rewardCurrency String            @map("reward_currency")
+  status         DailyRewardStatus @default(PENDING)
+  txHash         String?           @map("tx_hash")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@unique([date, playerId])
+  @@index([date, status])
+  @@map("daily_rewards")
+}
+
+model PushSubscription {
+  id         String   @id @default(uuid())
+  playerId   String   @map("player_id")
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  @@index([playerId, enabled])
+  @@map("push_subscriptions")
 }
 
 model HourlyPool {

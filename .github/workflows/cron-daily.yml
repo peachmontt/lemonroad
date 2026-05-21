@@ -1,0 +1,15 @@
+name: Daily Rewards
+
+on:
+  schedule:
+    - cron: '5 0 * * *'  # 00:05 UTC every day
+  workflow_dispatch:
+
+jobs:
+  daily-rewards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily rewards cron
+        run: |
+          curl -sf -X GET https://www.lemonroad.xyz/api/cron/daily-rewards \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

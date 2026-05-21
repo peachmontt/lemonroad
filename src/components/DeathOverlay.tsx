@@ -12,10 +12,12 @@ import type { GameSnapshot } from '../game/types';
 import { submitRun } from '../lib/api';
 import { trackRunEnd } from '../lib/analytics';
 import type { GameMode } from '../types/game';
+import type { PlayerResponse } from '../lib/api';
 import { computeRank } from '../utils/rank';
 import { buildShareCaption } from '../utils/share';
 import { ShareCard } from './ShareCard';
 import { ShareMenu } from './ShareMenu';
+import { WalletLinkPrompt } from './WalletLinkPrompt';
 
 interface DeathOverlayProps {
   snapshot: GameSnapshot;
@@ -24,8 +26,11 @@ interface DeathOverlayProps {
   depositTx: string | null;
   walletPubkey: string | null;
   paymentChain?: 'solana' | 'evm';
+  player?: PlayerResponse | null;
+  runCount?: number;
   onRetry: () => void;
   onRunSaved?: () => void;
+  onWalletLinked?: (walletPubkey: string) => Promise<void>;
 }
 
 function DeathScene() {
@@ -60,8 +65,11 @@ export function DeathOverlay({
   depositTx,
   walletPubkey,
   paymentChain = 'solana',
+  player,
+  runCount,
   onRetry,
   onRunSaved,
+  onWalletLinked,
 }: DeathOverlayProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const meters = Math.floor(snapshot.distance);
@@ -79,15 +87,27 @@ export function DeathOverlay({
   const [cause] = useState(() => pickCauseOfJuice());
   const [shareLabel] = useState(() => pickShareButtonLabel());
   const [retryLabel] = useState(() => pickRetryButtonLabel());
+  const isDead = snapshot.phase === 'dead';
   const [sharing, setSharing] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [walletPromptDismissed, setWalletPromptDismissed] = useState(false);
+  const [runSaved, setRunSaved] = useState(false);
   const savedRef = useRef(false);
+
+  // Show wallet prompt after first free run if no wallet linked
+  const showWalletPrompt =
+    isDead &&
+    runSaved &&
+    gameMode === 'free' &&
+    !walletPromptDismissed &&
+    !!player &&
+    !player.walletPubkey &&
+    (runCount ?? 0) <= 1;
   const [shareReady, setShareReady] = useState<{
     dataUrl: string;
     file: File;
     caption: string;
   } | null>(null);
-  const isDead = snapshot.phase === 'dead';
 
   // #region agent log
   useEffect(() => {
@@ -119,6 +139,7 @@ export function DeathOverlay({
         : {}),
     })
       .then(() => {
+        setRunSaved(true);
         onRunSavedRef.current?.();
       })
       .catch((e) => {
@@ -180,6 +201,16 @@ export function DeathOverlay({
               </div>
             </div>
             {saveError && <p className="tilt-msg">{saveError}</p>}
+
+            {showWalletPrompt && onWalletLinked && (
+              <WalletLinkPrompt
+                onSave={async (addr) => {
+                  await onWalletLinked(addr);
+                  setWalletPromptDismissed(true);
+                }}
+                onSkip={() => setWalletPromptDismissed(true)}
+              />
+            )}
 
             <p className="share-preview-label">this is what your friends will see:</p>
             <div className="share-preview-scaler" aria-hidden="true">

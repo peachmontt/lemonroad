@@ -131,6 +131,49 @@ export function fetchGlobalLeaderboard(
   return apiFetch<GlobalLeaderboardResponse>(`/api/leaderboard?${params}`);
 }
 
+export type DailyLeaderboardStatus = 'PENDING' | 'AWARDED' | 'REJECTED';
+export type DailyRewardStatus = 'PENDING' | 'PAID' | 'REJECTED';
+
+export interface DailyLeaderboardEntry {
+  position: number;
+  playerId: string;
+  displayName: string;
+  bestDistance: number;
+  totalRuns: number;
+  rewardStatus: DailyLeaderboardStatus | null;
+  paidStatus: DailyRewardStatus | null;
+}
+
+export interface DailyLeaderboardResponse {
+  scope: 'daily';
+  date: string;
+  entries: DailyLeaderboardEntry[];
+}
+
+export function fetchDailyLeaderboard(date: 'today' | 'yesterday' | string = 'today') {
+  return apiFetch<DailyLeaderboardResponse>(
+    `/api/leaderboard?scope=daily&date=${date}`,
+  );
+}
+
+export function subscribePush(subscription: {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}) {
+  return apiFetch<{ ok: boolean }>('/api/push/subscribe', {
+    method: 'POST',
+    body: JSON.stringify(subscription),
+  });
+}
+
+export function unsubscribePush(endpoint: string) {
+  return apiFetch<{ ok: boolean }>('/api/push/unsubscribe', {
+    method: 'POST',
+    body: JSON.stringify({ endpoint }),
+  });
+}
+
 /** @deprecated Use fetchPoolLeaderboard */
 export const fetchLeaderboard = fetchPoolLeaderboard;
 

@@ -2,11 +2,13 @@ import { z } from 'zod';
 import { getAuthenticatedPlayer } from './_lib/auth';
 import { prisma } from './_lib/db';
 import { currentHourBucket } from './_lib/hour';
+import { currentDayBucket } from './_lib/day';
 import { badRequest, json, unauthorized, withMethods, parseJsonBody } from './_lib/http';
 import { rateLimit } from './_lib/rate-limit';
 import { getSessionId } from './_lib/session';
 import { verifyEvmDepositTransaction } from './_lib/evm';
 import { USDT_PER_ATTEMPT } from './_lib/pool-math';
+import { scoreRun, parseDeviceType } from './_lib/anti-cheat';
 
 const postSchema = z.object({
   mode: z.enum(['free', 'paid']),
@@ -58,6 +60,10 @@ export default withMethods({
 
     const { mode, distance, juiceLevel, citricVelocity, durationMs, depositTx, walletPubkey, paymentChain } =
       parsed.data;
+
+    const dayBucket = currentDayBucket();
+    const deviceType = parseDeviceType(req);
+    const antiCheat = scoreRun({ distance, durationMs, citricVelocity });
 
     let hourBucket: string | null = null;
     let verifiedTx: string | null = null;
@@ -136,15 +142,47 @@ export default withMethods({
         durationMs,
         depositTx: verifiedTx,
         hourBucket,
+        dayBucket,
         walletPubkey: mode === 'paid' ? walletPubkey : null,
+        deviceType,
+        antiCheatScore: antiCheat.antiCheatScore,
+        isValid: antiCheat.isValid,
       },
     });
+
+    // Upsert daily leaderboard for free-mode runs
+    if (mode === 'free') {
+      const dateVal = new Date(`${dayBucket}T00:00:00.000Z`);
+      const existing = await prisma.dailyLeaderboard.findUnique({
+        where: { date_playerId: { date: dateVal, playerId: player.id } },
+      });
+
+      if (!existing) {
+        await prisma.dailyLeaderboard.create({
+          data: {
+            date: dateVal,
+            playerId: player.id,
+            bestDistance: distance,
+            totalRuns: 1,
+          },
+        });
+      } else {
+        await prisma.dailyLeaderboard.update({
+          where: { date_playerId: { date: dateVal, playerId: player.id } },
+          data: {
+            bestDistance: Math.max(existing.bestDistance, distance),
+            totalRuns: { increment: 1 },
+          },
+        });
+      }
+    }
 
     json(res, {
       id: run.id,
       mode: run.mode,
       distance: run.distance,
       diedAt: run.diedAt.toISOString(),
+      isValid: run.isValid,
     });
   },
 });

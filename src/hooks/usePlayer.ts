@@ -43,6 +43,16 @@ export function usePlayer() {
     [player, refresh],
   );
 
+  const linkWallet = useCallback(
+    async (walletPubkey: string) => {
+      const displayName = player?.displayName ?? 'Anonymous Lemon';
+      const updated = await updateProfile({ displayName, walletPubkey });
+      setPlayer(updated);
+      return updated;
+    },
+    [player],
+  );
+
   const reloadRuns = useCallback(async () => {
     const { runs: history } = await fetchRuns();
     setRuns(history);
@@ -55,6 +65,7 @@ export function usePlayer() {
     error,
     refresh,
     setDisplayName,
+    linkWallet,
     reloadRuns,
   };
 }

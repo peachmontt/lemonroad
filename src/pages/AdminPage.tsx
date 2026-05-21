@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 
 interface PoolStats {
   currentHour: string;
@@ -37,6 +37,34 @@ interface SettleResult {
   settleTx: string | null;
 }
 
+interface DailyRewardRow {
+  id: string;
+  date: string;
+  position: number;
+  rewardAmount: string;
+  rewardCurrency: string;
+  status: 'PENDING' | 'PAID' | 'REJECTED';
+  txHash: string | null;
+  createdAt: string;
+  player: {
+    id: string;
+    displayName: string;
+    walletPubkey: string | null;
+  };
+}
+
+const STATUS_LABELS: Record<DailyRewardRow['status'], string> = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  REJECTED: 'REJECTED',
+};
+
+const STATUS_COLORS: Record<DailyRewardRow['status'], string> = {
+  PENDING: '#f5c518',
+  PAID: '#4caf50',
+  REJECTED: '#e53935',
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? '';
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -51,6 +79,16 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return data;
 }
 
+function todayUTC(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function yesterdayUTC(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 export function AdminPage() {
   const [authed, setAuthed] = useState(!!sessionStorage.getItem('lr_admin_secret'));
   const [password, setPassword] = useState('');
@@ -59,6 +97,50 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [settling, setSettling] = useState<string | null>(null);
   const [settleResult, setSettleResult] = useState<SettleResult | null>(null);
+
+  // Daily rewards state
+  const [rewardsDate, setRewardsDate] = useState(yesterdayUTC);
+  const [rewards, setRewards] = useState<DailyRewardRow[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardsError, setRewardsError] = useState<string | null>(null);
+  const [actioning, setActioning] = useState<string | null>(null);
+  const [txHashInputs, setTxHashInputs] = useState<Record<string, string>>({});
+  const confirmRef = useRef<(msg: string) => boolean>(window.confirm.bind(window));
+
+  const loadRewards = useCallback(async (date: string) => {
+    setRewardsLoading(true);
+    setRewardsError(null);
+    try {
+      const data = await apiFetch<{ rewards: DailyRewardRow[] }>(`/api/admin/rewards?date=${date}`);
+      setRewards(data.rewards);
+    } catch (e) {
+      setRewardsError(e instanceof Error ? e.message : 'Failed to load rewards');
+    } finally {
+      setRewardsLoading(false);
+    }
+  }, []);
+
+  const updateRewardStatus = async (id: string, status: 'PAID' | 'REJECTED') => {
+    const row = rewards.find((r) => r.id === id);
+    const label = status === 'PAID'
+      ? `Mark reward for ${row?.player.displayName} (#${row?.position}) as PAID?`
+      : `Reject reward for ${row?.player.displayName} (#${row?.position})?`;
+    if (!confirmRef.current(label)) return;
+
+    setActioning(id);
+    try {
+      const txHash = status === 'PAID' ? (txHashInputs[id] || undefined) : undefined;
+      const updated = await apiFetch<DailyRewardRow>('/api/admin/rewards', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, status, txHash }),
+      });
+      setRewards((prev) => prev.map((r) => (r.id === id ? { ...r, ...updated } : r)));
+    } catch (e) {
+      setRewardsError(e instanceof Error ? e.message : 'Action failed');
+    } finally {
+      setActioning(null);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,8 +183,11 @@ export function AdminPage() {
   };
 
   useEffect(() => {
-    if (authed) void load();
-  }, [authed, load]);
+    if (authed) {
+      void load();
+      void loadRewards(rewardsDate);
+    }
+  }, [authed, load, loadRewards, rewardsDate]);
 
   if (!authed) {
     return (
@@ -210,6 +295,124 @@ export function AdminPage() {
               </ul>
             </section>
           )}
+
+          <section className="admin-section">
+            <div className="admin-section-header">
+              <h2>Daily Rewards</h2>
+              <div className="admin-section-controls">
+                <input
+                  type="date"
+                  value={rewardsDate}
+                  max={todayUTC()}
+                  onChange={(e) => {
+                    setRewardsDate(e.target.value);
+                    void loadRewards(e.target.value);
+                  }}
+                  className="admin-date-input"
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => void loadRewards(rewardsDate)}
+                  disabled={rewardsLoading}
+                >
+                  {rewardsLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+            </div>
+            {rewardsError && <p className="admin-error">{rewardsError}</p>}
+            {rewards.length === 0 && !rewardsLoading ? (
+              <p className="admin-empty">No rewards for {rewardsDate}.</p>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Player</th>
+                    <th>Wallet</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>TX Hash (for paid)</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rewards.map((r) => (
+                    <tr key={r.id}>
+                      <td>#{r.position}</td>
+                      <td>{r.player.displayName}</td>
+                      <td>
+                        {r.player.walletPubkey
+                          ? (
+                            <span
+                              title={r.player.walletPubkey}
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => void navigator.clipboard.writeText(r.player.walletPubkey!)}
+                            >
+                              {r.player.walletPubkey.slice(0, 6)}…{r.player.walletPubkey.slice(-4)}
+                            </span>
+                          )
+                          : <span style={{ opacity: 0.4 }}>no wallet</span>
+                        }
+                      </td>
+                      <td>{r.rewardAmount} {r.rewardCurrency}</td>
+                      <td>
+                        <span
+                          className="admin-status-badge"
+                          style={{ color: STATUS_COLORS[r.status] }}
+                        >
+                          {STATUS_LABELS[r.status]}
+                        </span>
+                      </td>
+                      <td>
+                        {r.status === 'PENDING' ? (
+                          <input
+                            type="text"
+                            placeholder="tx signature (optional)"
+                            value={txHashInputs[r.id] ?? ''}
+                            onChange={(e) =>
+                              setTxHashInputs((prev) => ({ ...prev, [r.id]: e.target.value }))
+                            }
+                            className="admin-tx-input"
+                            disabled={actioning === r.id}
+                          />
+                        ) : (
+                          r.txHash
+                            ? <span title={r.txHash}>{r.txHash.slice(0, 8)}…</span>
+                            : <span style={{ opacity: 0.4 }}>—</span>
+                        )}
+                      </td>
+                      <td className="admin-reward-actions">
+                        {r.status === 'PENDING' && (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              onClick={() => void updateRewardStatus(r.id, 'PAID')}
+                              disabled={actioning === r.id}
+                            >
+                              {actioning === r.id ? '…' : 'Mark Paid'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => void updateRewardStatus(r.id, 'REJECTED')}
+                              disabled={actioning === r.id}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {r.status !== 'PENDING' && (
+                          <span style={{ opacity: 0.4, fontSize: '0.75rem' }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
 
           <section className="admin-section">
             <h2>Recent Paid Runs (last 20)</h2>

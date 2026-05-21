@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './_lib/db';
 import { currentHourBucket, hourBucketLabel, previousHourBucket } from './_lib/hour';
+import { currentDayBucket, previousDayBucket, dayBucketToDate } from './_lib/day';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
 
@@ -82,10 +83,64 @@ async function getLeaderboardForHour(hourBucket: string) {
   }));
 }
 
+async function getDailyLeaderboard(dateStr: string) {
+  const date = dayBucketToDate(dateStr);
+  const isToday = dateStr === currentDayBucket();
+
+  const entries = await prisma.dailyLeaderboard.findMany({
+    where: { date },
+    orderBy: [{ bestDistance: 'desc' }, { createdAt: 'asc' }],
+    include: {
+      player: { select: { id: true, displayName: true } },
+    },
+  });
+
+  // For past days, join reward payout status
+  let rewardMap = new Map<string, { status: string } | null>();
+  if (!isToday && entries.length > 0) {
+    const rewards = await prisma.dailyReward.findMany({
+      where: { date },
+      select: { playerId: true, status: true },
+    });
+    for (const r of rewards) {
+      rewardMap.set(r.playerId, { status: r.status });
+    }
+  }
+
+  return {
+    date: dateStr,
+    entries: entries.map((e, i) => ({
+      position: e.position ?? i + 1,
+      playerId: e.player.id,
+      displayName: e.player.displayName,
+      bestDistance: e.bestDistance,
+      totalRuns: e.totalRuns,
+      rewardStatus: isToday ? null : e.rewardStatus,
+      paidStatus: isToday ? null : (rewardMap.get(e.playerId)?.status ?? null),
+    })),
+  };
+}
+
 export default withMethods({
   GET: async (req, res) => {
     const scope =
       typeof req.query.scope === 'string' ? req.query.scope : 'pool';
+
+    if (scope === 'daily') {
+      const rawDate = typeof req.query.date === 'string' ? req.query.date : 'today';
+      let dateStr: string;
+      if (rawDate === 'today') {
+        dateStr = currentDayBucket();
+      } else if (rawDate === 'yesterday') {
+        dateStr = previousDayBucket();
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+        dateStr = rawDate;
+      } else {
+        return badRequest(res, 'Invalid date (use today, yesterday, or YYYY-MM-DD)');
+      }
+      const data = await getDailyLeaderboard(dateStr);
+      return json(res, { scope: 'daily', ...data });
+    }
 
     if (scope === 'global') {
       const modeRaw =
