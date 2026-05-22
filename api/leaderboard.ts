@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './_lib/db';
-import { currentHourBucket, hourBucketLabel, previousHourBucket } from './_lib/hour';
 import { currentDayBucket, previousDayBucket, dayBucketToDate } from './_lib/day';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
@@ -45,9 +44,12 @@ async function getGlobalLeaderboard(mode: GlobalMode, limit: number) {
   }));
 }
 
-async function getLeaderboardForHour(hourBucket: string) {
+async function getDailyPoolLeaderboard(dayBucket: string) {
+  const dayStart = dayBucketToDate(dayBucket);
+  const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+
   const runs = await prisma.gameRun.findMany({
-    where: { mode: 'paid', hourBucket },
+    where: { mode: 'paid', diedAt: { gte: dayStart, lt: dayEnd } },
     orderBy: [{ distance: 'desc' }, { diedAt: 'asc' }],
     include: { player: true },
   });
@@ -74,13 +76,42 @@ async function getLeaderboardForHour(hourBucket: string) {
     (a, b) => b[1].distance - a[1].distance,
   );
 
-  return sorted.map(([wallet, data], i) => ({
+  const entries = sorted.map(([wallet, data], i) => ({
     rank: i + 1,
     walletPubkey: wallet,
     displayName: data.displayName,
     distance: data.distance,
     diedAt: data.diedAt.toISOString(),
   }));
+
+  const pools = await prisma.hourlyPool.findMany({
+    where: { hourStart: { gte: dayStart, lt: dayEnd } },
+  });
+
+  const poolTotal = pools.reduce(
+    (sum, p) => sum + p.depositedUsdt + p.rolloverIn,
+    0n,
+  );
+  const participants = pools.reduce((sum, p) => sum + p.participantCount, 0);
+
+  const winners: [string | null, string | null, string | null] = [
+    entries[0]?.walletPubkey ?? null,
+    entries[1]?.walletPubkey ?? null,
+    entries[2]?.walletPubkey ?? null,
+  ];
+
+  const distribution = computeDistribution(
+    poolTotal,
+    participants || entries.length,
+    winners,
+  );
+
+  return {
+    entries,
+    poolTotal,
+    participants: participants || entries.length,
+    distribution,
+  };
 }
 
 async function getDailyLeaderboard(dateStr: string) {
@@ -159,41 +190,28 @@ export default withMethods({
       return json(res, { scope: 'global', mode: modeRaw, entries });
     }
 
-    const hour =
-      typeof req.query.hour === 'string'
-        ? req.query.hour
-        : currentHourBucket();
-
-    if (!/^\d+$/.test(hour)) {
-      return badRequest(res, 'Invalid hour bucket');
+    // Pool scope — daily aggregation
+    const rawDay = typeof req.query.day === 'string' ? req.query.day : undefined;
+    let dayBucket: string;
+    if (rawDay === 'yesterday') {
+      dayBucket = previousDayBucket();
+    } else if (rawDay && /^\d{4}-\d{2}-\d{2}$/.test(rawDay)) {
+      dayBucket = rawDay;
+    } else {
+      dayBucket = currentDayBucket();
     }
 
-    const entries = await getLeaderboardForHour(hour);
-    const hourStart = new Date(Number(hour) * 3_600_000);
-    const pool = await prisma.hourlyPool.findUnique({
-      where: { hourStart },
-    });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dayBucket)) {
+      return badRequest(res, 'Invalid day bucket');
+    }
 
-    const participants = pool?.participantCount ?? entries.length;
-    const poolTotal =
-      (pool?.depositedUsdt ?? 0n) + (pool?.rolloverIn ?? 0n);
-
-    const winners: [string | null, string | null, string | null] = [
-      entries[0]?.walletPubkey ?? null,
-      entries[1]?.walletPubkey ?? null,
-      entries[2]?.walletPubkey ?? null,
-    ];
-
-    const distribution = computeDistribution(
-      poolTotal,
-      participants,
-      winners,
-    );
+    const { entries, poolTotal, participants, distribution } =
+      await getDailyPoolLeaderboard(dayBucket);
 
     json(res, {
       scope: 'pool',
-      hour,
-      hourLabel: hourBucketLabel(hour),
+      day: dayBucket,
+      dayLabel: dayBucket,
       participants,
       poolTotal: poolTotal.toString(),
       poolTotalFormatted: formatUsdt(poolTotal),
@@ -205,7 +223,7 @@ export default withMethods({
         amountFormatted: formatUsdt(p.amount),
       })),
       projectedRollover: distribution.rolloverOut.toString(),
-      previousHour: previousHourBucket(),
+      previousDay: previousDayBucket(),
     });
   },
 });

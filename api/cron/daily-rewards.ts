@@ -3,9 +3,9 @@ import { prisma } from '../_lib/db';
 import { previousDayBucket, dayBucketToDate } from '../_lib/day';
 import { json, unauthorized, withMethods } from '../_lib/http';
 
-const TOP_WINNERS = 10;
-const REWARD_AMOUNT = '10';
-const REWARD_CURRENCY = 'LEMON';
+const TOP_WINNERS = 3;
+const REWARD_CURRENCY = 'USDT';
+const REWARD_AMOUNTS: Record<number, string> = { 1: '10', 2: '6', 3: '4' };
 
 function configurePush() {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -102,7 +102,7 @@ export default withMethods({
           date,
           playerId: w.playerId,
           position: i + 1,
-          rewardAmount: REWARD_AMOUNT,
+          rewardAmount: REWARD_AMOUNTS[i + 1] ?? '0',
           rewardCurrency: REWARD_CURRENCY,
           status: 'PENDING',
         },

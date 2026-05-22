@@ -42,7 +42,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     if (evmAddress) trackWalletConnect(evmAddress);
   }, [evmAddress]);
 
-  const { player, runs, setDisplayName, reloadRuns } = usePlayer();
+  const { player, runs, setDisplayName, linkWallet, reloadRuns } = usePlayer();
   const {
     pending: paidPending,
     depositTx,
@@ -166,6 +166,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           depositTx={activeDepositTx}
           walletPubkey={activeWalletKey}
           paymentChain={activePaymentChain}
+          player={player}
           onRetry={handleRetry}
           onRunSaved={() => {
             void reloadRuns();
@@ -173,6 +174,9 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
             evmResetPaid();
             setActiveDepositTx(null);
             setActiveWalletKey(null);
+          }}
+          onWalletLinked={async (addr) => {
+            await linkWallet(addr);
           }}
         />
       )}

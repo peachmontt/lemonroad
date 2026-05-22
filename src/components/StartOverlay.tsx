@@ -74,6 +74,11 @@ export function StartOverlay({
       <h1 className="title-shake">LEMON ROAD</h1>
       <p className="tagline">the future of citrus transportation</p>
       <p className="sub-tagline">No utility. Only road.</p>
+
+      <div className="reward-banner">
+        FREE TRIES &middot; UP TO $600/MONTH IN USDT REWARDS
+      </div>
+
       <p className="controls-hint">mouse / arrows · touch · tilt on mobile</p>
 
       <div className="mode-picker">
@@ -96,7 +101,7 @@ export function StartOverlay({
       {gameMode === 'paid' && (
         <>
           <p className="paid-hint">
-            pay 1 USDT · hourly pool · 60/30/10 prizes
+            pay 1 USDT · daily pool · $10 / $6 / $4 prizes
             {hasPaidDeposit && ' · deposit ready'}
           </p>
 

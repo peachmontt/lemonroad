@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 
 interface PoolStats {
-  currentHour: string;
-  currentPool: {
+  currentDay: string;
+  currentDayPool: {
     participants: number;
     deposited: string;
     rolloverIn: string;
@@ -234,15 +234,15 @@ export function AdminPage() {
             <div className="admin-kpis">
               <div className="admin-kpi"><span>{stats.totals.players}</span>players</div>
               <div className="admin-kpi"><span>{stats.totals.runs}</span>total runs</div>
-              <div className="admin-kpi"><span>{stats.currentPool.totalFormatted}</span>current hour pool</div>
-              <div className="admin-kpi"><span>{stats.currentPool.participants}</span>current hour players</div>
+              <div className="admin-kpi"><span>{stats.currentDayPool.totalFormatted}</span>current day pool</div>
+              <div className="admin-kpi"><span>{stats.currentDayPool.participants}</span>today's players</div>
             </div>
           </section>
 
           <section className="admin-section">
-            <h2>Unsettled Hours ({stats.unsettledPools.length})</h2>
+            <h2>Unsettled Pools ({stats.unsettledPools.length})</h2>
             {stats.unsettledPools.length === 0 ? (
-              <p className="admin-empty">All hours settled.</p>
+              <p className="admin-empty">All pools settled.</p>
             ) : (
               <table className="admin-table">
                 <thead>

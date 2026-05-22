@@ -47,8 +47,8 @@ export interface RunRecord {
 
 export interface PoolLeaderboardResponse {
   scope: 'pool';
-  hour: string;
-  hourLabel: string;
+  day: string;
+  dayLabel: string;
   participants: number;
   poolTotal: string;
   poolTotalFormatted: string;
@@ -66,7 +66,7 @@ export interface PoolLeaderboardResponse {
     amountFormatted: string;
   }[];
   projectedRollover: string;
-  previousHour: string;
+  previousDay: string;
 }
 
 export interface GlobalLeaderboardResponse {
@@ -118,8 +118,8 @@ export function submitRun(body: {
   });
 }
 
-export function fetchPoolLeaderboard(hour?: string) {
-  const q = hour ? `?hour=${hour}` : '';
+export function fetchPoolLeaderboard(day?: string) {
+  const q = day ? `?day=${day}` : '';
   return apiFetch<PoolLeaderboardResponse>(`/api/leaderboard${q}`);
 }
 

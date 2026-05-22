@@ -10,7 +10,7 @@ interface LeaderboardPanelProps {
 
 export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelProps) {
   const [data, setData] = useState<PoolLeaderboardResponse | null>(null);
-  const [hour, setHour] = useState<string | undefined>(undefined);
+  const [day, setDay] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +18,7 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void fetchPoolLeaderboard(hour)
+    void fetchPoolLeaderboard(day)
       .then((lb) => {
         if (!cancelled) setData(lb);
       })
@@ -34,7 +34,7 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
     return () => {
       cancelled = true;
     };
-  }, [hour]);
+  }, [day]);
 
   const subtitle =
     loading && !data
@@ -42,7 +42,7 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
       : error && !data
         ? 'load failed'
         : data
-          ? `hour ${data.hourLabel} · ${data.participants} players · pool ${data.poolTotalFormatted}`
+          ? `${data.dayLabel} · ${data.participants} players · pool ${data.poolTotalFormatted}`
           : null;
 
   const body =
@@ -74,22 +74,22 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
           ))}
         </ol>
         {data.entries.length === 0 && (
-          <p className="leaderboard-empty">no paid runs this hour yet</p>
+          <p className="leaderboard-empty">no paid runs today yet</p>
         )}
         <div className="leaderboard-nav">
           <button
             type="button"
             className="link-btn"
-            onClick={() => setHour(undefined)}
+            onClick={() => setDay(undefined)}
           >
-            current hour
+            today
           </button>
           <button
             type="button"
             className="link-btn"
-            onClick={() => setHour(data.previousHour)}
+            onClick={() => setDay(data.previousDay)}
           >
-            previous hour
+            yesterday
           </button>
         </div>
       </>

@@ -1,19 +1,21 @@
 import { prisma } from '../_lib/db';
 import { json, unauthorized, withMethods } from '../_lib/http';
 import { isAdminAuthorized } from '../_lib/session';
-import { currentHourBucket } from '../_lib/hour';
+import { currentDayBucket, dayBucketToDate } from '../_lib/day';
 import { formatUsdt } from '../_lib/pool-math';
 
 export default withMethods({
   GET: async (req, res) => {
     if (!isAdminAuthorized(req)) return unauthorized(res);
 
-    const currentHour = currentHourBucket();
+    const currentDay = currentDayBucket();
+    const todayStart = dayBucketToDate(currentDay);
+    const tomorrowStart = new Date(todayStart.getTime() + 86_400_000);
     const now = new Date();
 
     const [
       unsettledPools,
-      currentPool,
+      todayPools,
       recentPaidRuns,
       totalPlayers,
       totalRuns,
@@ -23,8 +25,8 @@ export default withMethods({
         orderBy: { hourStart: 'desc' },
         take: 10,
       }),
-      prisma.hourlyPool.findUnique({
-        where: { hourStart: new Date(Number(currentHour) * 3_600_000) },
+      prisma.hourlyPool.findMany({
+        where: { hourStart: { gte: todayStart, lt: tomorrowStart } },
       }),
       prisma.gameRun.findMany({
         where: { mode: 'paid' },
@@ -36,16 +38,19 @@ export default withMethods({
       prisma.gameRun.count(),
     ]);
 
-    const poolTotal = (currentPool?.depositedUsdt ?? 0n) + (currentPool?.rolloverIn ?? 0n);
+    const dayDeposited = todayPools.reduce((sum, p) => sum + p.depositedUsdt, 0n);
+    const dayRollover = todayPools.reduce((sum, p) => sum + p.rolloverIn, 0n);
+    const dayTotal = dayDeposited + dayRollover;
+    const dayParticipants = todayPools.reduce((sum, p) => sum + p.participantCount, 0);
 
     json(res, {
-      currentHour,
-      currentPool: {
-        participants: currentPool?.participantCount ?? 0,
-        deposited: (currentPool?.depositedUsdt ?? 0n).toString(),
-        rolloverIn: (currentPool?.rolloverIn ?? 0n).toString(),
-        total: poolTotal.toString(),
-        totalFormatted: formatUsdt(poolTotal),
+      currentDay,
+      currentDayPool: {
+        participants: dayParticipants,
+        deposited: dayDeposited.toString(),
+        rolloverIn: dayRollover.toString(),
+        total: dayTotal.toString(),
+        totalFormatted: formatUsdt(dayTotal),
       },
       unsettledPools: unsettledPools.map((p) => ({
         hourStart: p.hourStart.toISOString(),

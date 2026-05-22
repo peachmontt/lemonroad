@@ -27,7 +27,6 @@ interface DeathOverlayProps {
   walletPubkey: string | null;
   paymentChain?: 'solana' | 'evm';
   player?: PlayerResponse | null;
-  runCount?: number;
   onRetry: () => void;
   onRunSaved?: () => void;
   onWalletLinked?: (walletPubkey: string) => Promise<void>;
@@ -66,7 +65,6 @@ export function DeathOverlay({
   walletPubkey,
   paymentChain = 'solana',
   player,
-  runCount,
   onRetry,
   onRunSaved,
   onWalletLinked,
@@ -94,15 +92,14 @@ export function DeathOverlay({
   const [runSaved, setRunSaved] = useState(false);
   const savedRef = useRef(false);
 
-  // Show wallet prompt after first free run if no wallet linked
+  // Show wallet prompt after every free run until a wallet is linked
   const showWalletPrompt =
     isDead &&
     runSaved &&
     gameMode === 'free' &&
     !walletPromptDismissed &&
     !!player &&
-    !player.walletPubkey &&
-    (runCount ?? 0) <= 1;
+    !player.walletPubkey;
   const [shareReady, setShareReady] = useState<{
     dataUrl: string;
     file: File;
