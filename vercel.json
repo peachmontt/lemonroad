@@ -4,8 +4,28 @@
   "framework": "vite",
   "cleanUrls": true,
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/sitemap.xml",        "destination": "/api/sitemap" },
     { "source": "/how-to-play",       "destination": "/how-to-play.html" },
     { "source": "/daily-rewards",     "destination": "/daily-rewards.html" },
     { "source": "/leaderboard",       "destination": "/leaderboard.html" },
