@@ -5,6 +5,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/sitemap.xml",        "destination": "/api/sitemap" },
     { "source": "/how-to-play",       "destination": "/how-to-play.html" },
     { "source": "/daily-rewards",     "destination": "/daily-rewards.html" },
     { "source": "/leaderboard",       "destination": "/leaderboard.html" },
