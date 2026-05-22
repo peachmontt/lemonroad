@@ -47,10 +47,10 @@ export function setAdminCookie(res: VercelResponse, token: string) {
 }
 
 export function isAdminAuthorized(req: VercelRequest): boolean {
-  const secret = process.env.ADMIN_SECRET;
+  const secret = (process.env.ADMIN_SECRET ?? '').trim();
   if (!secret) return false;
-  const header = req.headers.authorization?.replace('Bearer ', '');
+  const header = (req.headers.authorization ?? '').replace('Bearer ', '').trim();
   if (header === secret) return true;
-  const cookie = getAdminToken(req);
+  const cookie = (getAdminToken(req) ?? '').trim();
   return cookie === secret;
 }
