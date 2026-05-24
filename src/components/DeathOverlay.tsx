@@ -201,11 +201,8 @@ export function DeathOverlay({
 
             {showWalletPrompt && onWalletLinked && (
               <WalletLinkPrompt
-                onSave={async (addr) => {
-                  await onWalletLinked(addr);
-                  setWalletPromptDismissed(true);
-                }}
-                onSkip={() => setWalletPromptDismissed(true)}
+                onSave={(addr) => onWalletLinked(addr)}
+                onDismiss={() => setWalletPromptDismissed(true)}
               />
             )}
 
