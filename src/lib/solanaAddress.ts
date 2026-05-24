@@ -12,3 +12,10 @@ export function isValidSolanaWalletAddress(addr: string): boolean {
     return false;
   }
 }
+
+/** Shortens a wallet address for display, e.g. 7GhD...9KsP */
+export function formatShortWallet(addr: string, prefix = 4, suffix = 4): string {
+  const trimmed = addr.trim();
+  if (trimmed.length <= prefix + suffix + 3) return trimmed;
+  return `${trimmed.slice(0, prefix)}...${trimmed.slice(-suffix)}`;
+}

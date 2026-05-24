@@ -18,6 +18,7 @@ import { buildShareCaption } from '../utils/share';
 import { ShareCard } from './ShareCard';
 import { ShareMenu } from './ShareMenu';
 import { WalletLinkPrompt } from './WalletLinkPrompt';
+import { WalletConfirmedCard } from './WalletConfirmedCard';
 
 interface DeathOverlayProps {
   snapshot: GameSnapshot;
@@ -89,17 +90,27 @@ export function DeathOverlay({
   const [sharing, setSharing] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [walletPromptDismissed, setWalletPromptDismissed] = useState(false);
+  const [changingWallet, setChangingWallet] = useState(false);
   const [runSaved, setRunSaved] = useState(false);
   const savedRef = useRef(false);
 
-  // Show wallet prompt after every free run until a wallet is linked
-  const showWalletPrompt =
+  const linkedWallet = player?.walletPubkey ?? null;
+
+  const showWalletInput =
     isDead &&
     runSaved &&
     gameMode === 'free' &&
     !walletPromptDismissed &&
     !!player &&
-    !player.walletPubkey;
+    !!onWalletLinked &&
+    (!linkedWallet || changingWallet);
+
+  const showWalletConfirmation =
+    isDead &&
+    runSaved &&
+    gameMode === 'free' &&
+    !!linkedWallet &&
+    !changingWallet;
   const [shareReady, setShareReady] = useState<{
     dataUrl: string;
     file: File;
@@ -199,10 +210,22 @@ export function DeathOverlay({
             </div>
             {saveError && <p className="tilt-msg">{saveError}</p>}
 
-            {showWalletPrompt && onWalletLinked && (
+            {showWalletInput && onWalletLinked && (
               <WalletLinkPrompt
-                onSave={(addr) => onWalletLinked(addr)}
+                variant={linkedWallet ? 'change' : 'initial'}
+                onSave={async (addr) => {
+                  await onWalletLinked(addr);
+                  setChangingWallet(false);
+                }}
                 onDismiss={() => setWalletPromptDismissed(true)}
+                onCancel={linkedWallet ? () => setChangingWallet(false) : undefined}
+              />
+            )}
+
+            {showWalletConfirmation && linkedWallet && (
+              <WalletConfirmedCard
+                walletPubkey={linkedWallet}
+                onChangeWallet={() => setChangingWallet(true)}
               />
             )}
 

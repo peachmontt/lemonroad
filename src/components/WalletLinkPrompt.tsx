@@ -1,30 +1,30 @@
-import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { isValidSolanaWalletAddress } from '../lib/solanaAddress';
 
 interface WalletLinkPromptProps {
   onSave: (walletPubkey: string) => Promise<void>;
   onDismiss: () => void;
+  variant?: 'initial' | 'change';
+  onCancel?: () => void;
 }
 
 const VALIDATION_ERROR = 'Please enter a valid Solana wallet address.';
-const SUCCESS_MESSAGE = 'Wallet saved. You are eligible for the daily prize draw.';
 
-export function WalletLinkPrompt({ onSave, onDismiss }: WalletLinkPromptProps) {
+export function WalletLinkPrompt({
+  onSave,
+  onDismiss,
+  variant = 'initial',
+  onCancel,
+}: WalletLinkPromptProps) {
   const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [showInvalid, setShowInvalid] = useState(false);
 
   const trimmed = value.trim();
   const isValid = isValidSolanaWalletAddress(trimmed);
-
-  useEffect(() => {
-    if (!saved) return;
-    const timer = window.setTimeout(onDismiss, 2500);
-    return () => window.clearTimeout(timer);
-  }, [saved, onDismiss]);
+  const isChange = variant === 'change';
 
   const rejectInvalid = () => {
     setShowInvalid(true);
@@ -43,7 +43,6 @@ export function WalletLinkPrompt({ onSave, onDismiss }: WalletLinkPromptProps) {
 
     try {
       await onSave(trimmed);
-      setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save wallet');
       setSaving(false);
@@ -61,22 +60,13 @@ export function WalletLinkPrompt({ onSave, onDismiss }: WalletLinkPromptProps) {
     void handleSave();
   };
 
-  if (saved) {
-    return (
-      <div className="wallet-link-prompt wallet-link-prompt--success" role="status">
-        <p className="wallet-link-success">{SUCCESS_MESSAGE}</p>
-        <button type="button" className="btn btn-primary wallet-link-continue" onClick={onDismiss}>
-          Continue
-        </button>
-      </div>
-    );
-  }
-
   return (
     <>
       <form className="wallet-link-prompt" onSubmit={handleSubmit} noValidate>
         <p className="wallet-link-title">
-          Add your Solana wallet address to participate in the daily prize draw.
+          {isChange
+            ? 'Update your Solana wallet address for the daily prize draw.'
+            : 'Add your Solana wallet address to participate in the daily prize draw.'}
         </p>
 
         <label className="wallet-link-label" htmlFor="wallet-address-input">
@@ -104,7 +94,7 @@ export function WalletLinkPrompt({ onSave, onDismiss }: WalletLinkPromptProps) {
           autoComplete="off"
           spellCheck={false}
           aria-invalid={showInvalid}
-          aria-describedby={error ? 'wallet-link-error' : 'wallet-link-skip-help'}
+          aria-describedby={error ? 'wallet-link-error' : isChange ? undefined : 'wallet-link-skip-help'}
         />
 
         {error && (
@@ -119,22 +109,38 @@ export function WalletLinkPrompt({ onSave, onDismiss }: WalletLinkPromptProps) {
             className="btn btn-primary wallet-link-save"
             disabled={saving || !isValid}
           >
-            {saving ? 'Saving…' : 'Save wallet'}
+            {saving ? 'Saving…' : isChange ? 'Update wallet' : 'Save wallet'}
           </button>
-          <button
-            type="button"
-            className="btn btn-secondary wallet-link-skip"
-            onClick={() => setShowSkipConfirm(true)}
-            disabled={saving}
-          >
-            Skip prize draw
-          </button>
+
+          {isChange && onCancel && (
+            <button
+              type="button"
+              className="btn btn-secondary wallet-link-skip"
+              onClick={onCancel}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+          )}
+
+          {!isChange && (
+            <button
+              type="button"
+              className="btn btn-secondary wallet-link-skip"
+              onClick={() => setShowSkipConfirm(true)}
+              disabled={saving}
+            >
+              Skip prize draw
+            </button>
+          )}
         </div>
 
-        <p id="wallet-link-skip-help" className="wallet-link-help">
-          If you skip this step, you can still play, but you will not be eligible for the daily prize
-          draw.
-        </p>
+        {!isChange && (
+          <p id="wallet-link-skip-help" className="wallet-link-help">
+            If you skip this step, you can still play, but you will not be eligible for the daily prize
+            draw.
+          </p>
+        )}
       </form>
 
       {showSkipConfirm && (
