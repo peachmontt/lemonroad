@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install Lemon Road on Android — PWA Install Guide</title>
+    <meta name="description" content="How to install Lemon Road on Android using Chrome. Add the Lemon Road PWA to your home screen and enable daily prize reminders." />
+    <link rel="canonical" href="https://www.lemonroad.xyz/install/android" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Install Lemon Road on Android — PWA Install Guide" />
+    <meta property="og:description" content="How to install Lemon Road on Android using Chrome. Add the Lemon Road PWA to your home screen and enable daily prize reminders." />
+    <meta property="og:url" content="https://www.lemonroad.xyz/install/android" />
+    <meta property="og:image" content="https://www.lemonroad.xyz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Lemon Road" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Install Lemon Road on Android" />
+    <meta name="twitter:description" content="How to add Lemon Road to your Android home screen using Chrome." />
+    <meta name="twitter:image" content="https://www.lemonroad.xyz/og-image.png" />
+
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#fff200" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/seo.css" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.lemonroad.xyz/" },
+            { "@type": "ListItem", "position": 2, "name": "Install Lemon Road App", "item": "https://www.lemonroad.xyz/install" },
+            { "@type": "ListItem", "position": 3, "name": "Install on Android", "item": "https://www.lemonroad.xyz/install/android" }
+          ]
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to install Lemon Road on Android",
+          "description": "Install Lemon Road as a PWA on Android using Chrome.",
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Open Lemon Road in Chrome",
+              "text": "Open https://www.lemonroad.xyz in Chrome on your Android device."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Open the browser menu",
+              "text": "Tap the three-dot menu in the top-right corner of Chrome."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Tap Install app",
+              "text": "Tap Install app or Add to Home screen."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Confirm installation",
+              "text": "Confirm the installation to add Lemon Road to your home screen."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Open Lemon Road from the home screen",
+              "text": "Launch Lemon Road from the installed app icon."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <header class="site-header">
+        <div class="container">
+          <nav class="site-nav" aria-label="Main navigation">
+            <a href="/" class="nav-logo">🍋 Lemon Road</a>
+            <a href="/how-to-play">How to Play</a>
+            <a href="/daily-rewards">Daily Rewards</a>
+            <a href="/leaderboard">Leaderboard</a>
+            <a href="/faq">FAQ</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="container" id="main-content">
+        <article class="seo-page">
+          <nav aria-label="Breadcrumb" class="breadcrumb">
+            <a href="/">Home</a> &rsaquo;
+            <a href="/install">Install</a> &rsaquo;
+            <span>Android</span>
+          </nav>
+
+          <h1>Install Lemon Road on Android</h1>
+          <p class="lead-text">
+            Android Chrome supports one-tap PWA install. Add Lemon Road to your home screen for full-screen gameplay and daily prize reminders.
+          </p>
+
+          <div id="native-install-row" class="native-install-row" style="display:none">
+            <p><strong>Chrome detected your install intent.</strong> You can install Lemon Road right now:</p>
+            <button class="btn btn-primary" id="native-install-btn" type="button">Install Lemon Road</button>
+          </div>
+
+          <ol class="install-steps">
+            <li class="install-step">
+              <div class="step-icon">
+                <!-- Chrome icon hint -->
+                <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+                  <circle cx="24" cy="24" r="22" fill="#fff"/>
+                  <circle cx="24" cy="24" r="10" fill="#1a73e8"/>
+                  <path d="M24,2 A22,22 0 0,1 43,13 L33,13 A10,10 0 0,0 24,14 Z" fill="#ea4335"/>
+                  <path d="M43,13 A22,22 0 0,1 43,35 L36,24 A10,10 0 0,0 33,13 Z" fill="#fbbc05"/>
+                  <path d="M43,35 A22,22 0 0,1 5,35 L15,35 A10,10 0 0,0 24,34 Z" fill="#34a853"/>
+                  <path d="M5,35 A22,22 0 0,1 5,13 L12,24 A10,10 0 0,0 15,35 Z" fill="#1a73e8"/>
+                </svg>
+              </div>
+              <div class="step-content">
+                <h3>Step 1 — Open in Chrome</h3>
+                <p>Open <strong>https://www.lemonroad.xyz</strong> in the <strong>Chrome</strong> app on your Android device.</p>
+              </div>
+            </li>
+
+            <li class="install-step">
+              <div class="step-icon">
+                <!-- Three-dot menu icon -->
+                <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+                  <rect width="48" height="48" rx="8" fill="#1a73e8"/>
+                  <circle cx="24" cy="12" r="3.5" fill="#fff"/>
+                  <circle cx="24" cy="24" r="3.5" fill="#fff"/>
+                  <circle cx="24" cy="36" r="3.5" fill="#fff"/>
+                </svg>
+              </div>
+              <div class="step-content">
+                <h3>Step 2 — Tap the three-dot menu</h3>
+                <p>Tap the <strong>⋮ three-dot menu</strong> in the top-right corner of Chrome.</p>
+              </div>
+            </li>
+
+            <li class="install-step">
+              <div class="step-icon">
+                <!-- Install app icon -->
+                <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+                  <rect width="48" height="48" rx="8" fill="#fff200" stroke="#000" stroke-width="2"/>
+                  <rect x="20" y="8" width="8" height="18" rx="4" fill="#000"/>
+                  <polygon points="24,32 14,20 34,20" fill="#000"/>
+                  <rect x="10" y="36" width="28" height="4" rx="2" fill="#000"/>
+                </svg>
+              </div>
+              <div class="step-content">
+                <h3>Step 3 — Tap "Install app"</h3>
+                <p>Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong> from the menu. Chrome may also show a small install banner at the bottom of the screen.</p>
+              </div>
+            </li>
+
+            <li class="install-step">
+              <div class="step-icon">
+                <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+                  <rect width="48" height="48" rx="8" fill="#34c759"/>
+                  <polyline points="12,26 22,36 38,14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="step-content">
+                <h3>Step 4 — Confirm</h3>
+                <p>Tap <strong>"Install"</strong> or <strong>"Add"</strong> in the prompt. Lemon Road will be added to your home screen and app drawer.</p>
+              </div>
+            </li>
+
+            <li class="install-step">
+              <div class="step-icon">
+                <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+                  <rect width="48" height="48" rx="10" fill="#fff200" stroke="#000" stroke-width="2"/>
+                  <ellipse cx="24" cy="28" rx="14" ry="16" fill="#fff200" stroke="#000" stroke-width="2"/>
+                  <circle cx="19" cy="24" r="2.5" fill="#000"/>
+                  <circle cx="29" cy="24" r="2.5" fill="#000"/>
+                  <path d="M17,32 Q24,38 31,32" fill="none" stroke="#000" stroke-width="2"/>
+                  <ellipse cx="24" cy="10" rx="5" ry="8" fill="#228B22" stroke="#000" stroke-width="1.5" transform="rotate(-10 24 10)"/>
+                </svg>
+              </div>
+              <div class="step-content">
+                <h3>Step 5 — Open from your home screen</h3>
+                <p>Tap the <strong>Lemon Road icon</strong> on your home screen or in your app drawer. It opens full-screen with no browser bar.</p>
+              </div>
+            </li>
+          </ol>
+
+          <section class="install-note">
+            <h2>Enable daily prize reminders</h2>
+            <p>
+              After installing, Lemon Road can send you a reminder when the daily prize draw is live. You'll be asked to enable notifications when you open the app from your home screen.
+            </p>
+            <a href="/notifications" class="btn btn-primary">Enable notifications →</a>
+          </section>
+
+          <div class="internal-links">
+            <a href="/">Play Lemon Road</a>
+            <a href="/install">Install Guide</a>
+            <a href="/install/iphone">Install on iPhone</a>
+            <a href="/notifications">Enable Notifications</a>
+            <a href="/daily-rewards">Daily Rewards</a>
+          </div>
+        </article>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container">
+          <p class="footer-text">
+            Lemon Road (lemonroad) is a free browser-based meme survival game. Install the Lemon Road PWA on Android using Chrome for full-screen gameplay and daily prize reminders.
+          </p>
+          <nav aria-label="Footer navigation">
+            <ul class="footer-nav">
+              <li><a href="/">Play Lemon Road</a></li>
+              <li><a href="/how-to-play">How to Play</a></li>
+              <li><a href="/daily-rewards">Daily Rewards</a></li>
+              <li><a href="/install">Install Guide</a></li>
+              <li><a href="/install/iphone">Install on iPhone</a></li>
+              <li><a href="/notifications">Enable Notifications</a></li>
+              <li><a href="/faq">FAQ</a></li>
+              <li><a href="/terms">Terms</a></li>
+              <li><a href="/privacy">Privacy</a></li>
+            </ul>
+          </nav>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      (function() {
+        var deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+          e.preventDefault();
+          deferredPrompt = e;
+          document.getElementById('native-install-row').style.display = 'block';
+        });
+        document.getElementById('native-install-btn')?.addEventListener('click', async function() {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          var result = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          if (result.outcome === 'accepted') {
+            document.getElementById('native-install-row').innerHTML = '<p><strong>Installed!</strong> Open Lemon Road from your home screen.</p>';
+          }
+        });
+        window.addEventListener('appinstalled', function() {
+          document.getElementById('native-install-row').innerHTML = '<p><strong>Installed!</strong> Open Lemon Road from your home screen.</p>';
+        });
+      })();
+    </script>
+  </body>
+</html>

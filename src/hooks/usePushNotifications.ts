@@ -24,9 +24,10 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   const [subscribed, setSubscribed] = useState(false);
   const swRef = useRef<ServiceWorkerRegistration | null>(null);
 
-  // Register service worker on mount
+  // Register service worker on mount — always, so the SW is available for push even
+  // when the VAPID key is not configured yet (subscribe is still gated below).
   useEffect(() => {
-    if (!supported || !VAPID_PUBLIC_KEY) return;
+    if (!supported) return;
     navigator.serviceWorker
       .register('/sw.js')
       .then(async (reg) => {

@@ -5,6 +5,7 @@ import { useGameEngine } from '../hooks/useGameEngine';
 import { usePaidAttempt } from '../hooks/usePaidAttempt';
 import { useEvmPaidAttempt } from '../hooks/useEvmPaidAttempt';
 import { usePlayer } from '../hooks/usePlayer';
+import { usePwaOnboarding } from '../hooks/usePwaOnboarding';
 import type { GameMode } from '../types/game';
 import { trackGameStart, trackWalletConnect, trackPaidDeposit, trackPaymentError } from '../lib/analytics';
 import { DeathOverlay } from './DeathOverlay';
@@ -12,6 +13,8 @@ import { FakeModal, type ModalTab } from './FakeModal';
 import { HudOverlay } from './HudOverlay';
 import { StartOverlay } from './StartOverlay';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
+import { InstallNudgeCard } from './pwa/InstallNudgeCard';
+import { NotificationNudgeCard } from './pwa/NotificationNudgeCard';
 
 interface GameCanvasProps {
   modalTab: ModalTab | null;
@@ -43,6 +46,13 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   }, [evmAddress]);
 
   const { player, runs, setDisplayName, linkWallet, reloadRuns } = usePlayer();
+  const {
+    showInstallNudge,
+    showNotificationNudge,
+    onEngagement,
+    dismissInstall,
+    dismissNotification,
+  } = usePwaOnboarding();
   const {
     pending: paidPending,
     depositTx,
@@ -174,14 +184,28 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
             evmResetPaid();
             setActiveDepositTx(null);
             setActiveWalletKey(null);
+            onEngagement('gameOver');
           }}
           onWalletLinked={async (addr) => {
             await linkWallet(addr);
+            onEngagement('walletSaved');
           }}
         />
       )}
 
       {modalTab && <FakeModal tab={modalTab} onClose={onCloseModal} />}
+
+      {snapshot.phase !== 'playing' && showInstallNudge && (
+        <div className="pwa-nudge-overlay">
+          <InstallNudgeCard onDismiss={dismissInstall} />
+        </div>
+      )}
+
+      {snapshot.phase !== 'playing' && showNotificationNudge && !showInstallNudge && (
+        <div className="pwa-nudge-overlay">
+          <NotificationNudgeCard onDismiss={dismissNotification} />
+        </div>
+      )}
     </div>
   );
 }

@@ -22,6 +22,12 @@
       "headers": [
         { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }
       ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }
+      ]
     }
   ],
   "rewrites": [
@@ -37,6 +43,10 @@
     { "source": "/fair-play",         "destination": "/fair-play.html" },
     { "source": "/terms",             "destination": "/terms.html" },
     { "source": "/privacy",           "destination": "/privacy.html" },
+    { "source": "/install/iphone",    "destination": "/install-iphone.html" },
+    { "source": "/install/android",   "destination": "/install-android.html" },
+    { "source": "/install",           "destination": "/install.html" },
+    { "source": "/notifications",     "destination": "/notifications.html" },
     { "source": "/admin",             "destination": "/index.html" },
     { "source": "/admin/:path*",      "destination": "/index.html" },
     { "source": "/((?!api/)[^.]*)",    "destination": "/index.html" }

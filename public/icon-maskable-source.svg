@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Yellow background with extra safe zone padding (maskable: lemon within ~80%) -->
+  <rect width="512" height="512" fill="#fff200"/>
+
+  <!-- Road stripes -->
+  <rect x="0" y="430" width="512" height="82" fill="#444"/>
+  <rect x="206" y="444" width="30" height="20" fill="#fff200" rx="3"/>
+  <rect x="276" y="444" width="30" height="20" fill="#fff200" rx="3"/>
+  <rect x="206" y="472" width="30" height="20" fill="#fff200" rx="3"/>
+  <rect x="276" y="472" width="30" height="20" fill="#fff200" rx="3"/>
+
+  <!-- Lemon body (slightly smaller, centered within safe zone) -->
+  <ellipse cx="256" cy="225" rx="130" ry="155" fill="#fff200" stroke="#000" stroke-width="18"/>
+
+  <!-- Lemon shading -->
+  <ellipse cx="200" cy="192" rx="30" ry="46" fill="#e6c200" opacity="0.7"/>
+
+  <!-- Eyes -->
+  <circle cx="216" cy="192" r="20" fill="#000"/>
+  <circle cx="296" cy="192" r="20" fill="#000"/>
+  <circle cx="223" cy="184" r="6" fill="#fff"/>
+  <circle cx="303" cy="184" r="6" fill="#fff"/>
+
+  <!-- Smile -->
+  <path d="M200 272 Q256 328 312 272" fill="none" stroke="#000" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Leaf -->
+  <ellipse cx="256" cy="72" rx="36" ry="62" fill="#228B22" stroke="#000" stroke-width="12" transform="rotate(-15 256 72)"/>
+  <ellipse cx="283" cy="68" rx="27" ry="50" fill="#228B22" stroke="#000" stroke-width="10" transform="rotate(15 283 68)"/>
+  <line x1="256" y1="38" x2="256" y2="100" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+</svg>

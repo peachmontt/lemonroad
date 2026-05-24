@@ -197,6 +197,10 @@ export function StartOverlay({
         <button type="button" className="link-btn" onClick={() => onOpenModal('tokenomics')}>
           TOKENOMICS
         </button>
+        <span> | </span>
+        <a href="/install" className="link-btn">INSTALL APP</a>
+        <span> | </span>
+        <a href="/notifications" className="link-btn">NOTIFICATIONS</a>
       </div>
     </div>
   );

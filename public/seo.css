@@ -370,3 +370,230 @@ a:hover { opacity: 0.75; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Install / Notifications pages ───────────────── */
+
+.breadcrumb {
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.breadcrumb a { color: inherit; }
+
+.lead-text {
+  font-size: 1.1rem;
+  max-width: 640px;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.install-platform-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.platform-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fffbe6;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #1a1a1a;
+  min-width: 240px;
+  flex: 1;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.platform-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.platform-card--highlighted {
+  background: #fff200;
+  border-color: #000;
+}
+
+.platform-icon { flex-shrink: 0; }
+
+.platform-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.platform-info strong { font-size: 1rem; }
+.platform-info span { font-size: 0.85rem; color: #555; }
+
+.platform-arrow {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.install-benefits {
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+}
+
+.install-benefits ul {
+  line-height: 2;
+  padding-left: 1.5rem;
+}
+
+.install-steps {
+  list-style: none;
+  padding: 0;
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+}
+
+.install-step {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  background: #fffbe6;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  border-radius: 8px;
+}
+
+.step-icon { flex-shrink: 0; }
+
+.step-content { flex: 1; }
+
+.step-content h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.step-content p {
+  margin: 0;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.install-note {
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+  padding: 1.25rem;
+  background: #fff200;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  border-radius: 8px;
+}
+
+.install-note h2 { margin-top: 0; }
+
+.install-notice {
+  max-width: 640px;
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff9e6;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  border-radius: 8px;
+}
+
+.copy-link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.copy-link-text {
+  background: #f5f5f5;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+}
+
+.native-install-row {
+  max-width: 640px;
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: #fff200;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  border-radius: 8px;
+}
+
+.notif-ui {
+  max-width: 480px;
+  margin-bottom: 2.5rem;
+}
+
+.notif-card {
+  padding: 1.25rem;
+  background: #fffbe6;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  border-radius: 8px;
+}
+
+.notif-card p { margin-top: 0; }
+
+.notif-info {
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+}
+
+.notif-info h2 { margin-top: 2rem; }
+
+.notif-info ul {
+  padding-left: 1.5rem;
+  line-height: 2;
+}
+
+.small-text {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 0.5rem !important;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.4rem;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #000;
+}
+
+.btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.btn-primary {
+  background: #fff200;
+  color: #1a1a1a;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #1a1a1a;
+}
+
