@@ -183,11 +183,14 @@ export function preparePaidAttempt(
 ) {
   return apiFetch<{
     ready: boolean;
+    paymentAvailable?: boolean;
+    paymentMode?: 'program' | 'vault_owner' | 'unconfigured';
+    developerHint?: string;
     depositTx?: string;
     hourBucket: string;
     amountUsdt: string;
     amountFormatted?: string;
-    accounts?: Record<string, string>;
+    accounts?: Record<string, string> | null;
   }>('/api/paid/prepare', {
     method: 'POST',
     body: JSON.stringify({ walletPubkey, paymentChain }),

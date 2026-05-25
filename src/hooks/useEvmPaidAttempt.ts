@@ -8,6 +8,10 @@ import {
   EVM_USDT_PER_ATTEMPT,
   EVM_VAULT_ADDRESS,
 } from '../config/evm';
+import {
+  EVM_PAYMENT_DEV_HINT,
+  PAYMENT_UNAVAILABLE_MESSAGE,
+} from '../config/payment';
 
 export function useEvmPaidAttempt() {
   const { address, chainId } = useAccount();
@@ -22,7 +26,7 @@ export function useEvmPaidAttempt() {
 
   const payForAttempt = useCallback(async (): Promise<string | null> => {
     if (!address) {
-      setError('Connect MetaMask first');
+      setError('Connect wallet first');
       return null;
     }
 
@@ -30,12 +34,10 @@ export function useEvmPaidAttempt() {
     setError(null);
 
     try {
-      // Switch to the correct EVM chain if needed
       if (chainId !== EVM_CHAIN_ID) {
         await switchChainAsync({ chainId: EVM_CHAIN_ID });
       }
 
-      // Check for an existing unused deposit on the server
       const prep = await preparePaidAttempt(address, 'evm');
       setHourBucket(prep.hourBucket);
 
@@ -44,12 +46,24 @@ export function useEvmPaidAttempt() {
         return prep.depositTx;
       }
 
-      const vaultAddress = (prep.accounts?.evmVault as `0x${string}` | undefined) ?? EVM_VAULT_ADDRESS;
-      if (!vaultAddress) {
-        throw new Error('EVM vault not configured — contact support');
+      if (prep.paymentAvailable === false) {
+        if (import.meta.env.DEV) {
+          console.warn(prep.developerHint ?? EVM_PAYMENT_DEV_HINT);
+        }
+        setError(PAYMENT_UNAVAILABLE_MESSAGE);
+        return null;
       }
 
-      // Execute ERC-20 USDT transfer to vault
+      const vaultAddress =
+        (prep.accounts?.evmVault as `0x${string}` | undefined) ?? EVM_VAULT_ADDRESS;
+      if (!vaultAddress) {
+        if (import.meta.env.DEV) {
+          console.warn(prep.developerHint ?? EVM_PAYMENT_DEV_HINT);
+        }
+        setError(PAYMENT_UNAVAILABLE_MESSAGE);
+        return null;
+      }
+
       const hash = await writeContractAsync({
         address: EVM_USDT_ADDRESS,
         abi: erc20Abi,
@@ -58,14 +72,14 @@ export function useEvmPaidAttempt() {
         chainId: EVM_CHAIN_ID,
       });
 
-      // Wait for on-chain confirmation
       await publicClient?.waitForTransactionReceipt({ hash });
 
       setDepositTx(hash);
       return hash;
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'EVM payment failed';
-      setError(msg);
+      if (import.meta.env.DEV) console.warn(msg);
+      setError(PAYMENT_UNAVAILABLE_MESSAGE);
       return null;
     } finally {
       setPending(false);

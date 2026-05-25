@@ -11,6 +11,10 @@ import {
   ATTEMPT_AMOUNT,
 } from '../_lib/solana';
 import { getEvmVaultAddress, getEvmChainId } from '../_lib/evm';
+import {
+  getSolanaPaymentMode,
+  solanaPaymentDeveloperHint,
+} from '../_lib/payment-config';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 
@@ -57,18 +61,30 @@ export default withMethods({
         137: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
         80002: '0x52D800ca262522580CeBAD275395ca6e7598C014',
       };
+      const evmAccounts = evmVault
+        ? {
+            evmVault,
+            evmChainId: String(evmChainId),
+            usdtAddress: usdtAddresses[evmChainId] ?? usdtAddresses[137],
+          }
+        : null;
+
+      if (!evmAccounts) {
+        console.error(
+          '[paid/prepare] EVM payment unavailable: set POOL_EVM_VAULT on the server.',
+        );
+      }
+
       return json(res, {
         ready: false,
+        paymentAvailable: evmAccounts !== null,
+        developerHint: evmAccounts
+          ? undefined
+          : 'Set POOL_EVM_VAULT on the server.',
         hourBucket,
         amountUsdt: ATTEMPT_AMOUNT.toString(),
         amountFormatted: '1 USDT',
-        accounts: evmVault
-          ? {
-              evmVault,
-              evmChainId: String(evmChainId),
-              usdtAddress: usdtAddresses[evmChainId] ?? usdtAddresses[137],
-            }
-          : null,
+        accounts: evmAccounts,
       });
     }
 
@@ -101,8 +117,20 @@ export default withMethods({
       };
     }
 
+    const solanaMode = getSolanaPaymentMode();
+    const paymentAvailable = accounts !== null;
+
+    if (!paymentAvailable) {
+      console.error(
+        `[paid/prepare] Solana payment unavailable (${solanaMode}): ${solanaPaymentDeveloperHint(solanaMode)}`,
+      );
+    }
+
     json(res, {
       ready: false,
+      paymentAvailable,
+      paymentMode: solanaMode,
+      developerHint: paymentAvailable ? undefined : solanaPaymentDeveloperHint(solanaMode),
       hourBucket,
       amountUsdt: ATTEMPT_AMOUNT.toString(),
       amountFormatted: '1 USDT',

@@ -67,10 +67,14 @@ Put that in `.env` after `bootstrap-local.sh`, or export it before `npm run db:m
 |----------|--------|---------|
 | `SOLANA_RPC_URL` | Server | RPC for verifying deposits / settlement |
 | `USDT_MINT` | Server | SPL mint (6 decimals) |
-| `PROGRAM_ID` | Server | Deployed Anchor program (optional if using fallback) |
-| `POOL_VAULT_OWNER` | Server | Wallet pubkey that owns the pool USDT ATA (fallback when no program) |
+| `PROGRAM_ID` | Server | Deployed Anchor program — **or** use `POOL_VAULT_OWNER` instead |
+| `POOL_VAULT_OWNER` | Server | Wallet pubkey that owns the pool USDT ATA (simple transfer mode; no program) |
 | `CRANK_KEYPAIR` | Server | JSON array or base58 secret for `settle_hour` (keep off git) |
-| `VITE_SOLANA_RPC_URL`, `VITE_SOLANA_CLUSTER`, `VITE_PROGRAM_ID`, `VITE_USDT_MINT` | Build | Frontend |
+| `VITE_SOLANA_RPC_URL`, `VITE_SOLANA_CLUSTER`, `VITE_USDT_MINT` | Build | Frontend RPC + mint |
+| `VITE_PROGRAM_ID` | Build | Only when using the Anchor program path (must match `PROGRAM_ID`) |
+| `POOL_EVM_VAULT`, `VITE_EVM_VAULT_ADDRESS` | Server / Build | Optional EVM 1 USDT payments |
+
+Copy [`.env.example`](.env.example) for a full list. Set **either** `PROGRAM_ID` **or** `POOL_VAULT_OWNER` on the server (not both required).
 
 Anchor program lives under `programs/lemonroad-pool/`. From that directory (with Anchor + Rust installed):
 

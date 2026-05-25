@@ -1534,22 +1534,35 @@ body,
   left: 8px;
   right: 8px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   z-index: 2;
+  max-width: calc(100% - 16px);
+  pointer-events: auto;
 }
 
 .profile-name-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .profile-label {
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(160px, 48vw);
+}
+
+.profile-name-row .link-btn {
+  flex-shrink: 0;
+  font-size: 0.75rem;
 }
 
 .profile-input {
@@ -1580,8 +1593,24 @@ body,
   background: #fff !important;
 }
 
+@media (max-width: 420px) {
+  .profile-label {
+    max-width: min(96px, 38vw);
+  }
+
+  .wallet-btn {
+    padding: 5px 8px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .start-overlay {
+    padding-top: 72px;
+  }
+}
+
 .wallet-connect-wrap {
   position: relative;
+  flex-shrink: 0;
 }
 
 .wallet-connect-menu {

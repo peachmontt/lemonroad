@@ -4,12 +4,22 @@ import { preparePaidAttempt } from '../lib/api';
 import { buildDepositAttemptTransaction } from '../lib/pool';
 import { PROGRAM_ID } from '../config/solana';
 import {
+  PAYMENT_UNAVAILABLE_MESSAGE,
+  SOLANA_PAYMENT_DEV_HINT,
+} from '../config/payment';
+import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
   createTransferCheckedInstruction,
 } from '@solana/spl-token';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { USDT_MINT, USDT_PER_ATTEMPT } from '../config/solana';
+
+function reportPaymentConfigIssue(developerHint?: string) {
+  if (import.meta.env.DEV) {
+    console.warn(developerHint ?? SOLANA_PAYMENT_DEV_HINT);
+  }
+}
 
 export function usePaidAttempt() {
   const { connection } = useConnection();
@@ -37,14 +47,27 @@ export function usePaidAttempt() {
         return prep.depositTx;
       }
 
+      if (prep.paymentAvailable === false) {
+        reportPaymentConfigIssue(prep.developerHint);
+        setError(PAYMENT_UNAVAILABLE_MESSAGE);
+        return null;
+      }
+
+      const vaultAta = prep.accounts?.vaultAta;
+      if (!vaultAta) {
+        reportPaymentConfigIssue(prep.developerHint);
+        setError(PAYMENT_UNAVAILABLE_MESSAGE);
+        return null;
+      }
+
       let tx: Transaction | null = null;
 
-      if (PROGRAM_ID && prep.accounts?.vaultAta) {
+      if (PROGRAM_ID) {
         tx = buildDepositAttemptTransaction(publicKey, prep.hourBucket);
       }
 
-      if (!tx && prep.accounts?.vaultAta) {
-        const vaultAta = new PublicKey(prep.accounts.vaultAta);
+      if (!tx) {
+        const vault = new PublicKey(vaultAta);
         const userAta = getAssociatedTokenAddressSync(USDT_MINT, publicKey, false);
         tx = new Transaction();
         tx.add(
@@ -57,16 +80,12 @@ export function usePaidAttempt() {
           createTransferCheckedInstruction(
             userAta,
             USDT_MINT,
-            vaultAta,
+            vault,
             publicKey,
             USDT_PER_ATTEMPT,
             6,
           ),
         );
-      }
-
-      if (!tx) {
-        throw new Error('Pool not configured — set VITE_PROGRAM_ID or POOL vault');
       }
 
       const { blockhash, lastValidBlockHeight } =
@@ -81,7 +100,8 @@ export function usePaidAttempt() {
       return sig;
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Payment failed';
-      setError(msg);
+      if (import.meta.env.DEV) console.warn(msg);
+      setError(PAYMENT_UNAVAILABLE_MESSAGE);
       return null;
     } finally {
       setPending(false);
