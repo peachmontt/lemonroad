@@ -6,24 +6,45 @@
   padding: 0;
 }
 
+:root {
+  --page-bg: #fff8c8;
+}
+
 html,
 body,
 #root {
   width: 100%;
   height: 100%;
+  min-height: 100%;
   overflow: hidden;
   font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
-  background: #7cfc00;
+  background: var(--page-bg);
   user-select: none;
   -webkit-user-select: none;
 }
 
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
 /* Game root uses CSS grid so canvas + UI occupy the same cell.
    DOM order decides paint order — canvas first, UI on top. No z-index needed. */
+#root,
+.game-root {
+  min-height: 100dvh;
+  background: var(--page-bg);
+}
+
 .game-root {
   display: grid;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .game-canvas,
@@ -65,12 +86,11 @@ body,
 
 /* Start overlay: full-screen, centred panel on top of canvas */
 .start-overlay {
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* enough top padding to clear the absolute-positioned ProfileBar (≈56px),
-     plus a little breathing room */
-  padding: 68px 16px 24px;
-  background: rgba(255, 255, 200, 0.88);
+  padding: 20px 16px 24px;
+  background: var(--page-bg);
   pointer-events: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1576,17 +1596,15 @@ body,
 
 /* Profile & modes */
 .profile-bar {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
+  position: static;
+  width: 100%;
+  align-self: stretch;
+  margin-bottom: 8px;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  z-index: 2;
-  max-width: calc(100% - 16px);
   pointer-events: auto;
 }
 
@@ -1594,17 +1612,18 @@ body,
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
 }
 
 .profile-label {
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: min(160px, 48vw);
 }
 
 .profile-name-row .link-btn {
@@ -1642,7 +1661,11 @@ body,
 
 @media (max-width: 420px) {
   .profile-label {
-    max-width: min(96px, 38vw);
+    font-size: 0.85rem;
+  }
+
+  .profile-name-row .link-btn {
+    font-size: 0.7rem;
   }
 
   .wallet-btn {
@@ -1651,7 +1674,7 @@ body,
   }
 
   .start-overlay {
-    padding-top: 72px;
+    padding-top: 16px;
   }
 }
 
@@ -1739,6 +1762,18 @@ body,
 
 .free-hint {
   color: #333;
+}
+
+.free-hint-prizes {
+  white-space: nowrap;
+}
+
+@media (max-width: 430px) {
+  .free-hint,
+  .paid-hint {
+    max-width: min(340px, 92vw);
+    font-size: 0.8rem;
+  }
 }
 
 .evm-connect-row {

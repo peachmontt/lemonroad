@@ -97,7 +97,9 @@ export function StartOverlay({
         <p className="free-hint">
           Free run · Daily rewards pool
           <br />
-          $20 daily rewards for free players ($10 / $6 / $4 top 3)
+          $20 daily rewards for free players
+          <br />
+          <span className="free-hint-prizes">$10 / $6 / $4 for top 3</span>
           <br />
           Play free runs and compete for daily rewards
         </p>
