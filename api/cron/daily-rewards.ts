@@ -7,12 +7,17 @@ const TOP_WINNERS = 3;
 const REWARD_CURRENCY = 'USDT';
 const REWARD_AMOUNTS: Record<number, string> = { 1: '10', 2: '6', 3: '4' };
 
-function configurePush() {
+function configurePush(): boolean {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT ?? 'mailto:hello@lemonroad.xyz';
-  if (publicKey && privateKey) {
+  if (!publicKey || !privateKey) return false;
+  try {
     webPush.setVapidDetails(subject, publicKey, privateKey);
+    return true;
+  } catch {
+    console.error('VAPID configuration error — push notifications disabled');
+    return false;
   }
 }
 
@@ -47,7 +52,7 @@ export default withMethods({
       return unauthorized(res, 'Invalid cron secret');
     }
 
-    configurePush();
+    const pushEnabled = configurePush();
 
     const dayBucket = previousDayBucket();
     const date = dayBucketToDate(dayBucket);
@@ -134,30 +139,31 @@ export default withMethods({
     // Collect all participant player IDs (everyone who played yesterday)
     const allParticipantIds = entries.map((e) => e.playerId);
 
-    // Fetch push subscriptions for all participants
-    const subscriptions = await prisma.pushSubscription.findMany({
-      where: { playerId: { in: allParticipantIds }, enabled: true },
-    });
+    const pushResults = { sent: 0, failed: 0, skipped: !pushEnabled };
 
-    const pushResults = { sent: 0, failed: 0 };
+    if (pushEnabled) {
+      const subscriptions = await prisma.pushSubscription.findMany({
+        where: { playerId: { in: allParticipantIds }, enabled: true },
+      });
 
-    for (const sub of subscriptions) {
-      const isWinner = winnerIds.has(sub.playerId);
-      const payload = isWinner
-        ? {
-            title: 'Lemon Road',
-            body: 'You squeezed into the daily top. Claim your lemon prize.',
-            url: '/',
-          }
-        : {
-            title: 'Lemon Road',
-            body: 'You got juiced. New daily squeeze is live.',
-            url: '/',
-          };
+      for (const sub of subscriptions) {
+        const isWinner = winnerIds.has(sub.playerId);
+        const payload = isWinner
+          ? {
+              title: 'Lemon Road',
+              body: 'You squeezed into the daily top. Claim your lemon prize.',
+              url: '/',
+            }
+          : {
+              title: 'Lemon Road',
+              body: 'You got juiced. New daily squeeze is live.',
+              url: '/',
+            };
 
-      const ok = await sendPushToSubscription(sub, payload);
-      if (ok) pushResults.sent++;
-      else pushResults.failed++;
+        const ok = await sendPushToSubscription(sub, payload);
+        if (ok) pushResults.sent++;
+        else pushResults.failed++;
+      }
     }
 
     json(res, {
