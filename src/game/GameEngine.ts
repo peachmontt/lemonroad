@@ -1,4 +1,5 @@
 import { AudioManager, eventToSound } from './audio';
+import { getBiome } from './biomes';
 import { checkCollision } from './collision';
 import {
   BASE_SCROLL_SPEED,
@@ -6,20 +7,26 @@ import {
   MAX_SCROLL_SPEED,
   SCROLL_VISUAL_MULT,
 } from './constants';
+import {
+  triggerWelcomeBanner,
+  tryTriggerEvent,
+  updateActiveEvent,
+  updateCollectibles,
+} from './events';
 import { shouldSpawnHazard, spawnHazard, updateHazards } from './hazards';
-import { tryTriggerEvent, scheduleNextEvent, updateActiveEvent } from './events';
 import {
   computeInputTarget,
   createInputState,
   updateInputSmoothed,
 } from './input';
-import { createLemon, updateDyingLemon, updateLemon } from './lemon';
+import { createDefaultFlags, createLemon, updateDyingLemon, updateLemon } from './lemon';
 import {
   appendRoadSegment,
   initRoad,
   trimRoad,
 } from './road';
 import { renderGame, renderPausedPreview, setRenderTime } from './renderer';
+import { capBonusScore, getTotalScore, updateFloatingTexts } from './scoring';
 import type { GameSnapshot, GameState, InputState } from './types';
 
 export class GameEngine {
@@ -57,31 +64,27 @@ export class GameEngine {
       phase: 'idle',
       time: 0,
       distance: 0,
+      bonusScore: 0,
+      dodgeStreak: 0,
       scrollSpeed: BASE_SCROLL_SPEED,
       difficulty: 0,
+      biomePhase: 'tutorial',
+      lastBiomePhase: null,
+      phaseBanner: null,
+      welcomeShown: false,
+      firstHazardEasy: false,
       road: [],
       lemon: createLemon(w / 2),
       hazards: [],
+      collectibles: [],
+      floatingTexts: [],
       nextHazardAt: 4,
       lemonSquash: 1,
       lemonSquashVel: 0,
       lastHitKind: null,
       slipperyUntil: 0,
       taxman: { active: false, x: 0, y: 0 },
-      flags: {
-        scrollPaused: false,
-        scrollMultiplier: 1,
-        slippery: false,
-        screenShake: 0,
-        greenTint: 0,
-        freezeUntil: 0,
-        rugBurning: false,
-        knifeSlashUntil: 0,
-        dancingUntil: 0,
-        bullRunUntil: 0,
-        marketCrashUntil: 0,
-        lemonadeUntil: 0,
-      },
+      flags: createDefaultFlags(),
       activeEvent: null,
       eventQueue: [],
       nextEventAt: 15,
@@ -113,7 +116,6 @@ export class GameEngine {
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    // Only set the internal drawing buffer — CSS grid sizes the element.
     this.canvas.width = w * dpr;
     this.canvas.height = h * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -123,7 +125,6 @@ export class GameEngine {
     this.state.dpr = dpr;
     this.state.lemonScreenY = h * LEMON_SCREEN_Y_RATIO;
 
-    // Initialise road on first call; rescale on subsequent size changes
     if (this.state.road.length === 0) {
       this.state.road = initRoad(h, w / 2, w);
       this.state.lemon.x = w / 2;
@@ -137,6 +138,9 @@ export class GameEngine {
       this.state.lemon.x = (this.state.lemon.x - this.layoutWidth / 2) * ratio + w / 2;
       for (const hz of this.state.hazards) {
         hz.x = (hz.x - this.layoutWidth / 2) * ratio + w / 2;
+      }
+      for (const c of this.state.collectibles) {
+        c.x = (c.x - this.layoutWidth / 2) * ratio + w / 2;
       }
       if (this.state.taxman.active) {
         this.state.taxman.x = (this.state.taxman.x - this.layoutWidth / 2) * ratio + w / 2;
@@ -202,7 +206,6 @@ export class GameEngine {
     if (!this.audio.isMuted()) this.audio.startBg();
     this.audio.play('start');
 
-    // Use actual viewport dimensions
     const w = window.innerWidth;
     const h = window.innerHeight;
     this.layoutWidth = 0;
@@ -215,8 +218,11 @@ export class GameEngine {
     this.layoutWidth = w;
     this.state.phase = 'playing';
     this.state.difficulty = 0;
+    this.state.firstHazardEasy = true;
+    this.state.nextHazardAt = 4;
+    this.state.nextEventAt = 6;
+    this.state.eventQueue = ['liquidity_added'];
     this.segmentCounter = 0;
-    scheduleNextEvent(this.state, 8);
     this.lastTime = performance.now();
   }
 
@@ -257,6 +263,18 @@ export class GameEngine {
     this.emitSnapshot(dt);
   };
 
+  private updateBiome(s: GameState): void {
+    const biome = getBiome(s.distance);
+    s.difficulty = biome.difficulty;
+    s.biomePhase = biome.phase;
+    s.juiceLevel = biome.juiceLevel;
+
+    if (biome.phase !== s.lastBiomePhase && biome.banner) {
+      s.phaseBanner = { label: biome.banner, until: s.time + 2 };
+    }
+    s.lastBiomePhase = biome.phase;
+  }
+
   private update(dt: number): void {
     const s = this.state;
     s.time += dt;
@@ -280,6 +298,7 @@ export class GameEngine {
       if (s.time - s.deathTime > 2) {
         s.phase = 'dead';
       }
+      updateFloatingTexts(s, dt);
       return;
     }
 
@@ -287,24 +306,23 @@ export class GameEngine {
 
     if (s.time < s.flags.freezeUntil) return;
 
-    // Difficulty reaches max (3) at ~1800 distance units ≈ 90 s of play
-    s.difficulty = Math.min(3, s.distance / 600);
-    // Speed ramp: hits MAX_SCROLL_SPEED at ~1600 distance units
+    if (!s.welcomeShown && s.time >= 2) {
+      s.welcomeShown = true;
+      triggerWelcomeBanner(s, s.time);
+    }
+
+    if (s.phaseBanner && s.time >= s.phaseBanner.until) {
+      s.phaseBanner = null;
+    }
+
+    this.updateBiome(s);
+
     s.scrollSpeed = Math.min(
       MAX_SCROLL_SPEED,
-      BASE_SCROLL_SPEED + s.distance * 0.010,
+      BASE_SCROLL_SPEED + s.difficulty * 5.33,
     );
     s.citricVelocity = 1 + Math.sin(s.time * 5) * 0.3 + s.difficulty * 0.2;
-    s.juiceLevel =
-      s.distance < 100
-        ? 'mild'
-        : s.distance < 300
-          ? 'unstable'
-          : s.distance < 600
-            ? 'critical'
-            : 'catastrophic';
 
-    // Decay screen shake every frame so it naturally fades out
     s.flags.screenShake *= 0.85;
     if (s.flags.screenShake < 0.4) s.flags.screenShake = 0;
 
@@ -314,12 +332,24 @@ export class GameEngine {
       for (const seg of s.road) {
         seg.y += scrollDelta;
       }
-      s.distance += scrollDelta * 0.12;
+      const baseDistGain = scrollDelta * 0.12;
+      s.distance += baseDistGain;
+      if (s.flags.scoreMultiplier > 1) {
+        s.bonusScore += baseDistGain * (s.flags.scoreMultiplier - 1);
+        capBonusScore(s);
+      }
 
       if (shouldSpawnHazard(s, s.time)) {
-        spawnHazard(s);
+        if (s.firstHazardEasy) {
+          spawnHazard(s, 'monthly_inflation');
+          s.firstHazardEasy = false;
+        } else {
+          spawnHazard(s);
+        }
       }
       updateHazards(s, scrollDelta);
+      updateCollectibles(s, scrollDelta);
+
       if (s.lastHitKind && s.time - this.lastSqueezeSound > 0.15) {
         this.audio.play('squeeze');
         this.lastSqueezeSound = s.time;
@@ -342,6 +372,7 @@ export class GameEngine {
           s.distance,
           s.width,
           hasRoad,
+          s.flags.roadWidthMult,
         );
         if (s.flags.rugBurning && Math.random() < 0.3) {
           seg.hasRoad = false;
@@ -379,6 +410,7 @@ export class GameEngine {
     }
 
     updateActiveEvent(s, s.time, dt);
+    updateFloatingTexts(s, dt);
 
     const col = checkCollision(s.lemon, s.lemonScreenY, s.road, s.offRoadFrames);
     s.offRoadFrames = col.offRoadFrames;
@@ -442,12 +474,16 @@ export class GameEngine {
 
   getSnapshot(): GameSnapshot {
     const s = this.state;
+    const total = Math.floor(getTotalScore(s));
     return {
       phase: s.phase,
-      distance: Math.floor(s.distance),
+      distance: total,
+      bonusScore: Math.floor(s.bonusScore),
+      dodgeStreak: s.dodgeStreak,
       juiceLevel: s.juiceLevel,
       citricVelocity: s.citricVelocity,
       activeEventLabel: s.activeEvent?.label ?? null,
+      biomePhase: s.biomePhase,
       muted: this.audio.isMuted(),
     };
   }

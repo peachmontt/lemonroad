@@ -1,5 +1,10 @@
-import { LEMON_RADIUS } from './constants';
 import { getLeadingRoadSegment, randomXOnRoad } from './road';
+import {
+  hazardNearZone,
+  hazardOverlap,
+  registerNearMiss,
+  resetDodgeStreak,
+} from './scoring';
 import type { GameState, HazardKind } from './types';
 
 const KINDS: HazardKind[] = ['short_squeeze', 'monthly_inflation', 'powell_speech'];
@@ -12,8 +17,10 @@ const HAZARD_META: Record<HazardKind, { w: number; h: number; label: string }> =
 
 let nextId = 1;
 
-export function spawnHazard(state: GameState): void {
-  const kind = KINDS[Math.floor(Math.random() * KINDS.length)];
+export function spawnHazard(state: GameState, forceKind?: HazardKind): void {
+  const kind =
+    forceKind ??
+    KINDS[Math.floor(Math.random() * KINDS.length)];
   const meta = HAZARD_META[kind];
   const spawnY = getLeadingRoadSegment(state.road)?.y ?? 0;
   const x = randomXOnRoad(state.road, spawnY, state.width);
@@ -27,10 +34,12 @@ export function spawnHazard(state: GameState): void {
     w: meta.w,
     h: meta.h,
     life: 1,
+    passed: false,
   });
 }
 
 function applyHazardHit(state: GameState, kind: HazardKind): void {
+  resetDodgeStreak(state);
   const lemon = state.lemon;
   const seg = getLeadingRoadSegment(state.road);
   const center = seg?.centerX ?? state.width / 2;
@@ -72,14 +81,20 @@ export function updateHazards(state: GameState, scrollDelta: number): void {
     h.y += scrollDelta * 1.05 + h.vy;
     h.vy *= 0.9;
 
-    const overlap =
-      Math.abs(h.x - lemon.x) < h.w / 2 + LEMON_RADIUS - 8 &&
-      Math.abs(h.y - lemonY) < h.h / 2 + LEMON_RADIUS - 4;
-
-    if (overlap && h.life > 0) {
+    if (hazardOverlap(h, lemon.x, lemonY) && h.life > 0) {
       h.life = -1;
       applyHazardHit(state, h.kind);
       state.lastHitKind = h.kind;
+      continue;
+    }
+
+    if (!h.passed && h.y - h.h / 2 >= lemonY && h.life > 0) {
+      h.passed = true;
+      if (hazardNearZone(h, lemon.x, lemonY)) {
+        registerNearMiss(state, lemon.x, lemonY);
+      } else {
+        resetDodgeStreak(state);
+      }
     }
   }
 
@@ -89,7 +104,6 @@ export function updateHazards(state: GameState, scrollDelta: number): void {
 export function shouldSpawnHazard(state: GameState, now: number): boolean {
   if (state.phase !== 'playing') return false;
   if (state.flags.scrollPaused) return false;
-  // Early game: ~5 s gap. Late game (diff=3): ~3 s gap.
   const interval = Math.max(3.0, 5.5 - state.difficulty * 0.8);
   if (now < state.nextHazardAt) return false;
   state.nextHazardAt = now + interval + Math.random() * 1.5;

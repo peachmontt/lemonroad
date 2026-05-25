@@ -1,6 +1,9 @@
+import { LEMON_RADIUS } from './constants';
+import { getLeadingRoadSegment, randomXOnRoad } from './road';
+import { awardLemonHands, spawnFloatingText } from './scoring';
 import type { GameState, MemeEventId } from './types';
 
-const ALL_EVENTS: MemeEventId[] = [
+const ORIGINAL_EVENTS: MemeEventId[] = [
   'rug_pull',
   'irs',
   'lemonade_spill',
@@ -10,6 +13,16 @@ const ALL_EVENTS: MemeEventId[] = [
   'bull_run',
 ];
 
+const NEW_EVENTS: MemeEventId[] = [
+  'airdrop_bait',
+  'diamond_hands',
+  'paper_hands',
+  'influencer_call',
+  'liquidity_added',
+];
+
+const ALL_RANDOM_EVENTS: MemeEventId[] = [...ORIGINAL_EVENTS, ...NEW_EVENTS];
+
 const EVENT_META: Record<MemeEventId, { label: string; durationMs: number }> = {
   rug_pull: { label: 'RUG PULL!!!', durationMs: 1200 },
   irs: { label: 'SEC INVESTIGATION', durationMs: 6000 },
@@ -18,10 +31,18 @@ const EVENT_META: Record<MemeEventId, { label: string; durationMs: number }> = {
   dancing: { label: 'CT PUMP POST', durationMs: 3000 },
   market_crash: { label: 'MARKET CRASH -50%', durationMs: 3500 },
   bull_run: { label: 'NUMBER GO UP', durationMs: 5000 },
+  welcome_road: { label: 'WELCOME TO THE ROAD', durationMs: 1500 },
+  airdrop_bait: { label: 'FAKE AIRDROP', durationMs: 2500 },
+  diamond_hands: { label: 'DIAMOND HANDS', durationMs: 3000 },
+  paper_hands: { label: 'PAPER HANDS', durationMs: 3500 },
+  influencer_call: { label: 'THIS IS THE NEXT 100X', durationMs: 4500 },
+  liquidity_added: { label: 'LP ADDED', durationMs: 4000 },
 };
 
+let collectibleId = 1;
+
 function pickRandomEvent(): MemeEventId {
-  return ALL_EVENTS[Math.floor(Math.random() * ALL_EVENTS.length)];
+  return ALL_RANDOM_EVENTS[Math.floor(Math.random() * ALL_RANDOM_EVENTS.length)];
 }
 
 export function scheduleNextEvent(state: GameState, now: number): void {
@@ -39,14 +60,30 @@ export function tryTriggerEvent(state: GameState, now: number): MemeEventId | nu
   return id;
 }
 
+function spawnAirdrop(state: GameState): void {
+  const spawnY = getLeadingRoadSegment(state.road)?.y ?? 0;
+  const x = randomXOnRoad(state.road, spawnY, state.width);
+  state.collectibles.push({
+    id: collectibleId++,
+    kind: 'airdrop_bait',
+    x,
+    y: -48,
+    w: 52,
+    h: 52,
+    active: true,
+  });
+}
+
 export function startEvent(state: GameState, id: MemeEventId, now: number): void {
   const meta = EVENT_META[id];
   const endsAt = now + meta.durationMs / 1000;
 
-  state.activeEvent = { id, label: meta.label, endsAt };
+  state.activeEvent = { id, label: meta.label, endsAt, startedAt: now };
   const f = state.flags;
 
   switch (id) {
+    case 'welcome_road':
+      break;
     case 'rug_pull':
       f.rugBurning = true;
       f.screenShake = 6;
@@ -82,7 +119,55 @@ export function startEvent(state: GameState, id: MemeEventId, now: number): void
       f.scrollMultiplier = 2;
       f.greenTint = 1;
       break;
+    case 'airdrop_bait':
+      spawnAirdrop(state);
+      break;
+    case 'diamond_hands':
+      f.inputMult = 0.65;
+      f.frictionMult = 0.82;
+      f.scoreMultiplier = 1.5;
+      break;
+    case 'paper_hands':
+      f.inputMult = 1.8;
+      f.wobbleMult = 3;
+      break;
+    case 'influencer_call':
+      f.influencerPopupUntil = endsAt;
+      f.scrollMultiplier = 1.6;
+      f.greenTint = 1;
+      break;
+    case 'liquidity_added':
+      f.roadWidthMult = 1.35;
+      break;
   }
+}
+
+export function updateCollectibles(state: GameState, scrollDelta: number): void {
+  const lemon = state.lemon;
+  const lemonY = state.lemonScreenY;
+
+  for (const c of state.collectibles) {
+    if (!c.active) continue;
+    c.y += scrollDelta * 1.05;
+
+    const overlap =
+      Math.abs(c.x - lemon.x) < c.w / 2 + LEMON_RADIUS - 4 &&
+      Math.abs(c.y - lemonY) < c.h / 2 + LEMON_RADIUS - 4;
+
+    if (overlap) {
+      c.active = false;
+      const dir = Math.random() > 0.5 ? 1 : -1;
+      lemon.vx += dir * 12;
+      lemon.x += dir * 18;
+      state.flags.screenShake = Math.max(state.flags.screenShake, 7);
+      state.flags.claimFailedUntil = state.time + 1.2;
+      spawnFloatingText(state, 'CLAIM FAILED', lemon.x, lemonY - 50, '#FF1744');
+    }
+  }
+
+  state.collectibles = state.collectibles.filter(
+    (c) => c.active && c.y < state.height + 80,
+  );
 }
 
 export function updateActiveEvent(state: GameState, now: number, dt: number): void {
@@ -90,6 +175,9 @@ export function updateActiveEvent(state: GameState, now: number, dt: number): vo
   if (!ev) return;
 
   if (now >= ev.endsAt) {
+    if (ev.id === 'market_crash' && state.phase === 'playing') {
+      awardLemonHands(state, state.lemon.x, state.lemonScreenY);
+    }
     endEvent(state, ev.id);
     state.activeEvent = null;
     return;
@@ -124,6 +212,16 @@ export function updateActiveEvent(state: GameState, now: number, dt: number): vo
   if (ev.id === 'rug_pull') {
     state.flags.screenShake = 3 + Math.random() * 2;
   }
+
+  if (ev.id === 'influencer_call') {
+    const elapsed = now - ev.startedAt;
+    if (elapsed >= 3 && elapsed < 4.5) {
+      state.flags.screenShake = 5 + Math.random() * 4;
+      if (Math.random() < 0.08) {
+        state.lemon.vx += (Math.random() - 0.5) * 8;
+      }
+    }
+  }
 }
 
 function endEvent(state: GameState, id: MemeEventId): void {
@@ -155,5 +253,29 @@ function endEvent(state: GameState, id: MemeEventId): void {
     case 'knife':
       f.knifeSlashUntil = 0;
       break;
+    case 'diamond_hands':
+      f.inputMult = 1;
+      f.frictionMult = 1;
+      f.scoreMultiplier = 1;
+      break;
+    case 'paper_hands':
+      f.inputMult = 1;
+      f.wobbleMult = 1;
+      break;
+    case 'influencer_call':
+      f.scrollMultiplier = 1;
+      f.greenTint = 0;
+      f.influencerPopupUntil = 0;
+      break;
+    case 'liquidity_added':
+      f.roadWidthMult = 1;
+      break;
+    case 'welcome_road':
+    case 'airdrop_bait':
+      break;
   }
+}
+
+export function triggerWelcomeBanner(state: GameState, now: number): void {
+  state.phaseBanner = { label: 'WELCOME TO THE ROAD', until: now + 1.5 };
 }

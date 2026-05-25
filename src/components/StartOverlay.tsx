@@ -79,7 +79,7 @@ export function StartOverlay({
           FREE TRIES &middot; UP TO $600/MONTH IN USDT REWARDS
         </div>
 
-        <p className="controls-hint">mouse / arrows · touch · tilt on mobile</p>
+        <p className="controls-hint">drag · mouse · A/D · touch · tilt</p>
       </section>
 
       <section className="mode-section">
@@ -96,7 +96,7 @@ export function StartOverlay({
             className={`mode-btn ${gameMode === 'paid' ? 'active' : ''}`}
             onClick={() => onGameModeChange('paid')}
           >
-            GAME MODE (20 USDT)
+            GAME MODE (1 USDT)
           </button>
         </div>
 
@@ -113,7 +113,7 @@ export function StartOverlay({
             </p>
           ) : (
             <p className="paid-hint">
-              Game mode · Pay 20 USDT to play
+              Game mode · Pay 1 USDT to play (Testnet)
               {hasPaidDeposit && ' · deposit ready'}
             </p>
           )}
@@ -131,7 +131,7 @@ export function StartOverlay({
               : gameMode === 'paid'
                 ? hasPaidDeposit
                   ? 'START PAID RUN'
-                  : 'PAY 20 USDT & PLAY'
+                  : 'PAY 1 USDT & PLAY'
                 : 'START FREE RUN'}
           </button>
 

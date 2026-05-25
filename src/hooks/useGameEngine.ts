@@ -6,9 +6,12 @@ import type { GameSnapshot } from '../game/types';
 const defaultSnapshot: GameSnapshot = {
   phase: 'idle',
   distance: 0,
+  bonusScore: 0,
+  dodgeStreak: 0,
   juiceLevel: 'stable',
   citricVelocity: 1,
   activeEventLabel: null,
+  biomePhase: 'tutorial',
   muted: false,
 };
 
@@ -17,14 +20,6 @@ export function useGameEngine(canvasRef: RefObject<HTMLCanvasElement | null>) {
   const audioRef = useRef<AudioManager | null>(null);
   const [snapshot, setSnapshot] = useState<GameSnapshot>(defaultSnapshot);
   const playStartedAt = useRef<number | null>(null);
-
-  // #region agent log
-  useEffect(() => {
-    if (snapshot.phase === 'dying' || snapshot.phase === 'dead') {
-      fetch('http://127.0.0.1:7492/ingest/cdafb337-3a80-4628-8ac8-33134b513802',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'095ae7'},body:JSON.stringify({sessionId:'095ae7',location:'useGameEngine.ts:phaseChange',message:'snapshot phase changed',data:{phase:snapshot.phase},timestamp:Date.now(),hypothesisId:'H-phase'})}).catch(()=>{});
-    }
-  }, [snapshot.phase]);
-  // #endregion
 
   useEffect(() => {
     const canvas = canvasRef.current;

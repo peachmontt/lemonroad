@@ -25,14 +25,19 @@ export function updateLemon(
   canvasWidth: number,
   squash: { amount: number; vel: number },
 ): { amount: number; vel: number } {
-  const friction = flags.slippery ? FRICTION_SLIP : FRICTION_NORMAL;
-  const inputMult = flags.slippery ? 1.5 : 1;
+  const frictionBase = flags.slippery ? FRICTION_SLIP : FRICTION_NORMAL;
+  const friction = frictionBase * flags.frictionMult;
+  const inputMult = (flags.slippery ? 1.5 : 1) * flags.inputMult;
+  const wobbleMult = flags.wobbleMult;
 
   lemon.vx += inputSmoothed * ACCEL * inputMult * dt * 60;
   lemon.x += lemon.vx * dt * 60;
   lemon.vx *= Math.pow(friction, dt * 60);
 
-  lemon.x += Math.sin(time * 0.004) * 0.8 * dt * 60;
+  lemon.x += Math.sin(time * 0.004) * 0.8 * wobbleMult * dt * 60;
+  if (wobbleMult > 1) {
+    lemon.x += Math.sin(time * 0.02) * (wobbleMult - 1) * 2.5 * dt * 60;
+  }
 
   const margin = 36;
   if (lemon.x < margin) {
@@ -44,9 +49,8 @@ export function updateLemon(
     lemon.vx *= -0.4;
   }
 
-  lemon.rotation = lemon.vx * 0.12 + Math.sin(time * 0.025) * 0.35;
+  lemon.rotation = lemon.vx * 0.12 + Math.sin(time * 0.025) * 0.35 * wobbleMult;
 
-  // squash spring back after hazard hit
   let { amount, vel } = squash;
   if (amount < 1) {
     vel += 0.35 * dt * 60;
@@ -73,4 +77,28 @@ export function updateDyingLemon(lemon: LemonState, dt: number): void {
   lemon.squashX = 1;
   lemon.vx *= 0.98;
   lemon.x += lemon.vx * dt * 60;
+}
+
+export function createDefaultFlags(): GameFlags {
+  return {
+    scrollPaused: false,
+    scrollMultiplier: 1,
+    slippery: false,
+    screenShake: 0,
+    greenTint: 0,
+    freezeUntil: 0,
+    rugBurning: false,
+    knifeSlashUntil: 0,
+    dancingUntil: 0,
+    bullRunUntil: 0,
+    marketCrashUntil: 0,
+    lemonadeUntil: 0,
+    inputMult: 1,
+    frictionMult: 1,
+    wobbleMult: 1,
+    roadWidthMult: 1,
+    scoreMultiplier: 1,
+    influencerPopupUntil: 0,
+    claimFailedUntil: 0,
+  };
 }

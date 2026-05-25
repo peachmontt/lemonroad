@@ -36,10 +36,15 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
   drawRugPullFire(ctx, state);
   drawPuddles(ctx, state);
   drawHazards(ctx, state);
+  drawCollectibles(ctx, state);
   drawTaxman(ctx, state);
   drawLemon(ctx, state);
   drawKnifeSlash(ctx, state);
+  drawFloatingTexts(ctx, state);
+  drawPhaseBanner(ctx, state);
   drawEventBanner(ctx, state);
+  drawInfluencerPopup(ctx, state);
+  drawClaimFailed(ctx, state);
   drawRugBurnIndicator(ctx, state);
 
   ctx.restore();
@@ -529,6 +534,102 @@ function drawEventBanner(ctx: CanvasRenderingContext2D, state: GameState): void 
     }
   }
 
+  ctx.restore();
+}
+
+function drawCollectibles(ctx: CanvasRenderingContext2D, state: GameState): void {
+  for (const c of state.collectibles) {
+    if (!c.active) continue;
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.fillStyle = '#FF4081';
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = 3;
+    ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+    ctx.strokeRect(-c.w / 2, -c.h / 2, c.w, c.h);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px "Comic Neue", Comic Sans MS, cursive';
+    ctx.fillText('🎁', -12, 8);
+    ctx.font = 'bold 9px "Comic Neue", Comic Sans MS, cursive';
+    ctx.fillStyle = COLORS.outline;
+    ctx.fillText('FREE', -12, c.h / 2 + 12);
+    ctx.restore();
+  }
+}
+
+function drawFloatingTexts(ctx: CanvasRenderingContext2D, state: GameState): void {
+  for (const ft of state.floatingTexts) {
+    const alpha = Math.min(1, ft.life / 0.4);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const fontSize = state.width < 400 ? 14 : 16;
+    ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = 3;
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillStyle = ft.color;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+  }
+}
+
+function drawPhaseBanner(ctx: CanvasRenderingContext2D, state: GameState): void {
+  const banner = state.phaseBanner;
+  if (!banner || state.time >= banner.until) return;
+
+  ctx.save();
+  const text = banner.label;
+  const fontSize = state.width < 400 ? 22 : 28;
+  ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
+  const tw = ctx.measureText(text).width;
+  const bx = state.width / 2 - tw / 2 - 16;
+  const by = state.height * 0.22;
+  ctx.fillStyle = '#00E5FF';
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = 3;
+  ctx.fillRect(bx, by, tw + 32, 44);
+  ctx.strokeRect(bx, by, tw + 32, 44);
+  ctx.fillStyle = COLORS.outline;
+  ctx.fillText(text, state.width / 2 - tw / 2, by + 30);
+  ctx.restore();
+}
+
+function drawInfluencerPopup(ctx: CanvasRenderingContext2D, state: GameState): void {
+  if (state.time >= state.flags.influencerPopupUntil) return;
+  if (state.activeEvent?.id !== 'influencer_call') return;
+
+  ctx.save();
+  const text = 'THIS IS THE NEXT 100X';
+  const fontSize = state.width < 400 ? 16 : 20;
+  ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
+  const maxW = state.width - 32;
+  const tw = Math.min(ctx.measureText(text).width, maxW - 32);
+  const bx = state.width / 2 - tw / 2 - 16;
+  const by = state.height * 0.38;
+  ctx.fillStyle = '#00C853';
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = 3;
+  ctx.fillRect(bx, by, tw + 32, 52);
+  ctx.strokeRect(bx, by, tw + 32, 52);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(text, state.width / 2 - tw / 2, by + 32);
+  ctx.restore();
+}
+
+function drawClaimFailed(ctx: CanvasRenderingContext2D, state: GameState): void {
+  if (state.time >= state.flags.claimFailedUntil) return;
+
+  ctx.save();
+  const text = 'CLAIM FAILED';
+  const fontSize = state.width < 400 ? 24 : 32;
+  ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
+  const tw = ctx.measureText(text).width;
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#FF1744';
+  ctx.strokeStyle = COLORS.outline;
+  ctx.lineWidth = 4;
+  ctx.strokeText(text, state.width / 2 - tw / 2, state.height * 0.45);
+  ctx.fillText(text, state.width / 2 - tw / 2, state.height * 0.45);
   ctx.restore();
 }
 

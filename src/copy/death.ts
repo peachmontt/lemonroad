@@ -107,3 +107,13 @@ export function pickShareButtonLabel(): (typeof SHARE_BUTTON_LABELS)[number] {
 export function pickRetryButtonLabel(): (typeof RETRY_BUTTON_LABELS)[number] {
   return pickOne(RETRY_BUTTON_LABELS);
 }
+
+export function pickRewardRetryLabel(gapFromTop10: number | null): string {
+  if (gapFromTop10 != null && gapFromTop10 > 0 && gapFromTop10 <= 200) {
+    return `TRY AGAIN — ${gapFromTop10}m FROM TOP 10`;
+  }
+  if (gapFromTop10 != null && gapFromTop10 > 0) {
+    return `TRY AGAIN — NEED TOP 10`;
+  }
+  return pickRetryButtonLabel();
+}

@@ -11,6 +11,7 @@ export interface Hazard {
   w: number;
   h: number;
   life: number;
+  passed: boolean;
 }
 
 export type MemeEventId =
@@ -20,7 +21,13 @@ export type MemeEventId =
   | 'knife'
   | 'dancing'
   | 'market_crash'
-  | 'bull_run';
+  | 'bull_run'
+  | 'welcome_road'
+  | 'airdrop_bait'
+  | 'diamond_hands'
+  | 'paper_hands'
+  | 'influencer_call'
+  | 'liquidity_added';
 
 export interface RoadSegment {
   y: number;
@@ -44,6 +51,36 @@ export interface TaxmanState {
   y: number;
 }
 
+export interface Collectible {
+  id: number;
+  kind: 'airdrop_bait';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  active: boolean;
+}
+
+export interface FloatingText {
+  text: string;
+  x: number;
+  y: number;
+  life: number;
+  color: string;
+}
+
+export interface PhaseBanner {
+  label: string;
+  until: number;
+}
+
+export type BiomePhase =
+  | 'tutorial'
+  | 'market_opens'
+  | 'volatility'
+  | 'degen'
+  | 'final_boss';
+
 export interface GameFlags {
   scrollPaused: boolean;
   scrollMultiplier: number;
@@ -51,30 +88,46 @@ export interface GameFlags {
   screenShake: number;
   greenTint: number;
   freezeUntil: number;
-  /** Stays true after rug pull until a new run starts */
   rugBurning: boolean;
   knifeSlashUntil: number;
   dancingUntil: number;
   bullRunUntil: number;
   marketCrashUntil: number;
   lemonadeUntil: number;
+  inputMult: number;
+  frictionMult: number;
+  wobbleMult: number;
+  roadWidthMult: number;
+  scoreMultiplier: number;
+  influencerPopupUntil: number;
+  claimFailedUntil: number;
 }
 
 export interface ActiveEvent {
   id: MemeEventId;
   label: string;
   endsAt: number;
+  startedAt: number;
 }
 
 export interface GameState {
   phase: GamePhase;
   time: number;
   distance: number;
+  bonusScore: number;
+  dodgeStreak: number;
   scrollSpeed: number;
   difficulty: number;
+  biomePhase: BiomePhase;
+  lastBiomePhase: BiomePhase | null;
+  phaseBanner: PhaseBanner | null;
+  welcomeShown: boolean;
+  firstHazardEasy: boolean;
   road: RoadSegment[];
   lemon: LemonState;
   hazards: Hazard[];
+  collectibles: Collectible[];
+  floatingTexts: FloatingText[];
   nextHazardAt: number;
   lemonSquash: number;
   lemonSquashVel: number;
@@ -98,9 +151,12 @@ export interface GameState {
 export interface GameSnapshot {
   phase: GamePhase;
   distance: number;
+  bonusScore: number;
+  dodgeStreak: number;
   juiceLevel: string;
   citricVelocity: number;
   activeEventLabel: string | null;
+  biomePhase: BiomePhase;
   muted: boolean;
 }
 

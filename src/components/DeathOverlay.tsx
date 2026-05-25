@@ -5,10 +5,12 @@ import {
   pickCauseOfJuice,
   pickDeathQuote,
   pickDeathRoast,
+  pickRewardRetryLabel,
   pickRetryButtonLabel,
   pickShareButtonLabel,
 } from '../copy/death';
 import type { GameSnapshot } from '../game/types';
+import type { DailyRankContext } from '../hooks/useDailyRank';
 import { submitRun } from '../lib/api';
 import { trackRunEnd } from '../lib/analytics';
 import type { GameMode } from '../types/game';
@@ -28,6 +30,7 @@ interface DeathOverlayProps {
   walletPubkey: string | null;
   paymentChain?: 'solana' | 'evm';
   player?: PlayerResponse | null;
+  dailyRank?: DailyRankContext | null;
   onRetry: () => void;
   onRunSaved?: () => void;
   onWalletLinked?: (walletPubkey: string) => Promise<void>;
@@ -66,6 +69,7 @@ export function DeathOverlay({
   walletPubkey,
   paymentChain = 'solana',
   player,
+  dailyRank,
   onRetry,
   onRunSaved,
   onWalletLinked,
@@ -86,6 +90,14 @@ export function DeathOverlay({
   const [cause] = useState(() => pickCauseOfJuice());
   const [shareLabel] = useState(() => pickShareButtonLabel());
   const [retryLabel] = useState(() => pickRetryButtonLabel());
+  const deathRank =
+    gameMode === 'free' && dailyRank
+      ? dailyRank.computeDeathRank(meters)
+      : null;
+  const displayRetryLabel =
+    deathRank?.gapFromTop10 != null
+      ? pickRewardRetryLabel(deathRank.gapFromTop10)
+      : retryLabel;
   const isDead = snapshot.phase === 'dead';
   const [sharing, setSharing] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -198,6 +210,18 @@ export function DeathOverlay({
               <div className="death-stats">
                 <p>distance: {meters}m</p>
                 <p>rank: {juiceTitle}</p>
+                {gameMode === 'free' && deathRank && (
+                  <div className="death-reward-panel">
+                    {deathRank.rank != null && (
+                      <p>You are #{deathRank.rank} today</p>
+                    )}
+                    {deathRank.inZone ? (
+                      <p className="death-reward-zone">In reward zone!</p>
+                    ) : deathRank.gapToZone != null && deathRank.gapToZone > 0 ? (
+                      <p>Need +{deathRank.gapToZone}m to enter reward zone</p>
+                    ) : null}
+                  </div>
+                )}
                 <p>cause of juice: {cause}</p>
                 <p className="run-mode-tag">wallet damage: {gameMode === 'free' ? '$0' : '💸'}</p>
               </div>
@@ -242,7 +266,7 @@ export function DeathOverlay({
                 className="btn btn-secondary btn-retry"
                 onClick={onRetry}
               >
-                {retryLabel}
+                {displayRetryLabel}
               </button>
             </div>
           </>

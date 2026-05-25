@@ -36,6 +36,7 @@ export function appendRoadSegment(
   distance: number,
   canvasWidth: number,
   hasRoad = true,
+  roadWidthMult = 1,
 ): RoadSegment {
   const topY = segments.length > 0 ? Math.min(...segments.map((s) => s.y)) : 0;
   const newY = topY - SEGMENT_SPACING;
@@ -52,7 +53,8 @@ export function appendRoadSegment(
   roadX = Math.max(margin, Math.min(canvasWidth - margin, roadX));
 
   const startW = getRoadStartWidth(canvasWidth);
-  const width = Math.max(getRoadMinWidth(canvasWidth), startW - distance * 0.018);
+  const width =
+    Math.max(getRoadMinWidth(canvasWidth), startW - distance * 0.018) * roadWidthMult;
 
   return {
     y: newY,

@@ -236,6 +236,12 @@ export function eventToSound(id: string): SoundId | null {
     dancing: 'kazoo',
     market_crash: 'error',
     bull_run: 'lemon',
+    welcome_road: 'start',
+    airdrop_bait: 'bonk',
+    diamond_hands: 'lemon',
+    paper_hands: 'slip',
+    influencer_call: 'kazoo',
+    liquidity_added: 'lemon',
   };
   return map[id] ?? null;
 }

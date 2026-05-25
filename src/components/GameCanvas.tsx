@@ -7,10 +7,16 @@ import { useEvmPaidAttempt } from '../hooks/useEvmPaidAttempt';
 import { usePlayer } from '../hooks/usePlayer';
 import { usePwaOnboarding } from '../hooks/usePwaOnboarding';
 import type { GameMode } from '../types/game';
+import { useDailyRank } from '../hooks/useDailyRank';
 import { trackGameStart, trackWalletConnect, trackPaidDeposit, trackPaymentError } from '../lib/analytics';
 import { DeathOverlay } from './DeathOverlay';
 import { FakeModal, type ModalTab } from './FakeModal';
 import { HudOverlay } from './HudOverlay';
+import {
+  hasSeenOnboarding,
+  markOnboardingSeen,
+  OnboardingOverlay,
+} from './OnboardingOverlay';
 import { StartOverlay } from './StartOverlay';
 import type { WalletChannel } from './WalletConnectButton';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
@@ -34,6 +40,8 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   const [activeDepositTx, setActiveDepositTx] = useState<string | null>(null);
   const [activeWalletKey, setActiveWalletKey] = useState<string | null>(null);
   const [activePaymentChain, setActivePaymentChain] = useState<'solana' | 'evm'>('solana');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const pendingStartRef = useRef<(() => void) | null>(null);
 
   const { publicKey } = useWallet();
   const { address: evmAddress } = useAccount();
@@ -46,6 +54,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   }, [evmAddress]);
 
   const { player, runs, loading: runsLoading, setDisplayName, linkWallet, reloadRuns } = usePlayer();
+  const dailyRank = useDailyRank(player?.playerId);
   const {
     showInstallNudge,
     showNotificationNudge,
@@ -89,46 +98,69 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     start();
   };
 
-  const handleStart = () => {
-    void beginRun();
+  const dismissOnboarding = () => {
+    markOnboardingSeen();
+    setShowOnboarding(false);
+    const pending = pendingStartRef.current;
+    pendingStartRef.current = null;
+    pending?.();
   };
 
-  const handleStartPaid = async () => {
-    if (walletChannel === 'evm') {
-      if (!evmAddress) return;
-
-      let tx = evmDepositTx;
-      if (!tx) {
-        tx = await evmPayForAttempt();
-        if (!tx) {
-          if (evmError) trackPaymentError(evmError);
-          return;
-        }
-        trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: evmAddress });
-      }
-
-      setActiveDepositTx(tx);
-      setActiveWalletKey(evmAddress);
-      setActivePaymentChain('evm');
-      await beginRun();
-    } else {
-      if (!publicKey) return;
-
-      let tx = depositTx;
-      if (!tx) {
-        tx = await payForAttempt();
-        if (!tx) {
-          if (paidError) trackPaymentError(paidError);
-          return;
-        }
-        trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: publicKey.toBase58() });
-      }
-
-      setActiveDepositTx(tx);
-      setActiveWalletKey(publicKey.toBase58());
-      setActivePaymentChain('solana');
-      await beginRun();
+  const queueStart = (fn: () => void | Promise<void>) => {
+    if (!hasSeenOnboarding()) {
+      pendingStartRef.current = () => {
+        void fn();
+      };
+      setShowOnboarding(true);
+      return;
     }
+    void fn();
+  };
+
+  const handleStart = () => {
+    queueStart(beginRun);
+  };
+
+  const handleStartPaid = () => {
+    const runPaid = async () => {
+      if (walletChannel === 'evm') {
+        if (!evmAddress) return;
+
+        let tx = evmDepositTx;
+        if (!tx) {
+          tx = await evmPayForAttempt();
+          if (!tx) {
+            if (evmError) trackPaymentError(evmError);
+            return;
+          }
+          trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: evmAddress });
+        }
+
+        setActiveDepositTx(tx);
+        setActiveWalletKey(evmAddress);
+        setActivePaymentChain('evm');
+        await beginRun();
+      } else {
+        if (!publicKey) return;
+
+        let tx = depositTx;
+        if (!tx) {
+          tx = await payForAttempt();
+          if (!tx) {
+            if (paidError) trackPaymentError(paidError);
+            return;
+          }
+          trackPaidDeposit({ hourBucket: String(Math.floor(Date.now() / 3_600_000)), walletPrefix: publicKey.toBase58() });
+        }
+
+        setActiveDepositTx(tx);
+        setActiveWalletKey(publicKey.toBase58());
+        setActivePaymentChain('solana');
+        await beginRun();
+      }
+    };
+
+    queueStart(runPaid);
   };
 
   const handleRetry = () => {
@@ -145,8 +177,15 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
       <canvas ref={canvasRef} className="game-canvas" />
 
       {snapshot.phase === 'playing' && (
-        <HudOverlay snapshot={snapshot} onToggleMute={toggleMute} />
+        <HudOverlay
+          snapshot={snapshot}
+          gameMode={activeMode}
+          dailyRank={dailyRank}
+          onToggleMute={toggleMute}
+        />
       )}
+
+      {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
 
       {snapshot.phase === 'idle' && (
         <StartOverlay
@@ -178,9 +217,11 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           walletPubkey={activeWalletKey}
           paymentChain={activePaymentChain}
           player={player}
+          dailyRank={activeMode === 'free' ? dailyRank : null}
           onRetry={handleRetry}
           onRunSaved={() => {
             void reloadRuns();
+            dailyRank.refresh();
             resetPaid();
             evmResetPaid();
             setActiveDepositTx(null);
