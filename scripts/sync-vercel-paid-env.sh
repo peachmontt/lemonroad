@@ -11,7 +11,7 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-VERCEL=(npx vercel)
+VERCEL=(npx vercel --non-interactive)
 
 if ! "${VERCEL[@]}" whoami &>/dev/null; then
   echo "Vercel CLI is not logged in. Run:"
@@ -23,7 +23,12 @@ fi
 
 # shellcheck disable=SC1091
 set -a
-source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR)=' .env | sed 's/\r$//')
+source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR)=' .env | sed 's/\r$//' | sed 's/^export //')
+# Strip accidental quotes/newlines from .env values
+for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR; do
+  declare "${_var}=${!_var//\"/}"
+  declare "${_var}=$(printf '%s' "${!_var}" | tr -d '\n')"
+done
 set +a
 
 missing=()
@@ -49,7 +54,11 @@ upsert_env() {
 
   "${VERCEL[@]}" env rm "$key" "$target" --yes 2>/dev/null || true
 
-  local -a add_args=(env add "$key" "$target" --value "$value" --yes)
+  local -a add_args=(env add "$key" "$target")
+  if [[ "$target" == "preview" && -n "${VERCEL_PREVIEW_BRANCH:-}" ]]; then
+    add_args+=("$VERCEL_PREVIEW_BRANCH")
+  fi
+  add_args+=(--value "$value" --yes)
   if [[ "$sensitive" == "true" ]]; then
     add_args+=(--sensitive)
   fi
@@ -57,8 +66,15 @@ upsert_env() {
   echo "  ✓ $key → $target"
 }
 
+# Production + Development sync non-interactively. Preview needs an empty branch
+# at the prompt (all preview deploys) — run VERCEL_ENV_TARGETS="preview" interactively.
+TARGETS="${VERCEL_ENV_TARGETS:-production development}"
+
 echo "Syncing paid-mode env to Vercel project (lemonroad)..."
-for target in production preview development; do
+for target in $TARGETS; do
+  if [[ "$target" == "preview" && -z "${VERCEL_PREVIEW_BRANCH:-}" ]]; then
+    echo "  (preview: leave branch EMPTY when prompted, or set VERCEL_PREVIEW_BRANCH=main)"
+  fi
   echo ""
   echo "=== $target ==="
   upsert_env "PROGRAM_ID" "$PROGRAM_ID" "$target"
