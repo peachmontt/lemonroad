@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Push Solana paid-mode env vars from .env to the linked Vercel project (lemonroad).
-# Requires: vercel login (valid token) and .vercel/project.json from vercel link.
+# Requires: vercel login (OAuth device flow) and .vercel/project.json from vercel link.
+# Use project-local CLI: npx vercel (npm i -D vercel@latest)
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -10,9 +11,12 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-if ! vercel whoami &>/dev/null; then
+VERCEL=(npx vercel)
+
+if ! "${VERCEL[@]}" whoami &>/dev/null; then
   echo "Vercel CLI is not logged in. Run:"
-  echo "  vercel login"
+  echo "  npx vercel login"
+  echo "Approve at https://vercel.com/device with the code shown in the terminal."
   echo "Then run this script again."
   exit 1
 fi
@@ -43,14 +47,13 @@ upsert_env() {
   local target="$3"
   local sensitive="${4:-false}"
 
-  # Remove existing var in this target (ignore errors if missing)
-  vercel env rm "$key" "$target" --yes 2>/dev/null || true
+  "${VERCEL[@]}" env rm "$key" "$target" --yes 2>/dev/null || true
 
+  local -a add_args=(env add "$key" "$target" --value "$value" --yes)
   if [[ "$sensitive" == "true" ]]; then
-    printf '%s' "$value" | vercel env add "$key" "$target" --sensitive
-  else
-    printf '%s' "$value" | vercel env add "$key" "$target"
+    add_args+=(--sensitive)
   fi
+  "${VERCEL[@]}" "${add_args[@]}"
   echo "  ✓ $key → $target"
 }
 
@@ -74,5 +77,5 @@ done
 
 echo ""
 echo "Done. Redeploy production so VITE_* vars are baked into the frontend:"
-echo "  vercel --prod"
+echo "  npx vercel --prod"
 echo "Or push to main if Git integration auto-deploys."
