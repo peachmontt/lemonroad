@@ -42,9 +42,47 @@ async function sendPushToSubscription(
 
 export default withMethods({
   GET: async (req, res) => {
-    const secret = req.headers.authorization?.replace('Bearer ', '');
-    if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-      return unauthorized(res, 'Invalid cron secret');
+    const envSecret = process.env.CRON_SECRET;
+    const secretLegacy = req.headers.authorization?.replace('Bearer ', '');
+    const secretTrimmed = secretLegacy?.trim() ?? '';
+    const envTrimmed = envSecret?.trim() ?? '';
+    const authOk = Boolean(envSecret) && secretLegacy === envSecret;
+
+    // #region agent log
+    const authDiag = {
+      hasEnvSecret: Boolean(envSecret),
+      envLen: envSecret?.length ?? 0,
+      hasAuthHeader: Boolean(req.headers.authorization),
+      providedLen: secretLegacy?.length ?? 0,
+      lengthsEqual: (envSecret?.length ?? 0) === (secretLegacy?.length ?? 0),
+      trimLengthsEqual: envTrimmed.length === secretTrimmed.length,
+      exactMatch: secretLegacy === envSecret,
+      trimMatch: secretTrimmed === envTrimmed,
+      authOk,
+    };
+    fetch('http://127.0.0.1:7792/ingest/cdafb337-3a80-4628-8ac8-33134b513802', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': 'f2fdc9',
+      },
+      body: JSON.stringify({
+        sessionId: 'f2fdc9',
+        runId: 'pre-fix',
+        hypothesisId: 'A-E',
+        location: 'api/cron/daily-rewards.ts:auth',
+        message: 'cron auth diagnostics',
+        data: authDiag,
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    if (!authOk) {
+      return res.status(401).json({
+        error: 'Invalid cron secret',
+        debugAuth: authDiag,
+      });
     }
 
     configurePush();
