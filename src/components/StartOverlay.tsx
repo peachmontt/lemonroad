@@ -146,21 +146,20 @@ export function StartOverlay({
         </a>
       </div>
 
-      <div className="footer-links">
-        <button type="button" className="link-btn" onClick={() => onOpenModal('roadmap')}>
-          ROADMAP
+      <nav className="footer footer-links" aria-label="Footer">
+        <button type="button" className="footer-link" onClick={() => onOpenModal('tokenomics')}>
+          Tokenomics
         </button>
-        <span> | </span>
-        <button type="button" className="link-btn" onClick={() => onOpenModal('tokenomics')}>
-          TOKENOMICS
-        </button>
-        <span> | </span>
-        <a href="/install" className="link-btn">INSTALL APP</a>
-        <span> | </span>
-        <a href="/notifications" className="link-btn">NOTIFICATIONS</a>
-        <span> | </span>
-        <a href="/terms" className="link-btn">TERMS & CONDITIONS</a>
-      </div>
+        <a href="/terms" className="footer-link">
+          Terms
+        </a>
+        <a href="/privacy" className="footer-link">
+          Privacy
+        </a>
+        <a href="/press" className="footer-link">
+          Contact
+        </a>
+      </nav>
     </div>
   );
 }
