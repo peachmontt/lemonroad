@@ -3,10 +3,10 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-lemonroad_pool = "LmnRd1111111111111111111111111111111111111"
+lemonroad_pool = "8Uqs1mAVZY7CMwUshiiHg1oyh7jsFcdL8FTXX56qZkZf"
 
 [programs.devnet]
-lemonroad_pool = "LmnRd1111111111111111111111111111111111111"
+lemonroad_pool = "8Uqs1mAVZY7CMwUshiiHg1oyh7jsFcdL8FTXX56qZkZf"
 
 [registry]
 url = "https://api.apr.dev"

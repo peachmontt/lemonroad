@@ -10,3 +10,4 @@ dist
 programs/**/target/
 
 .env*.local
+programs/lemonroad-pool/Cargo.lock

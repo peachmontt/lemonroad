@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
-declare_id!("LmnRd1111111111111111111111111111111111111");
+declare_id!("8Uqs1mAVZY7CMwUshiiHg1oyh7jsFcdL8FTXX56qZkZf");
 
 pub const ATTEMPT_AMOUNT: u64 = 1_000_000; // 1 USDT, 6 decimals
 pub const USDT_DECIMALS: u8 = 6;
@@ -22,10 +22,10 @@ pub mod lemonroad_pool {
         Ok(())
     }
 
-    pub fn deposit_attempt(ctx: Context<DepositAttempt>) -> Result<()> {
+    pub fn deposit_attempt(ctx: Context<DepositAttempt>, hour_id: i64) -> Result<()> {
         let hour = &mut ctx.accounts.hour_ledger;
         if hour.hour_id == 0 {
-            hour.hour_id = Clock::get()?.unix_timestamp as i64 / 3600;
+            hour.hour_id = hour_id;
             hour.bump = ctx.bumps.hour_ledger;
         }
 
@@ -66,7 +66,7 @@ pub mod lemonroad_pool {
         let expected = compute_splits(pool, participant_count);
         require!(amounts == expected, PoolError::InvalidSplit);
 
-        let vault_auth = ctx.accounts.vault_authority.key();
+        let _vault_auth = ctx.accounts.vault_authority.key();
         let seeds = &[
             b"vault_authority".as_ref(),
             &[ctx.accounts.global_config.vault_bump],
@@ -160,6 +160,7 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(hour_id: i64)]
 pub struct DepositAttempt<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -171,7 +172,7 @@ pub struct DepositAttempt<'info> {
         init_if_needed,
         payer = user,
         space = 8 + HourLedger::INIT_SPACE,
-        seeds = [b"hour", &Clock::get()?.unix_timestamp.div_euclid(3600).to_le_bytes()],
+        seeds = [b"hour".as_ref(), hour_id.to_le_bytes().as_ref()],
         bump
     )]
     pub hour_ledger: Account<'info, HourLedger>,
@@ -201,7 +202,7 @@ pub struct SettleHour<'info> {
 
     #[account(
         mut,
-        seeds = [b"hour", &hour_id.to_le_bytes()],
+        seeds = [b"hour".as_ref(), hour_id.to_le_bytes().as_ref()],
         bump = hour_ledger.bump
     )]
     pub hour_ledger: Account<'info, HourLedger>,

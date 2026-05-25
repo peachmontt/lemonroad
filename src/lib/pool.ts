@@ -56,11 +56,15 @@ export function buildDepositAttemptTransaction(
   const vaultAta = getAssociatedTokenAddressSync(USDT_MINT, vaultAuth, true);
   const userAta = getAssociatedTokenAddressSync(USDT_MINT, wallet, false);
 
+  const data = Buffer.alloc(8 + DEPOSIT_DISCRIMINATOR.length);
+  DEPOSIT_DISCRIMINATOR.copy(data, 0);
+  data.writeBigInt64LE(hour, DEPOSIT_DISCRIMINATOR.length);
+
   const ix = new TransactionInstruction({
     programId,
     keys: [
       { pubkey: wallet, isSigner: true, isWritable: true },
-      { pubkey: config, isSigner: false, isWritable: true },
+      { pubkey: config, isSigner: false, isWritable: false },
       { pubkey: hourLedger, isSigner: false, isWritable: true },
       { pubkey: userAta, isSigner: false, isWritable: true },
       { pubkey: vaultAta, isSigner: false, isWritable: true },
@@ -69,7 +73,7 @@ export function buildDepositAttemptTransaction(
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
-    data: DEPOSIT_DISCRIMINATOR,
+    data,
   });
 
   return new Transaction().add(
