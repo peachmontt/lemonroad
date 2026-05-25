@@ -16,6 +16,13 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+interface Window {
+  ethereum?: {
+    request?: (args: { method: string }) => Promise<unknown>;
+    isMetaMask?: boolean;
+  };
+}
+
 interface DeviceOrientationEvent {
   requestPermission?: () => Promise<'granted' | 'denied'>;
 }

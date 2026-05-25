@@ -1,7 +1,7 @@
 import { createPublicClient, http, type Hex } from 'viem';
-import { polygon, mainnet } from 'viem/chains';
+import { mainnet, polygon, polygonAmoy } from 'viem/chains';
 
-const EVM_CHAIN_ID = Number(process.env.EVM_CHAIN_ID ?? 137);
+const EVM_CHAIN_ID = Number(process.env.EVM_CHAIN_ID ?? 80002);
 const EVM_RPC_URL = process.env.EVM_RPC_URL;
 
 const USDT_ADDRESSES: Record<number, Hex> = {
@@ -10,14 +10,19 @@ const USDT_ADDRESSES: Record<number, Hex> = {
   80002: '0x52D800ca262522580CeBAD275395ca6e7598C014',
 };
 
-const EVM_USDT_ADDRESS: Hex = USDT_ADDRESSES[EVM_CHAIN_ID] ?? USDT_ADDRESSES[137];
+const EVM_USDT_ADDRESS: Hex = USDT_ADDRESSES[EVM_CHAIN_ID] ?? USDT_ADDRESSES[80002];
 /** 1 USDT (6 decimals) */
 const EVM_USDT_PER_ATTEMPT = 1_000_000n;
 
+function getEvmChain() {
+  if (EVM_CHAIN_ID === 1) return mainnet;
+  if (EVM_CHAIN_ID === 137) return polygon;
+  return polygonAmoy;
+}
+
 function getClient() {
-  const chain = EVM_CHAIN_ID === 1 ? mainnet : polygon;
   return createPublicClient({
-    chain,
+    chain: getEvmChain(),
     transport: http(EVM_RPC_URL),
   });
 }

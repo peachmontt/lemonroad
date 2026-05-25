@@ -1,8 +1,9 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { EVM_CHAIN_ID } from '../config/evm';
+import type { Connector } from 'wagmi';
+import { EVM_CHAIN_ID, EVM_CHAIN_NAME } from '../config/evm';
 
 export type WalletChannel = 'solana' | 'evm';
 
@@ -13,6 +14,22 @@ interface WalletConnectButtonProps {
 
 function shortAddress(addr: string): string {
   return `${addr.slice(0, 4)}…${addr.slice(-4)}`;
+}
+
+function pickEvmConnector(connectors: readonly Connector[]): Connector | undefined {
+  const preferredIds = ['metaMaskSDK', 'metaMask', 'io.metamask'];
+  for (const id of preferredIds) {
+    const match = connectors.find((c) => c.id === id);
+    if (match) return match;
+  }
+  return connectors.find((c) => c.type === 'injected') ?? connectors[0];
+}
+
+function formatEvmConnectError(message: string): string {
+  if (/provider not found/i.test(message)) {
+    return 'MetaMask not detected. Install the extension or open this page in the MetaMask app browser.';
+  }
+  return message;
 }
 
 export function WalletConnectButton({
@@ -26,16 +43,27 @@ export function WalletConnectButton({
   const { disconnect: disconnectEvm } = useDisconnect();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [evmLocalError, setEvmLocalError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const metaMaskConnector =
-    connectors.find((c) => c.id === 'metaMask') ?? connectors[0];
+  const evmConnector = pickEvmConnector(connectors);
+  const evmChainLabel = EVM_CHAIN_NAME[EVM_CHAIN_ID] ?? `chain ${EVM_CHAIN_ID}`;
 
-  const handleEvmConnect = () => {
-    if (!metaMaskConnector) return;
+  const handleEvmConnect = useCallback(() => {
+    setEvmLocalError(null);
+    if (!evmConnector) {
+      setEvmLocalError('No EVM wallet found. Install MetaMask.');
+      return;
+    }
+    if (typeof window !== 'undefined' && !window.ethereum) {
+      setEvmLocalError(
+        'MetaMask not detected. Install the extension or open lemonroad.xyz in the MetaMask app browser.',
+      );
+      return;
+    }
     onActiveChannelChange('evm');
-    connect({ connector: metaMaskConnector, chainId: EVM_CHAIN_ID });
-  };
+    connect({ connector: evmConnector, chainId: EVM_CHAIN_ID });
+  }, [connect, evmConnector, onActiveChannelChange]);
 
   useEffect(() => {
     if (publicKey) onActiveChannelChange('solana');
@@ -65,9 +93,13 @@ export function WalletConnectButton({
 
   const solanaConnected = !!publicKey;
   const evmConnected = !!evmAddress;
+  const evmErrorMessage =
+    evmLocalError ??
+    (evmConnectError ? formatEvmConnectError(evmConnectError.message) : null);
 
   const openSolana = () => {
     setMenuOpen(false);
+    setEvmLocalError(null);
     onActiveChannelChange('solana');
     openSolanaModal(true);
   };
@@ -75,7 +107,6 @@ export function WalletConnectButton({
   const switchToEvm = () => {
     setMenuOpen(false);
     if (publicKey) void disconnectSolana();
-    onActiveChannelChange('evm');
     handleEvmConnect();
   };
 
@@ -191,7 +222,7 @@ export function WalletConnectButton({
         <ul className="wallet-connect-menu" role="menu">
           <li role="none">
             <button type="button" role="menuitem" className="wallet-connect-menu-item" onClick={openSolana}>
-              Solana wallet
+              Solana (devnet)
             </button>
           </li>
           <li role="none">
@@ -199,20 +230,20 @@ export function WalletConnectButton({
               type="button"
               role="menuitem"
               className="wallet-connect-menu-item"
-              disabled={evmConnecting || !metaMaskConnector}
+              disabled={evmConnecting}
               onClick={() => {
                 setMenuOpen(false);
                 handleEvmConnect();
               }}
             >
-              EVM wallet
+              EVM ({evmChainLabel})
             </button>
           </li>
         </ul>
       )}
-      {evmConnectError && (
+      {evmErrorMessage && (
         <p className="wallet-connect-error" role="alert">
-          {evmConnectError.message}
+          {evmErrorMessage}
         </p>
       )}
     </div>
