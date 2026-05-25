@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Full devnet deploy + pool initialize.
-# Run once after cloning, or re-run after Anchor program changes.
+# Mainnet-beta deploy + pool initialize.
+# Run AFTER testing everything on devnet first.
+# ⚠️  Real SOL and real USDT — triple-check before running.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -8,68 +9,73 @@ cd "$ROOT"
 echo "=== 1/6  Check tools ==="
 command -v solana >/dev/null 2>&1 || { echo "Install Solana CLI: https://docs.solana.com/cli/install"; exit 1; }
 command -v anchor >/dev/null 2>&1 || {
-  echo ""
-  echo "Anchor CLI not found. Install it with:"
-  echo "  cargo install --git https://github.com/coral-xyz/anchor avm --locked"
-  echo "  avm install 0.30.1 && avm use 0.30.1"
-  echo ""
-  echo "Also requires Rust: https://rustup.rs/"
+  echo "Anchor CLI not found. Install: cargo install --git https://github.com/coral-xyz/anchor avm --locked && avm install 0.30.1 && avm use 0.30.1"
   exit 1
 }
 command -v node >/dev/null 2>&1 || { echo "Install Node 20+"; exit 1; }
+
 echo "  solana $(solana --version)"
 echo "  anchor  $(anchor --version)"
-echo "  node    $(node --version)"
 
 echo ""
-echo "=== 2/6  Switch to devnet ==="
-solana config set --url devnet
+echo "=== 2/6  Switch to mainnet-beta ==="
+solana config set --url mainnet-beta
 solana config set --commitment confirmed
 
-echo ""
-echo "=== 3/6  Fund admin wallet (airdrop) ==="
 ADMIN_PUBKEY=$(solana address)
-echo "Admin: $ADMIN_PUBKEY"
-solana airdrop 2 "$ADMIN_PUBKEY" || echo "(airdrop may fail if already funded)"
-sleep 3
+echo "Admin wallet: $ADMIN_PUBKEY"
+BALANCE=$(solana balance --lamports | awk '{print $1}')
+if [[ "$BALANCE" -lt 3000000000 ]]; then
+  echo "⚠️  Admin wallet has less than 3 SOL. Deploy + init costs ~2-3 SOL."
+  echo "    Fund it before continuing. Exiting."
+  exit 1
+fi
 echo "Balance: $(solana balance)"
+
+echo ""
+echo "=== 3/6  Confirm mainnet deployment ==="
+echo ""
+echo "  ⚠️  You are about to deploy to MAINNET-BETA."
+echo "  ⚠️  This uses REAL SOL and will accept REAL USDT."
+echo ""
+read -r -p "Type YES to continue: " confirm
+if [[ "$confirm" != "YES" ]]; then
+  echo "Aborted."
+  exit 0
+fi
 
 echo ""
 echo "=== 4/6  Build & deploy Anchor program ==="
 cd programs/lemonroad-pool
 
-# Extract program id from keypair BEFORE first deploy (stable across redeploys)
 KEYPAIR_PATH="target/deploy/lemonroad_pool-keypair.json"
-if [[ ! -f "$KEYPAIR_PATH" ]]; then
-  echo "(keypair not found yet — will be created by anchor build)"
-fi
 
 anchor build
 
-# Get the real program id from the keypair file (created by anchor build)
 PROGRAM_ID=$(solana address -k "$KEYPAIR_PATH")
 echo "Program ID: $PROGRAM_ID"
 
-# Patch declare_id!() in lib.rs so the deployed binary matches the keypair
+# Patch declare_id!() so the binary matches the keypair
 LIB_RS="programs/lemonroad-pool/src/lib.rs"
 if grep -q 'declare_id!' "$LIB_RS"; then
   sed -i "s|declare_id!(\"[^\"]*\")|declare_id!(\"$PROGRAM_ID\")|" "$LIB_RS"
   echo "Patched declare_id!(\"$PROGRAM_ID\") in $LIB_RS"
-  # Rebuild with correct ID embedded
   anchor build
 fi
 
-anchor deploy --provider.cluster devnet
+anchor deploy --provider.cluster mainnet-beta
 echo "Deployed program: $PROGRAM_ID"
 cd "$ROOT"
 
 echo ""
 echo "=== 5/6  Initialize pool (one-time) ==="
-: "${USDT_MINT:=4zMMC9srt5Ri5X14GAgXhaHii3GnPEPpGqyejCcJxw4H}"
+# Real USDT on Solana mainnet:
+: "${USDT_MINT:=Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB}"
+# Crank pubkey — this wallet must hold mainnet SOL for settlement txs
 : "${CRANK_PUBKEY:=$(solana address)}"
+: "${SOLANA_RPC_URL:=https://api.mainnet-beta.solana.com}"
 
-export PROGRAM_ID USDT_MINT CRANK_PUBKEY
-export SOLANA_RPC_URL=https://api.devnet.solana.com
+export PROGRAM_ID USDT_MINT CRANK_PUBKEY SOLANA_RPC_URL
 
 npx ts-node --project tsconfig.api.json scripts/init-pool.ts
 
@@ -91,28 +97,29 @@ patch_env "PROGRAM_ID"            "$PROGRAM_ID"
 patch_env "VITE_PROGRAM_ID"       "$PROGRAM_ID"
 patch_env "USDT_MINT"             "$USDT_MINT"
 patch_env "VITE_USDT_MINT"        "$USDT_MINT"
-patch_env "SOLANA_RPC_URL"        "https://api.devnet.solana.com"
-patch_env "VITE_SOLANA_RPC_URL"   "https://api.devnet.solana.com"
-patch_env "VITE_SOLANA_CLUSTER"   "devnet"
+patch_env "SOLANA_RPC_URL"        "$SOLANA_RPC_URL"
+patch_env "VITE_SOLANA_RPC_URL"   "$SOLANA_RPC_URL"
+patch_env "VITE_SOLANA_CLUSTER"   "mainnet-beta"
 echo "Patched .env"
 
 echo ""
 echo "================================================"
-echo " Done! Add these to Vercel env vars:"
+echo " Mainnet deploy complete! Add these to Vercel:"
 echo "================================================"
 echo ""
 echo "  PROGRAM_ID=$PROGRAM_ID"
 echo "  VITE_PROGRAM_ID=$PROGRAM_ID"
 echo "  USDT_MINT=$USDT_MINT"
 echo "  VITE_USDT_MINT=$USDT_MINT"
-echo "  SOLANA_RPC_URL=https://api.devnet.solana.com"
-echo "  VITE_SOLANA_RPC_URL=https://api.devnet.solana.com"
-echo "  VITE_SOLANA_CLUSTER=devnet"
+echo "  SOLANA_RPC_URL=$SOLANA_RPC_URL"
+echo "  VITE_SOLANA_RPC_URL=$SOLANA_RPC_URL"
+echo "  VITE_SOLANA_CLUSTER=mainnet-beta"
 echo ""
 echo "  CRANK_KEYPAIR=$(cat ~/.config/solana/id.json | tr -d '[:space:]')"
 echo ""
 echo "  ⚠️  CRANK_KEYPAIR is a SECRET — mark it Sensitive in Vercel."
-echo "  ⚠️  Fund the crank wallet with devnet SOL for settlement txs:"
-echo "      solana airdrop 1 $ADMIN_PUBKEY"
+echo "  ⚠️  The crank wallet must hold MAINNET SOL for settlement txs."
+echo "  ⚠️  Replace SOLANA_RPC_URL with a paid RPC (Helius/QuickNode)"
+echo "      for reliable production performance."
 echo ""
-echo "  Then redeploy Vercel to bake VITE_* vars into the frontend."
+echo "  Redeploy Vercel to bake VITE_* vars into the frontend."
