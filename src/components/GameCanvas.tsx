@@ -12,6 +12,7 @@ import { DeathOverlay } from './DeathOverlay';
 import { FakeModal, type ModalTab } from './FakeModal';
 import { HudOverlay } from './HudOverlay';
 import { StartOverlay } from './StartOverlay';
+import type { WalletChannel } from './WalletConnectButton';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
 import { InstallNudgeCard } from './pwa/InstallNudgeCard';
 import { NotificationNudgeCard } from './pwa/NotificationNudgeCard';
@@ -28,7 +29,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     useGameEngine(canvasRef);
   const [tiltMsg, setTiltMsg] = useState<string | null>(null);
   const [gameMode, setGameMode] = useState<GameMode>('free');
-  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'evm'>('solana');
+  const [walletChannel, setWalletChannel] = useState<WalletChannel>('solana');
   const [activeMode, setActiveMode] = useState<GameMode>('free');
   const [activeDepositTx, setActiveDepositTx] = useState<string | null>(null);
   const [activeWalletKey, setActiveWalletKey] = useState<string | null>(null);
@@ -37,7 +38,6 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   const { publicKey } = useWallet();
   const { address: evmAddress } = useAccount();
 
-  // Track wallet connects
   useEffect(() => {
     if (publicKey) trackWalletConnect(publicKey.toBase58());
   }, [publicKey]);
@@ -94,7 +94,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   };
 
   const handleStartPaid = async () => {
-    if (paymentMethod === 'evm') {
+    if (walletChannel === 'evm') {
       if (!evmAddress) return;
 
       let tx = evmDepositTx;
@@ -152,8 +152,8 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
         <StartOverlay
           gameMode={gameMode}
           onGameModeChange={setGameMode}
-          paymentMethod={paymentMethod}
-          onPaymentMethodChange={setPaymentMethod}
+          walletChannel={walletChannel}
+          onWalletChannelChange={setWalletChannel}
           onStart={handleStart}
           onStartPaid={() => void handleStartPaid()}
           onOpenModal={onOpenModal}
@@ -164,7 +164,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           onSaveName={setDisplayName}
           paidPending={paidPending || evmPending}
           paidError={paidError ?? evmError}
-          hasPaidDeposit={paymentMethod === 'evm' ? !!evmDepositTx : !!depositTx}
+          hasPaidDeposit={walletChannel === 'evm' ? !!evmDepositTx : !!depositTx}
         />
       )}
 

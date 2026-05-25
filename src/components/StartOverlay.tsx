@@ -1,18 +1,18 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { BUY_URL, CHART_URL, X_URL } from '../config/links';
-import { EVM_CHAIN_NAME, EVM_CHAIN_ID } from '../config/evm';
 import type { GameMode } from '../types/game';
 import type { ModalTab } from './FakeModal';
 import { InfoPanelsAccordion } from './InfoPanelsAccordion';
 import { ProfileBar } from './ProfileBar';
 import type { PlayerResponse, RunRecord } from '../lib/api';
+import type { WalletChannel } from './WalletConnectButton';
 
 interface StartOverlayProps {
   gameMode: GameMode;
   onGameModeChange: (mode: GameMode) => void;
-  paymentMethod: 'solana' | 'evm';
-  onPaymentMethodChange: (method: 'solana' | 'evm') => void;
+  walletChannel: WalletChannel;
+  onWalletChannelChange: (channel: WalletChannel) => void;
   onStart: () => void;
   onStartPaid: () => void;
   onOpenModal: (tab: ModalTab) => void;
@@ -29,8 +29,8 @@ interface StartOverlayProps {
 export function StartOverlay({
   gameMode,
   onGameModeChange,
-  paymentMethod,
-  onPaymentMethodChange,
+  walletChannel,
+  onWalletChannelChange,
   onStart,
   onStartPaid,
   onOpenModal,
@@ -44,14 +44,10 @@ export function StartOverlay({
   hasPaidDeposit,
 }: StartOverlayProps) {
   const { publicKey } = useWallet();
-  const { address: wagmiAddress } = useAccount();
-
-  const evmConnected = !!wagmiAddress;
-  const chainName = EVM_CHAIN_NAME[EVM_CHAIN_ID] ?? 'EVM';
-  const walletChannel = gameMode === 'paid' && paymentMethod === 'evm' ? 'evm' : 'solana';
+  const { address: evmAddress } = useAccount();
 
   const isReadyToPay =
-    paymentMethod === 'evm' ? evmConnected : !!publicKey;
+    walletChannel === 'evm' ? !!evmAddress : !!publicKey;
 
   const handlePrimary = () => {
     if (gameMode === 'paid') {
@@ -67,6 +63,7 @@ export function StartOverlay({
         player={player}
         onSaveName={onSaveName}
         walletChannel={walletChannel}
+        onWalletChannelChange={onWalletChannelChange}
       />
 
       <h1 className="title-shake">LEMON ROAD</h1>
@@ -96,42 +93,23 @@ export function StartOverlay({
         </button>
       </div>
 
-      {gameMode === 'paid' && (
-        <>
-          <p className="paid-hint">
-            pay 1 USDT · daily pool · $10 / $6 / $4 prizes
-            {hasPaidDeposit && ' · deposit ready'}
-          </p>
-
-          <div className="payment-method-picker">
-            <button
-              type="button"
-              className={`payment-btn ${paymentMethod === 'solana' ? 'active' : ''}`}
-              onClick={() => onPaymentMethodChange('solana')}
-            >
-              Solana
-            </button>
-            <button
-              type="button"
-              className={`payment-btn ${paymentMethod === 'evm' ? 'active' : ''}`}
-              onClick={() => onPaymentMethodChange('evm')}
-            >
-              MetaMask / EVM
-            </button>
-          </div>
-
-          {paymentMethod === 'solana' && (
-            <p className="wallet-hint">Connect wallet (top right) · Phantom · Solflare</p>
-          )}
-
-          {paymentMethod === 'evm' && (
-            <p className="wallet-hint">
-              Connect MetaMask (top right) · {chainName} USDT
-              {wagmiAddress && ` · ${wagmiAddress.slice(0, 6)}…${wagmiAddress.slice(-4)}`}
-            </p>
-          )}
-        </>
+      {gameMode === 'free' && (
+        <p className="free-hint">
+          Free run · Daily rewards pool
+          <br />
+          $20 daily rewards for free players ($10 / $6 / $4 top 3)
+          <br />
+          Play free runs and compete for daily rewards
+        </p>
       )}
+
+      {gameMode === 'paid' && (
+        <p className="paid-hint">
+          Game mode · Pay 1 USDT to play
+          {hasPaidDeposit && ' · deposit ready'}
+        </p>
+      )}
+
       {paidError && <p className="tilt-msg">{paidError}</p>}
 
       <button
@@ -146,7 +124,7 @@ export function StartOverlay({
             ? hasPaidDeposit
               ? 'START PAID RUN'
               : 'PAY 1 USDT & PLAY'
-            : 'START SQUEEZING'}
+            : 'START FREE RUN'}
       </button>
 
       {needsTilt && (

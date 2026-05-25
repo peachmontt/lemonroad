@@ -7,9 +7,15 @@ interface ProfileBarProps {
   player: PlayerResponse | null;
   onSaveName: (name: string, wallet?: string) => Promise<unknown>;
   walletChannel: WalletChannel;
+  onWalletChannelChange: (channel: WalletChannel) => void;
 }
 
-export function ProfileBar({ player, onSaveName, walletChannel }: ProfileBarProps) {
+export function ProfileBar({
+  player,
+  onSaveName,
+  walletChannel,
+  onWalletChannelChange,
+}: ProfileBarProps) {
   const { publicKey } = useWallet();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(player?.displayName ?? '');
@@ -77,7 +83,10 @@ export function ProfileBar({ player, onSaveName, walletChannel }: ProfileBarProp
           </>
         )}
       </div>
-      <WalletConnectButton channel={walletChannel} />
+      <WalletConnectButton
+        activeChannel={walletChannel}
+        onActiveChannelChange={onWalletChannelChange}
+      />
     </div>
   );
 }

@@ -1652,40 +1652,17 @@ body,
   background: #ffe135;
 }
 
+.free-hint,
 .paid-hint {
   font-size: 0.85rem;
   max-width: 320px;
   text-align: center;
   margin-bottom: 8px;
+  line-height: 1.35;
 }
 
-.payment-method-picker {
-  display: flex;
-  gap: 6px;
-  margin: 8px 0 4px;
-  justify-content: center;
-}
-
-.payment-btn {
-  border: 2px solid #000;
-  background: #fff;
-  padding: 6px 12px;
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
-.payment-btn.active {
-  background: #ffe135;
-}
-
-.wallet-hint {
-  font-size: 0.78rem;
-  color: #555;
-  text-align: center;
-  margin: 4px 0;
+.free-hint {
+  color: #333;
 }
 
 .evm-connect-row {
