@@ -1871,6 +1871,40 @@ body {
   text-align: right;
 }
 
+@media (min-width: 768px) {
+  .start-overlay .top-bar {
+    position: relative;
+    min-height: 44px;
+    margin-bottom: 10px;
+  }
+
+  .start-overlay .profile-bar {
+    justify-content: flex-start;
+    min-height: 44px;
+  }
+
+  .start-overlay .profile-name-row {
+    flex: 0 1 auto;
+    max-width: min(520px, calc(100vw - 220px));
+  }
+
+  .start-overlay .wallet-connect-wrap {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top, 0px));
+    right: max(18px, env(safe-area-inset-right, 0px));
+    z-index: 45;
+  }
+
+  .start-overlay .wallet-connect-menu {
+    right: 0;
+    left: auto;
+  }
+
+  .start-overlay .wallet-connect-error {
+    max-width: 280px;
+  }
+}
+
 /* Solana wallet picker modal — above game overlays */
 .wallet-adapter-modal-wrapper {
   z-index: 2000 !important;
