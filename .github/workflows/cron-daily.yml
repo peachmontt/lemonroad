@@ -8,23 +8,14 @@ on:
 jobs:
   daily-rewards:
     runs-on: ubuntu-latest
-    env:
-      CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
-      - name: Check secret (hypothesis F)
-        run: |
-          echo "CRON_SECRET length: ${#CRON_SECRET}"
-          if [ -z "$CRON_SECRET" ]; then
-            echo "ERROR: CRON_SECRET is empty - secret not configured in GitHub"
-          fi
-
       - name: Trigger daily rewards cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
           body=$(mktemp)
-          redirect_log=$(mktemp)
-          # hypothesis G: capture redirects with -v, use env var for secret
-          code=$(curl -s -o "$body" -w "%{http_code}" --max-redirs 0 \
+          code=$(curl -s -o "$body" -w "%{http_code}" \
             -X GET https://www.lemonroad.xyz/api/cron/daily-rewards \
             -H "Authorization: Bearer $CRON_SECRET")
           echo "HTTP $code"
