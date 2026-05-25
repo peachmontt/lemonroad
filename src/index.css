@@ -72,28 +72,146 @@ body {
 }
 
 .overlay {
+  grid-area: 1 / 1;
   position: absolute;
   inset: 0;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  z-index: 1;
 }
 
 .overlay > * {
   pointer-events: auto;
 }
 
-/* Start overlay: full-screen, centred panel on top of canvas */
-.start-overlay {
+/* Start overlay: full-screen, top-aligned panel on top of canvas */
+.start-overlay,
+.home-page {
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
+  width: 100%;
+  min-height: 100%;
   padding: 20px 16px 24px;
   background: var(--page-bg);
   pointer-events: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent flex shrink overlap on short viewports (title covering profile row). */
+.start-overlay > *,
+.home-page > * {
+  flex-shrink: 0;
+}
+
+.top-bar {
+  width: 100%;
+  max-width: 720px;
+  align-self: stretch;
+}
+
+.hero-section {
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+}
+
+.mode-section {
+  width: 100%;
+  max-width: 720px;
+  margin: 22px auto 0;
+  text-align: center;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mode-content {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.mode-content .free-hint,
+.mode-content .paid-hint {
+  margin-bottom: 0;
+}
+
+.mode-error {
+  margin: 0;
+}
+
+.accordion-section {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  justify-content: center;
+}
+
+.accordion-section .info-panels-accordion {
+  margin: 16px 0;
+}
+
+.actions-section {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  justify-content: center;
+}
+
+.actions-section .cta-row {
+  margin-top: 0;
+}
+
+.site-footer {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 34px;
+}
+
+.site-footer .footer-links {
+  margin-top: 0;
+}
+
+.start-primary-btn {
+  min-width: 260px;
+  min-height: 64px;
+  padding: 18px 28px;
+  font-size: clamp(20px, 4vw, 34px);
+  font-weight: 800;
+  border: 6px solid #000;
+  box-shadow: 8px 8px 0 #000;
+  margin: 4px 0;
+}
+
+.start-primary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 8px 8px 0 #000;
+}
+
+@media (min-width: 768px) {
+  .mode-content {
+    min-height: 185px;
+  }
+}
+
+@media (max-width: 430px) {
+  .mode-content {
+    min-height: 220px;
+  }
 }
 
 .title-shake {
@@ -1596,9 +1714,11 @@ body {
 
 /* Profile & modes */
 .profile-bar {
-  position: static;
+  position: relative;
+  z-index: 20;
   width: 100%;
   align-self: stretch;
+  flex-shrink: 0;
   margin-bottom: 8px;
   display: flex;
   flex-wrap: nowrap;
@@ -1606,6 +1726,7 @@ body {
   justify-content: space-between;
   gap: 8px;
   pointer-events: auto;
+  isolation: isolate;
 }
 
 .profile-name-row {
@@ -1624,11 +1745,15 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .profile-name-row .link-btn {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   font-size: 0.75rem;
+  pointer-events: auto;
 }
 
 .profile-input {
@@ -1680,7 +1805,9 @@ body {
 
 .wallet-connect-wrap {
   position: relative;
+  z-index: 1;
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .wallet-connect-menu {
@@ -1728,14 +1855,6 @@ body {
 /* Solana wallet picker modal — above game overlays */
 .wallet-adapter-modal-wrapper {
   z-index: 2000 !important;
-}
-
-.mode-picker {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 .mode-btn {
