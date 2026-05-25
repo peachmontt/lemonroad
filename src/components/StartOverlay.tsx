@@ -1,5 +1,5 @@
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { BUY_URL, CHART_URL, X_URL } from '../config/links';
 import { EVM_CHAIN_NAME, EVM_CHAIN_ID } from '../config/evm';
 import type { GameMode } from '../types/game';
@@ -45,11 +45,10 @@ export function StartOverlay({
 }: StartOverlayProps) {
   const { publicKey } = useWallet();
   const { address: wagmiAddress } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
 
   const evmConnected = !!wagmiAddress;
   const chainName = EVM_CHAIN_NAME[EVM_CHAIN_ID] ?? 'EVM';
+  const walletChannel = gameMode === 'paid' && paymentMethod === 'evm' ? 'evm' : 'solana';
 
   const isReadyToPay =
     paymentMethod === 'evm' ? evmConnected : !!publicKey;
@@ -62,14 +61,13 @@ export function StartOverlay({
     }
   };
 
-  const handleEvmConnect = () => {
-    const injector = connectors.find((c) => c.id === 'metaMask') ?? connectors[0];
-    if (injector) connect({ connector: injector });
-  };
-
   return (
     <div className="overlay start-overlay">
-      <ProfileBar player={player} onSaveName={onSaveName} />
+      <ProfileBar
+        player={player}
+        onSaveName={onSaveName}
+        walletChannel={walletChannel}
+      />
 
       <h1 className="title-shake">LEMON ROAD</h1>
       <p className="tagline">the future of citrus transportation</p>
@@ -123,33 +121,14 @@ export function StartOverlay({
           </div>
 
           {paymentMethod === 'solana' && (
-            <p className="wallet-hint">Phantom · Solflare · any Solana wallet</p>
+            <p className="wallet-hint">Connect wallet (top right) · Phantom · Solflare</p>
           )}
 
           {paymentMethod === 'evm' && (
-            <div className="evm-connect-row">
-              <p className="wallet-hint">
-                {chainName} USDT
-                {wagmiAddress && ` · ${wagmiAddress.slice(0, 6)}…${wagmiAddress.slice(-4)}`}
-              </p>
-              {evmConnected ? (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs"
-                  onClick={() => disconnect()}
-                >
-                  disconnect
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleEvmConnect}
-                >
-                  Connect MetaMask
-                </button>
-              )}
-            </div>
+            <p className="wallet-hint">
+              Connect MetaMask (top right) · {chainName} USDT
+              {wagmiAddress && ` · ${wagmiAddress.slice(0, 6)}…${wagmiAddress.slice(-4)}`}
+            </p>
           )}
         </>
       )}

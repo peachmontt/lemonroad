@@ -1,14 +1,15 @@
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useState } from 'react';
 import type { PlayerResponse } from '../lib/api';
+import { WalletConnectButton, type WalletChannel } from './WalletConnectButton';
 
 interface ProfileBarProps {
   player: PlayerResponse | null;
   onSaveName: (name: string, wallet?: string) => Promise<unknown>;
+  walletChannel: WalletChannel;
 }
 
-export function ProfileBar({ player, onSaveName }: ProfileBarProps) {
+export function ProfileBar({ player, onSaveName, walletChannel }: ProfileBarProps) {
   const { publicKey } = useWallet();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(player?.displayName ?? '');
@@ -76,7 +77,7 @@ export function ProfileBar({ player, onSaveName }: ProfileBarProps) {
           </>
         )}
       </div>
-      <WalletMultiButton className="wallet-btn" />
+      <WalletConnectButton channel={walletChannel} />
     </div>
   );
 }
