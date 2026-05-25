@@ -158,6 +158,8 @@ export function StartOverlay({
         <a href="/install" className="link-btn">INSTALL APP</a>
         <span> | </span>
         <a href="/notifications" className="link-btn">NOTIFICATIONS</a>
+        <span> | </span>
+        <a href="/terms" className="link-btn">TERMS & CONDITIONS</a>
       </div>
     </div>
   );

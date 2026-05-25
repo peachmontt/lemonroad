@@ -14,7 +14,7 @@ const urls: Array<{ loc: string; lastmod: string; changefreq: string; priority: 
   { loc: `${SITE}/press`,            lastmod: '2026-05-21', changefreq: 'monthly', priority: '0.6' },
   { loc: `${SITE}/reward-rules`,     lastmod: '2026-05-21', changefreq: 'monthly', priority: '0.6' },
   { loc: `${SITE}/fair-play`,        lastmod: '2026-05-21', changefreq: 'monthly', priority: '0.6' },
-  { loc: `${SITE}/terms`,            lastmod: '2026-05-21', changefreq: 'yearly',  priority: '0.4' },
+  { loc: `${SITE}/terms`,            lastmod: '2026-05-25', changefreq: 'yearly',  priority: '0.4' },
   { loc: `${SITE}/privacy`,          lastmod: '2026-05-21', changefreq: 'yearly',  priority: '0.4' },
   { loc: `${SITE}/install`,          lastmod: '2026-05-24', changefreq: 'monthly', priority: '0.7' },
   { loc: `${SITE}/install/iphone`,   lastmod: '2026-05-24', changefreq: 'monthly', priority: '0.6' },
