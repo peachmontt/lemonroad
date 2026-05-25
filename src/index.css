@@ -94,7 +94,7 @@ body {
   align-items: center;
   width: 100%;
   min-height: 100%;
-  padding: 20px 16px 24px;
+  padding: 20px 16px calc(32px + env(safe-area-inset-bottom));
   background: var(--page-bg);
   pointer-events: auto;
   overflow-y: auto;
@@ -1754,6 +1754,12 @@ body {
   flex-shrink: 0;
   font-size: 0.75rem;
   pointer-events: auto;
+  touch-action: manipulation;
+  min-height: 36px;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-input {
@@ -1800,6 +1806,18 @@ body {
 
   .start-overlay {
     padding-top: 16px;
+  }
+}
+
+@media all and (display-mode: standalone) {
+  .start-overlay,
+  .home-page {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  }
+
+  .site-footer .footer-links {
+    padding-bottom: calc(44px + env(safe-area-inset-bottom));
   }
 }
 
@@ -1893,6 +1911,10 @@ body {
     max-width: min(340px, 92vw);
     font-size: 0.8rem;
   }
+
+  .info-panels-accordion {
+    max-width: 360px;
+  }
 }
 
 .evm-connect-row {
@@ -1927,7 +1949,7 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 360px;
+  max-width: 520px;
   margin: 16px 0;
   gap: 8px;
 }
@@ -2313,5 +2335,50 @@ body {
   z-index: 500;
   width: min(420px, calc(100vw - 2rem));
   pointer-events: all;
+}
+
+/* Lemon loader spinner */
+.lemon-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.lemon-loader-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px dashed #f5c518;
+  animation: lemon-ring-spin 1.6s linear infinite;
+}
+
+.lemon-loader-icon {
+  font-size: 1.6rem;
+  display: inline-block;
+  animation: lemon-counter-spin 1.6s linear infinite;
+}
+
+.lemon-loader-label {
+  font-size: 0.75rem;
+  color: #555;
+  font-family: inherit;
+}
+
+@keyframes lemon-ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes lemon-counter-spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(-90deg) scale(1.1); }
+  50%  { transform: rotate(-180deg) scale(1); }
+  75%  { transform: rotate(-270deg) scale(1.1); }
+  100% { transform: rotate(-360deg) scale(1); }
 }
 

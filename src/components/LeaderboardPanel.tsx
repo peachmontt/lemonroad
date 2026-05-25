@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchPoolLeaderboard, type PoolLeaderboardResponse } from '../lib/api';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { LemonLoader } from './LemonLoader';
 
 interface LeaderboardPanelProps {
   compact?: boolean;
@@ -47,7 +48,7 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
 
   const body =
     loading && !data ? (
-      <p className="leaderboard-loading">loading pool rankings...</p>
+      <LemonLoader label="loading pool rankings..." />
     ) : error && !data ? (
       <p className="leaderboard-empty">could not load pool: {error}</p>
     ) : !data ? null : (

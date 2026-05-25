@@ -45,7 +45,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     if (evmAddress) trackWalletConnect(evmAddress);
   }, [evmAddress]);
 
-  const { player, runs, setDisplayName, linkWallet, reloadRuns } = usePlayer();
+  const { player, runs, loading: runsLoading, setDisplayName, linkWallet, reloadRuns } = usePlayer();
   const {
     showInstallNudge,
     showNotificationNudge,
@@ -161,6 +161,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           needsTilt={needsPermission && status !== 'granted'}
           player={player}
           runs={runs}
+          runsLoading={runsLoading}
           onSaveName={setDisplayName}
           paidPending={paidPending || evmPending}
           paidError={paidError ?? evmError}

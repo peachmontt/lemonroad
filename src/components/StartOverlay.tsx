@@ -20,6 +20,7 @@ interface StartOverlayProps {
   needsTilt: boolean;
   player: PlayerResponse | null;
   runs: RunRecord[];
+  runsLoading?: boolean;
   onSaveName: (name: string, wallet?: string) => Promise<unknown>;
   paidPending: boolean;
   paidError: string | null;
@@ -38,6 +39,7 @@ export function StartOverlay({
   needsTilt,
   player,
   runs,
+  runsLoading = false,
   onSaveName,
   paidPending,
   paidError,
@@ -94,7 +96,7 @@ export function StartOverlay({
             className={`mode-btn ${gameMode === 'paid' ? 'active' : ''}`}
             onClick={() => onGameModeChange('paid')}
           >
-            GAME MODE (1 USDT)
+            GAME MODE (20 USDT)
           </button>
         </div>
 
@@ -111,7 +113,7 @@ export function StartOverlay({
             </p>
           ) : (
             <p className="paid-hint">
-              Game mode · Pay 1 USDT to play
+              Game mode · Pay 20 USDT to play
               {hasPaidDeposit && ' · deposit ready'}
             </p>
           )}
@@ -129,7 +131,7 @@ export function StartOverlay({
               : gameMode === 'paid'
                 ? hasPaidDeposit
                   ? 'START PAID RUN'
-                  : 'PAY 1 USDT & PLAY'
+                  : 'PAY 20 USDT & PLAY'
                 : 'START FREE RUN'}
           </button>
 
@@ -141,7 +143,7 @@ export function StartOverlay({
       </section>
 
       <section className="accordion-section">
-        <InfoPanelsAccordion runs={runs} />
+        <InfoPanelsAccordion runs={runs} runsLoading={runsLoading} />
       </section>
 
       <section className="actions-section">

@@ -7,6 +7,7 @@ import {
   type DailyRewardStatus,
 } from '../lib/api';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { LemonLoader } from './LemonLoader';
 
 interface GlobalLeaderboardPanelProps {
   compact?: boolean;
@@ -121,7 +122,7 @@ export function GlobalLeaderboardPanel({
   }
 
   const body = loading && !dailyToday && !dailyYesterday && !globalData ? (
-    <p className="leaderboard-loading">loading rankings...</p>
+    <LemonLoader label="loading rankings..." />
   ) : error && !dailyToday && !dailyYesterday && !globalData ? (
     <p className="leaderboard-empty">could not load: {error}</p>
   ) : (

@@ -8,9 +8,10 @@ export type InfoPanelId = 'history' | 'global' | 'pool';
 
 interface InfoPanelsAccordionProps {
   runs: RunRecord[];
+  runsLoading?: boolean;
 }
 
-export function InfoPanelsAccordion({ runs }: InfoPanelsAccordionProps) {
+export function InfoPanelsAccordion({ runs, runsLoading = false }: InfoPanelsAccordionProps) {
   const [openId, setOpenId] = useState<InfoPanelId | null>(null);
 
   const toggle = (id: InfoPanelId) => {
@@ -21,6 +22,7 @@ export function InfoPanelsAccordion({ runs }: InfoPanelsAccordionProps) {
     <div className="info-panels-accordion">
       <RunHistoryPanel
         runs={runs}
+        loading={runsLoading}
         open={openId === 'history'}
         onToggle={() => toggle('history')}
       />
