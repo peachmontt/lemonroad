@@ -133,15 +133,15 @@ export default withMethods({
       const poolReady = await isPoolProgramInitialized(programId);
       if (!poolReady) {
         console.error(
-          '[paid/prepare] Pool program not initialized on chain — run scripts/init-pool.ts on devnet',
+          '[paid/prepare] Pool program not initialized on chain — run scripts/init-pool.ts',
         );
         return json(res, {
           ready: false,
           paymentAvailable: false,
           paymentMode: 'program',
-          developerHint: 'Pool not initialized on devnet. Admin must run scripts/init-pool.ts once.',
+          developerHint: 'Pool not initialized on-chain. Admin must run scripts/init-pool.ts once.',
           userMessage:
-            'Paid mode is not set up on devnet yet. Try again later or use Free mode.',
+            'Paid mode is not set up yet. Try again later or use Free mode.',
           hourBucket,
           amountUsdt: ATTEMPT_AMOUNT.toString(),
           accounts: null,

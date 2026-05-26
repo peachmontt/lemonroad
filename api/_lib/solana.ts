@@ -17,7 +17,8 @@ import { USDT_PER_ATTEMPT } from './pool-math';
 const ATTEMPT_AMOUNT = USDT_PER_ATTEMPT;
 
 export function getConnection(): Connection {
-  const rpc = process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com';
+  const rpc =
+    process.env.SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com';
   return new Connection(rpc, 'confirmed');
 }
 
@@ -34,7 +35,7 @@ export function getProgramId(): PublicKey | null {
 export function getUsdtMint(): PublicKey {
   const mint =
     process.env.USDT_MINT ??
-    '4zMMC9srt5Ri5X14GAgXhaHii3GnPEPpGqyejCcJxw4H'; // devnet USDC-like test mint
+    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'; // mainnet USDT
   return new PublicKey(mint);
 }
 

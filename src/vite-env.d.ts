@@ -8,6 +8,9 @@ interface ImportMetaEnv {
   readonly VITE_PROGRAM_ID?: string;
   readonly VITE_USDT_MINT?: string;
   readonly VITE_EVM_CHAIN_ID?: string;
+  readonly VITE_EVM_RPC_URL?: string;
+  readonly VITE_EVM_RPC_URL_POLYGON?: string;
+  readonly VITE_EVM_RPC_URL_ETHEREUM?: string;
   readonly VITE_EVM_VAULT_ADDRESS?: string;
   readonly VITE_VAPID_PUBLIC_KEY?: string;
 }

@@ -1,3 +1,8 @@
+import { SOLANA_CLUSTER } from './solana';
+
+const IS_SOLANA_MAINNET =
+  SOLANA_CLUSTER === 'mainnet-beta' || SOLANA_CLUSTER === 'mainnet';
+
 /** Shown in the game UI when paid mode is not configured or prepare fails. */
 export const PAYMENT_UNAVAILABLE_MESSAGE =
   'Payment is temporarily unavailable. Please try again later.';
@@ -17,7 +22,9 @@ export const EVM_PAYMENT_DEV_HINT =
 export function formatPaymentError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
   if (/unexpected error/i.test(msg)) {
-    return 'Wallet could not send the payment. Use Solana Devnet in Phantom, keep some SOL for fees, and ensure you have 1 test USDT.';
+    return IS_SOLANA_MAINNET
+      ? 'Wallet could not send the payment. Use Solana Mainnet in Phantom, keep some SOL for fees, and ensure you have 1 USDT.'
+      : 'Wallet could not send the payment. Use Solana Devnet in Phantom, keep some SOL for fees, and ensure you have 1 test USDT.';
   }
   if (/user rejected|rejected the request|transaction cancelled/i.test(msg)) {
     return 'Payment cancelled in wallet.';
@@ -29,7 +36,9 @@ export function formatPaymentError(err: unknown): string {
     return 'Network timed out — please try again.';
   }
   if (/simulation failed|custom program error|0x1/i.test(msg)) {
-    return 'On-chain payment failed. Ensure you have test USDT and are on devnet.';
+    return IS_SOLANA_MAINNET
+      ? 'On-chain payment failed. Ensure you have 1 USDT and are on Solana Mainnet.'
+      : 'On-chain payment failed. Ensure you have test USDT and are on devnet.';
   }
   if (msg.includes('Payment could not be saved')) {
     return PAYMENT_SAVE_ERROR_MESSAGE;

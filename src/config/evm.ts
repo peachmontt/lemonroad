@@ -1,5 +1,5 @@
-/** Polygon Amoy testnet — default for dev/test deployments */
-export const EVM_CHAIN_ID = Number(import.meta.env.VITE_EVM_CHAIN_ID ?? 80002);
+/** Active EVM chain for payments (137 Polygon mainnet in production). */
+export const EVM_CHAIN_ID = Number(import.meta.env.VITE_EVM_CHAIN_ID ?? 137);
 
 const USDT_ADDRESSES: Record<number, `0x${string}`> = {
   1: '0xdAC17F958D2ee523a2206206994597C13D831ec7',

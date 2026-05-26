@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
+import { solanaExplorerTxUrl } from '../config/explorer';
 
 interface PoolStats {
   currentDay: string;
@@ -286,7 +287,7 @@ export function AdminPage() {
               <h2>Last Settle Result — Hour {settleResult.hour}</h2>
               <p>Players: {settleResult.participants} | Pool: {settleResult.poolTotal} µUSDT | Rollover: {settleResult.rolloverOut} µUSDT</p>
               {settleResult.settleTx && (
-                <p>TX: <a href={`https://explorer.solana.com/tx/${settleResult.settleTx}?cluster=devnet`} target="_blank" rel="noreferrer">{settleResult.settleTx.slice(0, 16)}…</a></p>
+                <p>TX: <a href={solanaExplorerTxUrl(settleResult.settleTx)} target="_blank" rel="noreferrer">{settleResult.settleTx.slice(0, 16)}…</a></p>
               )}
               <ul>
                 {settleResult.payouts.map((p) => (

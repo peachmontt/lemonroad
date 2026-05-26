@@ -113,7 +113,7 @@ export function StartOverlay({
             </p>
           ) : (
             <p className="paid-hint">
-              Game mode · Pay 1 USDT to play (Testnet)
+              Game mode · Pay 1 USDT to play (Mainnet)
               {hasPaidDeposit && ' · deposit ready'}
             </p>
           )}

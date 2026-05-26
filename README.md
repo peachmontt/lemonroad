@@ -33,7 +33,7 @@ Vite + React game with **Vercel serverless API**, **Postgres** (run history, dis
    npm run dev         # Vite on :5173, proxies /api → :3000
    ```
 
-5. Open **http://localhost:5173** — free runs save after death; rename in the top bar; paid mode needs wallet + devnet USDT (see below).
+5. Open **http://localhost:5173** — free runs save after death; rename in the top bar; paid mode needs wallet + USDT on the configured cluster (see below).
 
 ### Local `DATABASE_URL` (Docker default)
 
@@ -61,29 +61,35 @@ Put that in `.env` after `bootstrap-local.sh`, or export it before `npm run db:m
 
 ---
 
-## Paid mode (Solana)
+## Paid mode (Solana + optional EVM)
+
+Production uses **Solana mainnet-beta** and **Polygon mainnet (137)** by default. See [docs/MAINNET_PREREQUISITES.md](docs/MAINNET_PREREQUISITES.md).
 
 | Variable | Where | Purpose |
 |----------|--------|---------|
-| `SOLANA_RPC_URL` | Server | RPC for verifying deposits / settlement |
-| `USDT_MINT` | Server | SPL mint (6 decimals) |
+| `SOLANA_RPC_URL` | Server | Mainnet RPC (paid provider recommended) |
+| `USDT_MINT` | Server | Mainnet USDT `Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB` |
 | `PROGRAM_ID` | Server | Deployed Anchor program — **or** use `POOL_VAULT_OWNER` instead |
-| `POOL_VAULT_OWNER` | Server | Wallet pubkey that owns the pool USDT ATA (simple transfer mode; no program) |
-| `CRANK_KEYPAIR` | Server | JSON array or base58 secret for `settle_hour` (keep off git) |
-| `VITE_SOLANA_RPC_URL`, `VITE_SOLANA_CLUSTER`, `VITE_USDT_MINT` | Build | Frontend RPC + mint |
-| `VITE_PROGRAM_ID` | Build | Only when using the Anchor program path (must match `PROGRAM_ID`) |
-| `POOL_EVM_VAULT`, `VITE_EVM_VAULT_ADDRESS` | Server / Build | Optional EVM 1 USDT payments |
+| `POOL_VAULT_OWNER` | Server | Simple USDT transfer mode (no program) |
+| `CRANK_KEYPAIR` | Server | Settlement wallet secret (fund with mainnet SOL) |
+| `VITE_SOLANA_*`, `VITE_PROGRAM_ID`, `VITE_USDT_MINT` | Build | Must match server; redeploy after changes |
+| `EVM_CHAIN_ID`, `POOL_EVM_VAULT`, `EVM_RPC_URL` | Server | Polygon `137` or Ethereum `1` |
+| `VITE_EVM_*` | Build | EVM chain + vault for MetaMask |
 
-Copy [`.env.example`](.env.example) for a full list. Set **either** `PROGRAM_ID` **or** `POOL_VAULT_OWNER` on the server (not both required).
-
-Anchor program lives under `programs/lemonroad-pool/`. From that directory (with Anchor + Rust installed):
+### Mainnet deploy (production)
 
 ```bash
-anchor build
-anchor deploy --provider.cluster devnet
+npm run deploy:mainnet    # deploy + init pool (real SOL/USDT)
+npm run sync:vercel-paid  # push .env paid vars to Vercel lemonroad
 ```
 
-Then set `PROGRAM_ID` / `VITE_PROGRAM_ID` to the deployed address and run program `initialize` once (admin + vault setup).
+### Devnet (local testing only)
+
+```bash
+npm run deploy:devnet
+```
+
+Anchor program: `programs/lemonroad-pool/`. Set `PROGRAM_ID` / `VITE_PROGRAM_ID` and run `npm run init:pool` once per cluster.
 
 ---
 
@@ -96,6 +102,9 @@ Then set `PROGRAM_ID` / `VITE_PROGRAM_ID` to the deployed address and run progra
 | `npm run dev:stack` | Postgres (if not up) + `vercel dev` + Vite |
 | `npm run build` | `prisma generate` + `tsc` + Vite production build |
 | `npm run db:migrate` | `prisma migrate deploy` |
+| `npm run deploy:mainnet` | Solana mainnet deploy + pool init |
+| `npm run deploy:devnet` | Solana devnet deploy + pool init |
+| `npm run sync:vercel-paid` | Sync paid env to Vercel `lemonroad` |
 
 ---
 

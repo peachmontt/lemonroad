@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Push Solana paid-mode env vars from .env to the linked Vercel project (lemonroad).
-# Requires: vercel login (OAuth device flow) and .vercel/project.json from vercel link.
+# Push Solana + EVM paid-mode env vars from .env to Vercel project lemonroad only.
+# Requires: vercel login and npm run vercel:link
 # Use project-local CLI: npx vercel (npm i -D vercel@latest)
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,9 +23,9 @@ fi
 
 # shellcheck disable=SC1091
 set -a
-source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR|EVM_CHAIN_ID|VITE_EVM_CHAIN_ID|POOL_EVM_VAULT|VITE_EVM_VAULT_ADDRESS)=' .env | sed 's/\r$//' | sed 's/^export //')
+source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR|EVM_CHAIN_ID|VITE_EVM_CHAIN_ID|EVM_RPC_URL|POOL_EVM_VAULT|VITE_EVM_VAULT_ADDRESS)=' .env | sed 's/\r$//' | sed 's/^export //')
 # Strip accidental quotes/newlines from .env values
-for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR EVM_CHAIN_ID VITE_EVM_CHAIN_ID POOL_EVM_VAULT VITE_EVM_VAULT_ADDRESS; do
+for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR EVM_CHAIN_ID VITE_EVM_CHAIN_ID EVM_RPC_URL POOL_EVM_VAULT VITE_EVM_VAULT_ADDRESS; do
   declare "${_var}=${!_var//\"/}"
   declare "${_var}=$(printf '%s' "${!_var}" | tr -d '\n')"
 done
@@ -42,9 +42,11 @@ missing=()
 
 if [[ ${#missing[@]} -gt 0 ]]; then
   echo "Error: missing in .env: ${missing[*]}"
-  echo "Run: bash scripts/deploy-devnet.sh"
+  echo "Run: bash scripts/deploy-mainnet.sh (production) or deploy-devnet.sh (local test)"
   exit 1
 fi
+
+npx vercel@latest link --project lemonroad --yes 2>/dev/null || true
 
 upsert_env() {
   local key="$1"
@@ -89,8 +91,11 @@ for target in $TARGETS; do
   else
     echo "  ⚠ CRANK_KEYPAIR empty in .env — skipping (hourly settlement disabled)"
   fi
-  upsert_env "EVM_CHAIN_ID" "${EVM_CHAIN_ID:-80002}" "$target"
-  upsert_env "VITE_EVM_CHAIN_ID" "${VITE_EVM_CHAIN_ID:-80002}" "$target"
+  upsert_env "EVM_CHAIN_ID" "${EVM_CHAIN_ID:-137}" "$target"
+  upsert_env "VITE_EVM_CHAIN_ID" "${VITE_EVM_CHAIN_ID:-137}" "$target"
+  if [[ -n "${EVM_RPC_URL:-}" ]]; then
+    upsert_env "EVM_RPC_URL" "$EVM_RPC_URL" "$target"
+  fi
   if [[ -n "${POOL_EVM_VAULT:-}" ]]; then
     upsert_env "POOL_EVM_VAULT" "$POOL_EVM_VAULT" "$target"
     upsert_env "VITE_EVM_VAULT_ADDRESS" "${VITE_EVM_VAULT_ADDRESS:-$POOL_EVM_VAULT}" "$target"

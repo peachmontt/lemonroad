@@ -24,7 +24,7 @@ function parsePublicKeyEnv(
 }
 
 export const SOLANA_CLUSTER =
-  trimEnv(import.meta.env.VITE_SOLANA_CLUSTER) ?? 'devnet';
+  trimEnv(import.meta.env.VITE_SOLANA_CLUSTER) ?? 'mainnet-beta';
 
 export const SOLANA_RPC_URL =
   trimEnv(import.meta.env.VITE_SOLANA_RPC_URL) ??

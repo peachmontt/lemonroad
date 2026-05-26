@@ -117,7 +117,12 @@ async function main() {
   const sig = await connection.sendRawTransaction(tx.serialize());
   await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
   console.log('✅ Initialized! TX:', sig);
-  console.log(`   Explorer: https://explorer.solana.com/tx/${sig}?cluster=devnet`);
+  const cluster = process.env.VITE_SOLANA_CLUSTER ?? process.env.CLUSTER ?? 'mainnet-beta';
+  const clusterQ =
+    cluster === 'mainnet-beta' || cluster === 'mainnet'
+      ? ''
+      : `?cluster=${cluster}`;
+  console.log(`   Explorer: https://explorer.solana.com/tx/${sig}${clusterQ}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

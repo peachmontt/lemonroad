@@ -14,6 +14,8 @@
     "setup:vercel-db": "bash scripts/set-vercel-database-env.sh",
     "vercel:link": "bash scripts/vercel-link-lemonroad.sh",
     "deploy:devnet": "bash scripts/deploy-devnet.sh",
+    "deploy:mainnet": "bash scripts/deploy-mainnet.sh",
+    "sync:vercel-paid": "bash scripts/sync-vercel-paid-env.sh",
     "init:pool": "ts-node --project tsconfig.api.json scripts/init-pool.ts",
     "build": "prisma generate && tsc -b && vite build",
     "preview": "vite preview",

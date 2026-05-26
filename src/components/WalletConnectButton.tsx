@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import type { Connector } from 'wagmi';
 import { EVM_CHAIN_ID, EVM_CHAIN_NAME } from '../config/evm';
+import { solanaClusterLabel } from '../config/explorer';
 import {
   connectEvmFromUserAction,
   connectSolanaFromUserAction,
@@ -303,7 +304,7 @@ export function WalletConnectButton({
         <ul className="wallet-connect-menu" role="menu">
           <li role="none">
             <button type="button" role="menuitem" className="wallet-connect-menu-item" onClick={openSolana}>
-              Solana (devnet)
+              Solana ({solanaClusterLabel()})
             </button>
           </li>
           <li role="none">
