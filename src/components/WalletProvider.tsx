@@ -1,4 +1,4 @@
-import { isIosAndRedirectable, WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   ConnectionProvider,
   WalletProvider as SolanaWalletProvider,
@@ -26,10 +26,9 @@ export function WalletProvider({ children }: Props) {
     [network],
   );
 
-  // Phantom adapter marks iOS Safari as Loadable; wallet-adapter-react autoConnect
-  // calls connect() which redirects to phantom.app without user input. Phantom's own
-  // autoConnect() skips Loadable — we mirror that by disabling autoConnect on iOS.
-  const autoConnect = useMemo(() => !isIosAndRedirectable(), []);
+  // Do not auto-connect wallets on page load. autoConnect triggers adapter.connect()
+  // on mount (including Phantom deep links to phantom.app on mobile/PWA) and hurts retention.
+  // Wallet connection must only happen from explicit user clicks (Connect Wallet, modal, pay).
 
   const Provider = ConnectionProvider as ComponentType<{
     endpoint: string;
@@ -39,7 +38,7 @@ export function WalletProvider({ children }: Props) {
   return (
     <EvmProvider>
       <Provider endpoint={SOLANA_RPC_URL}>
-        <SolanaWalletProvider wallets={wallets} autoConnect={autoConnect}>
+        <SolanaWalletProvider wallets={wallets} autoConnect={false}>
           <WalletModalProvider>{children}</WalletModalProvider>
         </SolanaWalletProvider>
       </Provider>

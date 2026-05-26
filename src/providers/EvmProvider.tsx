@@ -33,8 +33,9 @@ export function EvmProvider({ children }: { children: ReactNode }) {
 
   void EVM_CHAIN_ID;
 
+  // Do not auto-connect wallets on page load. reconnectOnMount opens MetaMask without user input.
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config} reconnectOnMount={false}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );
