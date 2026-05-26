@@ -251,11 +251,6 @@ export function DeathOverlay({
               />
             )}
 
-            <p className="share-preview-label">this is what your friends will see:</p>
-            <div className="share-preview-scaler" aria-hidden="true">
-              <ShareCard snapshot={snapshot} juiceTitle={juiceTitle} preview />
-            </div>
-
             <div className="death-actions">
               <button
                 type="button"
@@ -272,6 +267,11 @@ export function DeathOverlay({
               >
                 {displayRetryLabel}
               </button>
+            </div>
+
+            <p className="share-preview-label">this is what your friends will see:</p>
+            <div className="share-preview-scaler" aria-hidden="true">
+              <ShareCard snapshot={snapshot} juiceTitle={juiceTitle} preview />
             </div>
           </>
         )}

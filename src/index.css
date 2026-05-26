@@ -561,6 +561,8 @@ html.gameplay-active #root {
   align-items: stretch;
   gap: 8px;
   width: min(92vw, 400px);
+  margin-bottom: 14px;
+  flex-shrink: 0;
 }
 
 .death-actions .btn {
@@ -1337,7 +1339,7 @@ html.gameplay-active #root {
   width: min(92vw, 480px);
   aspect-ratio: 1200 / 630;
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   border: 4px solid #000;
   box-shadow: 4px 4px 0 #000;
   background: #fff9e6;
@@ -1525,8 +1527,8 @@ html.gameplay-active #root {
     margin-bottom: 5px;
   }
 
-  .share-preview-scaler {
-    margin-bottom: 10px;
+  .death-actions {
+    margin-bottom: 12px;
   }
 
   .death-actions .btn-primary {
@@ -1603,7 +1605,7 @@ html.gameplay-active #root {
 
   .share-preview-scaler {
     width: min(52vw, 340px);
-    margin-bottom: 6px;
+    margin-bottom: 0;
   }
 
   .death-actions {
