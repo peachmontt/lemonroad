@@ -54,17 +54,17 @@ upsert_env() {
   local target="$3"
   local sensitive="${4:-false}"
 
-  "${VERCEL[@]}" env rm "$key" "$target" --yes 2>/dev/null || true
+  "${VERCEL[@]}" env rm "$key" "$target" -y 2>/dev/null || true
 
   local -a add_args=(env add "$key" "$target")
   if [[ "$target" == "preview" && -n "${VERCEL_PREVIEW_BRANCH:-}" ]]; then
-    add_args+=("$VERCEL_PREVIEW_BRANCH")
+    add_args=(env add "$key" "$target" "$VERCEL_PREVIEW_BRANCH")
   fi
-  add_args+=(--value "$value" --yes)
+  add_args+=(--value "$value" -y)
   if [[ "$sensitive" == "true" ]]; then
     add_args+=(--sensitive)
   fi
-  "${VERCEL[@]}" "${add_args[@]}"
+  "${VERCEL[@]}" "${add_args[@]}" </dev/null
   echo "  ✓ $key → $target"
 }
 

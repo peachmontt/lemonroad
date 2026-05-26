@@ -58,7 +58,7 @@ upsert_env() {
   local value="$2"
   local env="$3"
   echo "Setting ${name} for ${env}..."
-  npx vercel@latest env rm "${name}" "${env}" --yes "${TOKEN_ARGS[@]}" 2>/dev/null || true
+  npx vercel@latest env rm "${name}" "${env}" -y "${TOKEN_ARGS[@]}" 2>/dev/null || true
   printf '%s' "${value}" | npx vercel@latest env add "${name}" "${env}" "${TOKEN_ARGS[@]}"
 }
 
