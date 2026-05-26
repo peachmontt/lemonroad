@@ -18,6 +18,7 @@
     "deploy:mainnet:wait": "bash scripts/wait-and-deploy-mainnet.sh",
     "patch:env-mainnet": "bash scripts/patch-env-mainnet.sh",
     "sync:vercel-paid": "bash scripts/sync-vercel-paid-env.sh",
+    "sync:vercel-push": "bash scripts/sync-vercel-push-env.sh",
     "init:pool": "ts-node --project tsconfig.api.json scripts/init-pool.ts",
     "build": "prisma generate && tsc -b && vite build",
     "preview": "vite preview",

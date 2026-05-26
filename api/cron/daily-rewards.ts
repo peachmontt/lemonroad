@@ -136,15 +136,19 @@ export default withMethods({
       });
     }
 
-    // Collect all participant player IDs (everyone who played yesterday)
-    const allParticipantIds = entries.map((e) => e.playerId);
-
-    const pushResults = { sent: 0, failed: 0, skipped: !pushEnabled };
+    const pushResults = {
+      sent: 0,
+      failed: 0,
+      skipped: !pushEnabled,
+      ...(pushEnabled ? {} : { reason: 'VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY not set' }),
+      subscribers: 0,
+    };
 
     if (pushEnabled) {
       const subscriptions = await prisma.pushSubscription.findMany({
-        where: { playerId: { in: allParticipantIds }, enabled: true },
+        where: { enabled: true },
       });
+      pushResults.subscribers = subscriptions.length;
 
       for (const sub of subscriptions) {
         const isWinner = winnerIds.has(sub.playerId);
@@ -156,7 +160,7 @@ export default withMethods({
             }
           : {
               title: 'Lemon Road',
-              body: 'You got juiced. New daily squeeze is live.',
+              body: 'A new daily squeeze is live. Play free and climb the board.',
               url: '/',
             };
 
