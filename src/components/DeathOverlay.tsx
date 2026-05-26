@@ -95,8 +95,8 @@ export function DeathOverlay({
       ? dailyRank.computeDeathRank(meters)
       : null;
   const displayRetryLabel =
-    deathRank?.gapFromTop10 != null
-      ? pickRewardRetryLabel(deathRank.gapFromTop10)
+    deathRank?.gapFromPrizeZone != null
+      ? pickRewardRetryLabel(deathRank.gapFromPrizeZone)
       : retryLabel;
   const isDead = snapshot.phase === 'dead';
   const [sharing, setSharing] = useState(false);
@@ -212,13 +212,17 @@ export function DeathOverlay({
                 <p>rank: {juiceTitle}</p>
                 {gameMode === 'free' && deathRank && (
                   <div className="death-reward-panel">
-                    {deathRank.rank != null && (
+                    {deathRank.rank != null ? (
                       <p>You are #{deathRank.rank} today</p>
+                    ) : (
+                      <p>Play a run to enter today&apos;s board</p>
                     )}
-                    {deathRank.inZone ? (
-                      <p className="death-reward-zone">In reward zone!</p>
-                    ) : deathRank.gapToZone != null && deathRank.gapToZone > 0 ? (
-                      <p>Need +{deathRank.gapToZone}m to enter reward zone</p>
+                    {deathRank.inPrizeZone ? (
+                      <p className="death-reward-zone">In the top 3!</p>
+                    ) : deathRank.gapToTarget != null && deathRank.gapToTarget > 0 ? (
+                      <p>Need +{deathRank.gapToTarget}m to beat the next target</p>
+                    ) : dailyRank?.scoreToBeatMessage ? (
+                      <p>{dailyRank.scoreToBeatMessage}</p>
                     ) : null}
                   </div>
                 )}

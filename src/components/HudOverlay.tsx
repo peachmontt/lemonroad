@@ -9,6 +9,16 @@ interface HudOverlayProps {
   onToggleMute: () => void;
 }
 
+function formatScoreToBeat(dailyRank: DailyRankContext): string {
+  if (dailyRank.loading) return '…';
+  if (dailyRank.error) return 'unavailable';
+  if (dailyRank.scoreToBeatMessage) return dailyRank.scoreToBeatMessage;
+  if (dailyRank.scoreToBeat != null) {
+    return `${Math.floor(dailyRank.scoreToBeat)}m`;
+  }
+  return '—';
+}
+
 export function HudOverlay({
   snapshot,
   gameMode,
@@ -37,21 +47,15 @@ export function HudOverlay({
           <p className="hud-reward-full">
             Daily Pool: {dailyRank.poolTotal}
             <br />
-            Top 10 enter reward zone
+            Top 3 win $10 / $6 / $4
             <br />
-            Your rank: {dailyRank.loading ? '…' : dailyRank.playerRank ? `#${dailyRank.playerRank}` : 'unranked'}
+            Your rank: {dailyRank.playerRankLabel}
             <br />
-            Score to beat:{' '}
-            {dailyRank.rewardZoneScore != null
-              ? `${Math.floor(dailyRank.rewardZoneScore)}m`
-              : '—'}
+            Score to beat: {formatScoreToBeat(dailyRank)}
           </p>
           <p className="hud-reward-compact">
-            Pool {dailyRank.poolTotal} ·{' '}
-            {dailyRank.loading ? '…' : dailyRank.playerRank ? `#${dailyRank.playerRank}` : '—'} · beat{' '}
-            {dailyRank.rewardZoneScore != null
-              ? `${Math.floor(dailyRank.rewardZoneScore)}m`
-              : '—'}
+            Pool {dailyRank.poolTotal} · {dailyRank.playerRankLabel} · beat{' '}
+            {formatScoreToBeat(dailyRank)}
           </p>
         </div>
       )}

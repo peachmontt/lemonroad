@@ -6,6 +6,7 @@ import {
   type DailyLeaderboardResponse,
   type DailyRewardStatus,
 } from '../lib/api';
+import { useDailyLeaderboard } from '../context/DailyLeaderboardContext';
 import { CollapsiblePanel } from './CollapsiblePanel';
 import { LemonLoader } from './LemonLoader';
 
@@ -36,8 +37,8 @@ export function GlobalLeaderboardPanel({
   onToggle,
   currentPlayerId,
 }: GlobalLeaderboardPanelProps) {
+  const sharedToday = useDailyLeaderboard();
   const [tab, setTab] = useState<Tab>('daily-today');
-  const [dailyToday, setDailyToday] = useState<DailyLeaderboardResponse | null>(null);
   const [dailyYesterday, setDailyYesterday] = useState<DailyLeaderboardResponse | null>(null);
   const [globalData, setGlobalData] = useState<GlobalLeaderboardResponse | null>(null);
   const [globalMode, setGlobalMode] = useState<'free' | 'paid' | 'all'>('free');
@@ -45,22 +46,21 @@ export function GlobalLeaderboardPanel({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (tab === 'daily-today') return;
+
     let cancelled = false;
     setLoading(true);
     setError(null);
 
     const fetcher =
-      tab === 'daily-today'
-        ? fetchDailyLeaderboard('today')
-        : tab === 'daily-yesterday'
-          ? fetchDailyLeaderboard('yesterday')
-          : fetchGlobalLeaderboard(globalMode, compact ? 15 : 50);
+      tab === 'daily-yesterday'
+        ? fetchDailyLeaderboard('yesterday')
+        : fetchGlobalLeaderboard(globalMode, compact ? 15 : 50);
 
     fetcher
       .then((data) => {
         if (cancelled) return;
-        if (tab === 'daily-today') setDailyToday(data as DailyLeaderboardResponse);
-        else if (tab === 'daily-yesterday') setDailyYesterday(data as DailyLeaderboardResponse);
+        if (tab === 'daily-yesterday') setDailyYesterday(data as DailyLeaderboardResponse);
         else setGlobalData(data as GlobalLeaderboardResponse);
       })
       .catch((err: unknown) => {
@@ -73,14 +73,31 @@ export function GlobalLeaderboardPanel({
     return () => { cancelled = true; };
   }, [tab, globalMode, compact]);
 
-  const subtitle = loading
+  const dailyToday = sharedToday.today;
+  const todayLoading = sharedToday.loading;
+  const todayError = sharedToday.error;
+
+  const currentData =
+    tab === 'daily-today'
+      ? dailyToday
+      : tab === 'daily-yesterday'
+        ? dailyYesterday
+        : globalData;
+
+  const isLoading =
+    tab === 'daily-today' ? todayLoading && !dailyToday : loading && !currentData;
+
+  const currentError =
+    tab === 'daily-today' ? todayError : error;
+
+  const subtitle = isLoading
     ? 'loading…'
-    : error
+    : currentError && !currentData
       ? 'load failed'
       : tab === 'daily-today'
         ? "today's free runs"
         : tab === 'daily-yesterday'
-          ? "yesterday · results"
+          ? 'yesterday · results'
           : `best run per player · ${globalMode}`;
 
   function renderDailyEntries(data: DailyLeaderboardResponse) {
@@ -121,10 +138,10 @@ export function GlobalLeaderboardPanel({
     );
   }
 
-  const body = loading && !dailyToday && !dailyYesterday && !globalData ? (
+  const body = isLoading ? (
     <LemonLoader label="loading rankings..." />
-  ) : error && !dailyToday && !dailyYesterday && !globalData ? (
-    <p className="leaderboard-empty">could not load: {error}</p>
+  ) : currentError && !currentData ? (
+    <p className="leaderboard-empty">could not load: {currentError}</p>
   ) : (
     <>
       {tab === 'daily-today' && dailyToday && renderDailyEntries(dailyToday)}

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { useGameEngine } from '../hooks/useGameEngine';
@@ -172,8 +172,25 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     setTiltMsg(null);
   };
 
+  const isGameplay = snapshot.phase !== 'idle';
+
+  useEffect(() => {
+    document.body.classList.toggle('gameplay-active', isGameplay);
+    document.documentElement.classList.toggle('gameplay-active', isGameplay);
+    window.dispatchEvent(new Event('resize'));
+    return () => {
+      document.body.classList.remove('gameplay-active');
+      document.documentElement.classList.remove('gameplay-active');
+    };
+  }, [isGameplay]);
+
+  const gameRootClass = useMemo(
+    () => (isGameplay ? 'game-root gameplay-screen' : 'game-root'),
+    [isGameplay],
+  );
+
   return (
-    <div className="game-root">
+    <div className={gameRootClass}>
       <canvas ref={canvasRef} className="game-canvas" />
 
       {snapshot.phase === 'playing' && (

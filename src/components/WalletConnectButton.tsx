@@ -27,7 +27,10 @@ function pickEvmConnector(connectors: readonly Connector[]): Connector | undefin
 
 function formatEvmConnectError(message: string): string {
   if (/provider not found/i.test(message)) {
-    return 'MetaMask not detected. Install the extension or open this page in the MetaMask app browser.';
+    return 'Could not open MetaMask. Install the app or try again from MetaMask’s in-app browser.';
+  }
+  if (/dependency "@metamask\/connect-evm" not found/i.test(message)) {
+    return 'MetaMask SDK is unavailable. Please try again later.';
   }
   return message;
 }
@@ -55,12 +58,7 @@ export function WalletConnectButton({
       setEvmLocalError('No EVM wallet found. Install MetaMask.');
       return;
     }
-    if (typeof window !== 'undefined' && !window.ethereum) {
-      setEvmLocalError(
-        'MetaMask not detected. Install the extension or open lemonroad.xyz in the MetaMask app browser.',
-      );
-      return;
-    }
+
     onActiveChannelChange('evm');
     connect({ connector: evmConnector, chainId: EVM_CHAIN_ID });
   }, [connect, evmConnector, onActiveChannelChange]);

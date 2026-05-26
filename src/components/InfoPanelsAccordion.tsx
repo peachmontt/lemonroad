@@ -9,9 +9,14 @@ export type InfoPanelId = 'history' | 'global' | 'pool';
 interface InfoPanelsAccordionProps {
   runs: RunRecord[];
   runsLoading?: boolean;
+  currentPlayerId?: string | null;
 }
 
-export function InfoPanelsAccordion({ runs, runsLoading = false }: InfoPanelsAccordionProps) {
+export function InfoPanelsAccordion({
+  runs,
+  runsLoading = false,
+  currentPlayerId,
+}: InfoPanelsAccordionProps) {
   const [openId, setOpenId] = useState<InfoPanelId | null>(null);
 
   const toggle = (id: InfoPanelId) => {
@@ -30,6 +35,7 @@ export function InfoPanelsAccordion({ runs, runsLoading = false }: InfoPanelsAcc
         compact
         open={openId === 'global'}
         onToggle={() => toggle('global')}
+        currentPlayerId={currentPlayerId}
       />
       <LeaderboardPanel
         compact

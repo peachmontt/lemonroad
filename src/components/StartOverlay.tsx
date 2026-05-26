@@ -143,7 +143,11 @@ export function StartOverlay({
       </section>
 
       <section className="accordion-section">
-        <InfoPanelsAccordion runs={runs} runsLoading={runsLoading} />
+        <InfoPanelsAccordion
+          runs={runs}
+          runsLoading={runsLoading}
+          currentPlayerId={player?.playerId}
+        />
       </section>
 
       <section className="actions-section">

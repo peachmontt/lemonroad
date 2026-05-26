@@ -25,7 +25,73 @@ body,
 
 body {
   min-height: 100dvh;
+  min-height: 100vh;
   overflow-x: hidden;
+}
+
+body.gameplay-active {
+  overflow: hidden;
+  height: 100dvh;
+  height: 100vh;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+html.gameplay-active {
+  overflow: hidden;
+  height: 100dvh;
+  height: 100vh;
+}
+
+html.gameplay-active #root {
+  height: 100dvh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.gameplay-active .site-footer,
+.gameplay-active footer,
+.gameplay-active .bottom-links,
+.gameplay-active .footer-links,
+.gameplay-active .token-actions,
+.gameplay-active .menu-layout,
+.gameplay-active .home-panels,
+.gameplay-active .start-overlay,
+.gameplay-active .home-page,
+.gameplay-active .actions-section,
+.gameplay-active .accordion-section,
+.gameplay-active .cta-row,
+.gameplay-active .pwa-nudge-overlay {
+  display: none !important;
+}
+
+.gameplay-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #f9f1bd;
+  z-index: 1000;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.gameplay-screen .game-canvas {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.gameplay-screen .overlay {
+  position: absolute;
+  inset: 0;
 }
 
 /* Game root uses CSS grid so canvas + UI occupy the same cell.

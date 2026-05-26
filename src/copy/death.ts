@@ -108,12 +108,12 @@ export function pickRetryButtonLabel(): (typeof RETRY_BUTTON_LABELS)[number] {
   return pickOne(RETRY_BUTTON_LABELS);
 }
 
-export function pickRewardRetryLabel(gapFromTop10: number | null): string {
-  if (gapFromTop10 != null && gapFromTop10 > 0 && gapFromTop10 <= 200) {
-    return `TRY AGAIN — ${gapFromTop10}m FROM TOP 10`;
+export function pickRewardRetryLabel(gapFromPrizeZone: number | null): string {
+  if (gapFromPrizeZone != null && gapFromPrizeZone > 0 && gapFromPrizeZone <= 200) {
+    return `TRY AGAIN — ${gapFromPrizeZone}m FROM TOP 3`;
   }
-  if (gapFromTop10 != null && gapFromTop10 > 0) {
-    return `TRY AGAIN — NEED TOP 10`;
+  if (gapFromPrizeZone != null && gapFromPrizeZone > 0) {
+    return 'TRY AGAIN — NEED TOP 3';
   }
   return pickRetryButtonLabel();
 }
