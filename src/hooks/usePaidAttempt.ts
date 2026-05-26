@@ -1,7 +1,10 @@
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { useCallback, useState } from 'react';
 import { preparePaidAttempt } from '../lib/api';
-import { buildDepositAttemptTransaction } from '../lib/pool';
+import {
+  buildDepositAttemptFromPrepare,
+  buildDepositAttemptTransaction,
+} from '../lib/pool';
 import { PROGRAM_ID } from '../config/solana';
 import {
   formatPaymentError,
@@ -50,7 +53,7 @@ export function usePaidAttempt() {
 
       if (prep.paymentAvailable === false) {
         reportPaymentConfigIssue(prep.developerHint);
-        setError(PAYMENT_UNAVAILABLE_MESSAGE);
+        setError(prep.userMessage ?? PAYMENT_UNAVAILABLE_MESSAGE);
         return null;
       }
 
@@ -63,7 +66,9 @@ export function usePaidAttempt() {
 
       let tx: Transaction | null = null;
 
-      if (PROGRAM_ID) {
+      if (prep.accounts?.programId) {
+        tx = buildDepositAttemptFromPrepare(publicKey, prep.hourBucket, prep.accounts);
+      } else if (PROGRAM_ID) {
         tx = buildDepositAttemptTransaction(publicKey, prep.hourBucket);
       }
 

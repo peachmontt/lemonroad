@@ -9,6 +9,7 @@ import {
   hourLedgerPda,
   vaultAuthorityPda,
   vaultTokenPda,
+  isPoolProgramInitialized,
   ATTEMPT_AMOUNT,
 } from '../_lib/solana';
 import { getEvmVaultAddress, getEvmChainId } from '../_lib/evm';
@@ -129,6 +130,23 @@ export default withMethods({
     let accounts: Record<string, string> | null = null;
     const poolVaultOwner = process.env.POOL_VAULT_OWNER;
     if (programId) {
+      const poolReady = await isPoolProgramInitialized(programId);
+      if (!poolReady) {
+        console.error(
+          '[paid/prepare] Pool program not initialized on chain — run scripts/init-pool.ts on devnet',
+        );
+        return json(res, {
+          ready: false,
+          paymentAvailable: false,
+          paymentMode: 'program',
+          developerHint: 'Pool not initialized on devnet. Admin must run scripts/init-pool.ts once.',
+          userMessage:
+            'Paid mode is not set up on devnet yet. Try again later or use Free mode.',
+          hourBucket,
+          amountUsdt: ATTEMPT_AMOUNT.toString(),
+          accounts: null,
+        });
+      }
       const vaultAuth = vaultAuthorityPda(programId);
       accounts = {
         programId: programId.toBase58(),

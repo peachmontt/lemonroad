@@ -16,6 +16,9 @@ export const EVM_PAYMENT_DEV_HINT =
 /** Map wallet/RPC errors to short UI copy (never log secrets). */
 export function formatPaymentError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
+  if (/unexpected error/i.test(msg)) {
+    return 'Wallet could not send the payment. Use Solana Devnet in Phantom, keep some SOL for fees, and ensure you have 1 test USDT.';
+  }
   if (/user rejected|rejected the request|transaction cancelled/i.test(msg)) {
     return 'Payment cancelled in wallet.';
   }

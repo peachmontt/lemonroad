@@ -89,6 +89,12 @@ export function vaultTokenPda(programId: PublicKey): PublicKey {
   return pda;
 }
 
+export async function isPoolProgramInitialized(programId: PublicKey): Promise<boolean> {
+  const connection = getConnection();
+  const info = await connection.getAccountInfo(globalConfigPda(programId));
+  return info !== null && info.data.length > 0;
+}
+
 export async function verifyDepositTransaction(
   txSignature: string,
   expectedWallet: string,

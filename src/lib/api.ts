@@ -186,6 +186,7 @@ export function preparePaidAttempt(
     paymentAvailable?: boolean;
     paymentMode?: 'program' | 'vault_owner' | 'unconfigured';
     developerHint?: string;
+    userMessage?: string;
     depositTx?: string;
     hourBucket: string;
     amountUsdt: string;
