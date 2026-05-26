@@ -2,6 +2,10 @@
 export const PAYMENT_UNAVAILABLE_MESSAGE =
   'Payment is temporarily unavailable. Please try again later.';
 
+/** Shown when the on-chain payment succeeded but the server could not persist it. */
+export const PAYMENT_SAVE_ERROR_MESSAGE =
+  'Payment could not be saved, please try again';
+
 /** Logged in dev when server/client paid config is missing. */
 export const SOLANA_PAYMENT_DEV_HINT =
   'Solana paid mode: set PROGRAM_ID + VITE_PROGRAM_ID (Anchor program), or POOL_VAULT_OWNER on the API (simple USDT transfer). Also set USDT_MINT / VITE_USDT_MINT and SOLANA_RPC_URL / VITE_SOLANA_RPC_URL.';

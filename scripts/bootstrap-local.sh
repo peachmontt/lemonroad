@@ -24,6 +24,7 @@ for i in $(seq 1 40); do
 done
 
 export DATABASE_URL="${DATABASE_URL:-postgresql://lemonroad:lemonroad@localhost:5432/lemonroad?schema=public}"
+export DIRECT_URL="${DIRECT_URL:-$DATABASE_URL}"
 
 echo "Running Prisma migrations..."
 npm run db:migrate

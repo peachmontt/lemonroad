@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../_lib/db';
 import { currentHourBucket } from '../_lib/hour';
-import { badRequest, json, withMethods, parseJsonBody } from '../_lib/http';
+import { badRequest, json, serviceUnavailable, withMethods, parseJsonBody } from '../_lib/http';
 import {
   getProgramId,
   getUsdtMint,
@@ -17,6 +17,11 @@ import {
 } from '../_lib/payment-config';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import {
+  isPrismaConnectionError,
+  PAYMENT_DB_ERROR_MESSAGE,
+  prismaOp,
+} from '../_lib/prisma-ops';
 
 const bodySchema = z.object({
   walletPubkey: z.string(),
@@ -33,17 +38,40 @@ export default withMethods({
     const { walletPubkey, paymentChain } = parsed.data;
     const hourBucket = currentHourBucket();
 
-    const unused = await prisma.verifiedDeposit.findFirst({
-      where: {
-        walletPubkey,
-        hourBucket,
-        paymentChain,
-        usedAt: null,
-      },
-      orderBy: { createdAt: 'desc' },
+    console.log('[payment] prepare start', {
+      walletPubkey: walletPubkey.slice(0, 8),
+      paymentChain,
+      hourBucket,
     });
 
+    let unused;
+    try {
+      unused = await prismaOp(
+        'verifiedDeposit.findFirst.unused',
+        { walletPubkey: walletPubkey.slice(0, 8), hourBucket, paymentChain },
+        () =>
+          prisma.verifiedDeposit.findFirst({
+            where: {
+              walletPubkey,
+              hourBucket,
+              paymentChain,
+              usedAt: null,
+            },
+            orderBy: { createdAt: 'desc' },
+          }),
+      );
+    } catch (err) {
+      console.error('[payment] prepare db lookup failed', err);
+      if (isPrismaConnectionError(err)) {
+        return serviceUnavailable(res, PAYMENT_DB_ERROR_MESSAGE);
+      }
+      throw err;
+    }
+
     if (unused) {
+      console.log('[payment] prepare reuse unused deposit', {
+        depositTx: unused.txSignature.slice(0, 16),
+      });
       return json(res, {
         ready: true,
         depositTx: unused.txSignature,
@@ -74,6 +102,10 @@ export default withMethods({
           '[paid/prepare] EVM payment unavailable: set POOL_EVM_VAULT on the server.',
         );
       }
+
+      console.log('[payment] prepare evm accounts ready', {
+        paymentAvailable: evmAccounts !== null,
+      });
 
       return json(res, {
         ready: false,
@@ -125,6 +157,11 @@ export default withMethods({
         `[paid/prepare] Solana payment unavailable (${solanaMode}): ${solanaPaymentDeveloperHint(solanaMode)}`,
       );
     }
+
+    console.log('[payment] prepare solana accounts ready', {
+      paymentAvailable,
+      paymentMode: solanaMode,
+    });
 
     json(res, {
       ready: false,

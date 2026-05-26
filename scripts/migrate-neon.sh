@@ -21,6 +21,19 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   exit 1
 fi
 
+if [[ -z "${DIRECT_URL:-}" ]]; then
+  if [[ -f .env ]]; then
+    DIRECT_URL=$(grep '^DIRECT_URL=' .env | cut -d= -f2- | tr -d '"' || true)
+    export DIRECT_URL
+  fi
+fi
+
+if [[ -z "${DIRECT_URL:-}" ]]; then
+  echo "Warning: DIRECT_URL not set; using DATABASE_URL for migrations."
+  echo "For Neon/Supabase, set DIRECT_URL to the non-pooled host for prisma migrate."
+  export DIRECT_URL="${DATABASE_URL}"
+fi
+
 echo "Running migrations against: ${DATABASE_URL%%@*}@***"
 npx prisma migrate deploy
 echo "✅ Migrations applied."

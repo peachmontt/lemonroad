@@ -10,6 +10,7 @@ import {
 } from '../config/evm';
 import {
   EVM_PAYMENT_DEV_HINT,
+  PAYMENT_SAVE_ERROR_MESSAGE,
   PAYMENT_UNAVAILABLE_MESSAGE,
 } from '../config/payment';
 
@@ -79,7 +80,11 @@ export function useEvmPaidAttempt() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'EVM payment failed';
       if (import.meta.env.DEV) console.warn(msg);
-      setError(PAYMENT_UNAVAILABLE_MESSAGE);
+      setError(
+        msg.includes('Payment could not be saved')
+          ? PAYMENT_SAVE_ERROR_MESSAGE
+          : PAYMENT_UNAVAILABLE_MESSAGE,
+      );
       return null;
     } finally {
       setPending(false);

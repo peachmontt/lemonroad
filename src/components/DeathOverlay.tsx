@@ -13,6 +13,7 @@ import type { GameSnapshot } from '../game/types';
 import type { DailyRankContext } from '../hooks/useDailyRank';
 import { submitRun } from '../lib/api';
 import { trackRunEnd } from '../lib/analytics';
+import { PAYMENT_SAVE_ERROR_MESSAGE } from '../config/payment';
 import type { GameMode } from '../types/game';
 import type { PlayerResponse } from '../lib/api';
 import { computeRank } from '../utils/rank';
@@ -157,7 +158,14 @@ export function DeathOverlay({
         onRunSavedRef.current?.();
       })
       .catch((e) => {
-        setSaveError(e instanceof Error ? e.message : 'Failed to save run');
+        const raw = e instanceof Error ? e.message : 'Failed to save run';
+        const message =
+          gameMode === 'paid' &&
+          (raw.includes('Payment could not be saved') ||
+            raw.includes('Could not save run'))
+            ? PAYMENT_SAVE_ERROR_MESSAGE
+            : raw;
+        setSaveError(message);
         // savedRef.current stays true — prevents infinite retry loop on API failure
       });
   }, [

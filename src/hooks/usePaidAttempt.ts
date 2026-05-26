@@ -4,6 +4,7 @@ import { preparePaidAttempt } from '../lib/api';
 import { buildDepositAttemptTransaction } from '../lib/pool';
 import { PROGRAM_ID } from '../config/solana';
 import {
+  PAYMENT_SAVE_ERROR_MESSAGE,
   PAYMENT_UNAVAILABLE_MESSAGE,
   SOLANA_PAYMENT_DEV_HINT,
 } from '../config/payment';
@@ -101,7 +102,11 @@ export function usePaidAttempt() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Payment failed';
       if (import.meta.env.DEV) console.warn(msg);
-      setError(PAYMENT_UNAVAILABLE_MESSAGE);
+      setError(
+        msg.includes('Payment could not be saved')
+          ? PAYMENT_SAVE_ERROR_MESSAGE
+          : PAYMENT_UNAVAILABLE_MESSAGE,
+      );
       return null;
     } finally {
       setPending(false);

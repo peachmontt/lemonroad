@@ -14,6 +14,10 @@ export function unauthorized(res: VercelResponse, message = 'Unauthorized') {
   return res.status(401).json({ error: message });
 }
 
+export function serviceUnavailable(res: VercelResponse, message: string) {
+  return res.status(503).json({ error: message });
+}
+
 export function json(res: VercelResponse, data: unknown, status = 200) {
   return res.status(status).json(data);
 }

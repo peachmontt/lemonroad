@@ -11,6 +11,8 @@
     "dev:stack": "bash scripts/dev-stack.sh",
     "setup:local": "bash scripts/bootstrap-local.sh",
     "setup:neon": "bash scripts/migrate-neon.sh",
+    "setup:vercel-db": "bash scripts/set-vercel-database-env.sh",
+    "vercel:link": "bash scripts/vercel-link-lemonroad.sh",
     "deploy:devnet": "bash scripts/deploy-devnet.sh",
     "init:pool": "ts-node --project tsconfig.api.json scripts/init-pool.ts",
     "build": "prisma generate && tsc -b && vite build",
