@@ -84,6 +84,11 @@ export function vaultAuthorityPda(programId: PublicKey): PublicKey {
   return pda;
 }
 
+export function vaultTokenPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync([Buffer.from('vault')], programId);
+  return pda;
+}
+
 export async function verifyDepositTransaction(
   txSignature: string,
   expectedWallet: string,
@@ -118,10 +123,13 @@ export async function verifyDepositTransaction(
     }
   }
 
-  const vaultAuth = programId
-    ? vaultAuthorityPda(programId)
-    : new PublicKey(process.env.POOL_VAULT_OWNER ?? expectedWallet);
-  const vaultAta = getAssociatedTokenAddressSync(usdtMint, vaultAuth, true);
+  const vaultDest = programId
+    ? vaultTokenPda(programId)
+    : getAssociatedTokenAddressSync(
+        usdtMint,
+        new PublicKey(process.env.POOL_VAULT_OWNER ?? expectedWallet),
+        false,
+      );
 
   let deposited = 0n;
   const pre = tx.meta.preTokenBalances ?? [];
@@ -134,12 +142,10 @@ export async function verifyDepositTransaction(
     );
     const preAmt = BigInt(preBal?.uiTokenAmount.amount ?? '0');
     const postAmt = BigInt(postBal.uiTokenAmount.amount);
-    if (postBal.owner === vaultAuth.toBase58() || postBal.accountIndex) {
-      const accountKey =
-        tx.transaction.message.accountKeys[postBal.accountIndex]?.pubkey;
-      if (accountKey?.equals(vaultAta)) {
-        deposited += postAmt - preAmt;
-      }
+    const accountKey =
+      tx.transaction.message.accountKeys[postBal.accountIndex]?.pubkey;
+    if (accountKey?.equals(vaultDest)) {
+      deposited += postAmt - preAmt;
     }
   }
 
@@ -160,7 +166,7 @@ export async function verifyDepositTransaction(
           const amt = BigInt(parsed.info?.amount ?? '0');
           if (dest && amt >= ATTEMPT_AMOUNT) {
             const destKey = new PublicKey(dest);
-            if (destKey.equals(vaultAta)) {
+            if (destKey.equals(vaultDest)) {
               deposited = amt;
             }
           }
@@ -197,7 +203,7 @@ export async function buildSettleHourTransaction(
   const config = globalConfigPda(programId);
   const hourLedger = hourLedgerPda(programId, hourId);
   const vaultAuth = vaultAuthorityPda(programId);
-  const vaultAta = getAssociatedTokenAddressSync(usdtMint, vaultAuth, true);
+  const vaultAta = vaultTokenPda(programId);
 
   const winnerKeys = winners.map((w) =>
     w ? new PublicKey(w) : PublicKey.default,

@@ -12,3 +12,27 @@ export const SOLANA_PAYMENT_DEV_HINT =
 
 export const EVM_PAYMENT_DEV_HINT =
   'EVM paid mode: set POOL_EVM_VAULT on the API and optionally VITE_EVM_VAULT_ADDRESS on the frontend.';
+
+/** Map wallet/RPC errors to short UI copy (never log secrets). */
+export function formatPaymentError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/user rejected|rejected the request|transaction cancelled/i.test(msg)) {
+    return 'Payment cancelled in wallet.';
+  }
+  if (/insufficient funds|insufficient lamports/i.test(msg)) {
+    return 'Not enough SOL for fees or USDT for the 1 USDT payment.';
+  }
+  if (/blockhash not found|expired/i.test(msg)) {
+    return 'Network timed out — please try again.';
+  }
+  if (/simulation failed|custom program error|0x1/i.test(msg)) {
+    return 'On-chain payment failed. Ensure you have test USDT and are on devnet.';
+  }
+  if (msg.includes('Payment could not be saved')) {
+    return PAYMENT_SAVE_ERROR_MESSAGE;
+  }
+  if (msg.length > 0 && msg.length <= 140) {
+    return msg;
+  }
+  return PAYMENT_UNAVAILABLE_MESSAGE;
+}

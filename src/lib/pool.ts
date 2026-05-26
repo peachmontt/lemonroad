@@ -42,6 +42,12 @@ export function vaultAuthorityPda(programId: PublicKey): PublicKey {
   return pda;
 }
 
+/** Program-owned USDT token account (seeds: ["vault"]), not an ATA. */
+export function vaultTokenPda(programId: PublicKey): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync([Buffer.from('vault')], programId);
+  return pda;
+}
+
 export function buildDepositAttemptTransaction(
   wallet: PublicKey,
   hourId: string,
@@ -53,7 +59,7 @@ export function buildDepositAttemptTransaction(
   const config = globalConfigPda(programId);
   const hourLedger = hourLedgerPda(programId, hour);
   const vaultAuth = vaultAuthorityPda(programId);
-  const vaultAta = getAssociatedTokenAddressSync(USDT_MINT, vaultAuth, true);
+  const vault = vaultTokenPda(programId);
   const userAta = getAssociatedTokenAddressSync(USDT_MINT, wallet, false);
 
   const data = Buffer.alloc(8 + DEPOSIT_DISCRIMINATOR.length);
@@ -67,7 +73,7 @@ export function buildDepositAttemptTransaction(
       { pubkey: config, isSigner: false, isWritable: false },
       { pubkey: hourLedger, isSigner: false, isWritable: true },
       { pubkey: userAta, isSigner: false, isWritable: true },
-      { pubkey: vaultAta, isSigner: false, isWritable: true },
+      { pubkey: vault, isSigner: false, isWritable: true },
       { pubkey: vaultAuth, isSigner: false, isWritable: false },
       { pubkey: USDT_MINT, isSigner: false, isWritable: false },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },

@@ -10,7 +10,7 @@ import {
 } from '../config/evm';
 import {
   EVM_PAYMENT_DEV_HINT,
-  PAYMENT_SAVE_ERROR_MESSAGE,
+  formatPaymentError,
   PAYMENT_UNAVAILABLE_MESSAGE,
 } from '../config/payment';
 
@@ -78,13 +78,8 @@ export function useEvmPaidAttempt() {
       setDepositTx(hash);
       return hash;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'EVM payment failed';
-      if (import.meta.env.DEV) console.warn(msg);
-      setError(
-        msg.includes('Payment could not be saved')
-          ? PAYMENT_SAVE_ERROR_MESSAGE
-          : PAYMENT_UNAVAILABLE_MESSAGE,
-      );
+      console.warn('[payment] evm tx failed', e instanceof Error ? e.message : e);
+      setError(formatPaymentError(e));
       return null;
     } finally {
       setPending(false);

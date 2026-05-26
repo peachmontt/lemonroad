@@ -4,7 +4,7 @@ import { preparePaidAttempt } from '../lib/api';
 import { buildDepositAttemptTransaction } from '../lib/pool';
 import { PROGRAM_ID } from '../config/solana';
 import {
-  PAYMENT_SAVE_ERROR_MESSAGE,
+  formatPaymentError,
   PAYMENT_UNAVAILABLE_MESSAGE,
   SOLANA_PAYMENT_DEV_HINT,
 } from '../config/payment';
@@ -94,19 +94,26 @@ export function usePaidAttempt() {
       tx.recentBlockhash = blockhash;
       tx.feePayer = publicKey;
 
+      if (import.meta.env.DEV) {
+        try {
+          const sim = await connection.simulateTransaction(tx);
+          if (sim.value.err) {
+            console.warn('[payment] simulation failed', sim.value.err, sim.value.logs);
+          }
+        } catch {
+          /* unsigned tx may not simulate until wallet signs */
+        }
+      }
+
       const sig = await sendTransaction(tx, connection);
       await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
 
       setDepositTx(sig);
       return sig;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Payment failed';
-      if (import.meta.env.DEV) console.warn(msg);
-      setError(
-        msg.includes('Payment could not be saved')
-          ? PAYMENT_SAVE_ERROR_MESSAGE
-          : PAYMENT_UNAVAILABLE_MESSAGE,
-      );
+      const msg = formatPaymentError(e);
+      console.warn('[payment] wallet tx failed', e instanceof Error ? e.message : e);
+      setError(msg);
       return null;
     } finally {
       setPending(false);

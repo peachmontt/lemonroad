@@ -8,6 +8,7 @@ import {
   globalConfigPda,
   hourLedgerPda,
   vaultAuthorityPda,
+  vaultTokenPda,
   ATTEMPT_AMOUNT,
 } from '../_lib/solana';
 import { getEvmVaultAddress, getEvmChainId } from '../_lib/evm';
@@ -134,7 +135,7 @@ export default withMethods({
         globalConfig: globalConfigPda(programId).toBase58(),
         hourLedger: hourLedgerPda(programId, BigInt(hourBucket)).toBase58(),
         vaultAuthority: vaultAuth.toBase58(),
-        vaultAta: getAssociatedTokenAddressSync(usdtMint, vaultAuth, true).toBase58(),
+        vaultAta: vaultTokenPda(programId).toBase58(),
         userAta: getAssociatedTokenAddressSync(usdtMint, wallet, false).toBase58(),
         usdtMint: usdtMint.toBase58(),
         hourId: hourBucket,
