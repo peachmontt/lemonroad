@@ -39,6 +39,14 @@ export function getPendingReferral(): string | null {
   }
 }
 
+export function clearPendingReferral(): void {
+  try {
+    localStorage.removeItem(PENDING_REF_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export interface ReferralReward {
   friends: number;
   label: string;

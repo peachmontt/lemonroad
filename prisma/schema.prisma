@@ -21,18 +21,27 @@ enum DailyLeaderboardStatus {
   REJECTED
 }
 
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REJECTED
+}
+
 model Player {
   id                String             @id @default(uuid())
   sessionId         String             @unique @map("session_id")
   ipHash            String             @map("ip_hash")
   walletPubkey      String?            @unique @map("wallet_pubkey")
   displayName       String             @default("Anonymous Lemon") @map("display_name")
+  referralCode      String?            @unique @map("referral_code")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   runs              GameRun[]
   dailyEntries      DailyLeaderboard[]
   dailyRewards      DailyReward[]
   pushSubscriptions PushSubscription[]
+  referralsMade     Referral[]         @relation("Referrer")
+  referralReceived  Referral?          @relation("Referee")
 
   @@index([ipHash])
   @@map("players")
@@ -55,6 +64,7 @@ model GameRun {
   deviceType     String?  @map("device_type")
   antiCheatScore Int      @default(0) @map("anti_cheat_score")
   isValid        Boolean  @default(true) @map("is_valid")
+  referralQualified Referral?
 
   @@index([playerId, diedAt(sort: Desc)])
   @@index([mode, hourBucket, distance(sort: Desc)])
@@ -138,6 +148,25 @@ model PrizePayout {
 
   @@unique([hourStart, place])
   @@map("prize_payouts")
+}
+
+model Referral {
+  id             String         @id @default(uuid())
+  referrerId     String         @map("referrer_id")
+  referrer       Player         @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeId      String         @unique @map("referee_id")
+  referee        Player         @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+  code           String
+  status         ReferralStatus @default(PENDING)
+  rejectReason   String?        @map("reject_reason")
+  refereeIpHash  String         @map("referee_ip_hash")
+  qualifiedRunId String?        @unique @map("qualified_run_id")
+  qualifiedRun   GameRun?       @relation(fields: [qualifiedRunId], references: [id])
+  createdAt      DateTime       @default(now()) @map("created_at")
+  qualifiedAt    DateTime?      @map("qualified_at")
+
+  @@index([referrerId, status])
+  @@map("referrals")
 }
 
 model VerifiedDeposit {

@@ -10,10 +10,14 @@ import { ReferralsTab } from './ReferralsTab';
 import { SkinsTab } from './SkinsTab';
 import { WeeklyCupTab } from './WeeklyCupTab';
 
+import type { ReferralStats } from '../lib/api';
+
 interface LemonClubMenuProps {
   open: boolean;
   initialTab?: LemonClubTab;
   progress: PlayerProgress;
+  referralStats?: ReferralStats | null;
+  referralBackendReady?: boolean;
   onClose: () => void;
   onSelectSkin: (id: SkinId) => void;
   onSelectDeathTitle: (id: DeathTitleId | null) => void;
@@ -25,6 +29,8 @@ export function LemonClubMenu({
   open,
   initialTab = 'missions',
   progress,
+  referralStats,
+  referralBackendReady,
   onClose,
   onSelectSkin,
   onSelectDeathTitle,
@@ -87,7 +93,12 @@ export function LemonClubMenu({
             <BadgesTab progress={progress} onSelectTitle={onSelectDeathTitle} />
           )}
           {tab === 'referrals' && (
-            <ReferralsTab progress={progress} onSimulateReferral={onSimulateReferral} />
+            <ReferralsTab
+              progress={progress}
+              referralStats={referralStats}
+              referralBackendReady={referralBackendReady}
+              onSimulateReferral={onSimulateReferral}
+            />
           )}
           {tab === 'weekly' && <WeeklyCupTab progress={progress} />}
           {tab === 'shame' && <HallOfShameTab />}

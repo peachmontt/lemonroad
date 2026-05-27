@@ -325,4 +325,20 @@ export function incrementReferralCountDev(): PlayerProgress {
   return p;
 }
 
+export function applyServerReferralStats(stats: {
+  code: string;
+  qualifiedCount: number;
+}): PlayerProgress {
+  const p = getProgress();
+  p.referralCode = stats.code;
+  p.referralCount = stats.qualifiedCount;
+  if (p.referralCount >= 3 && !p.unlockedSkins.includes('golden')) {
+    p.unlockedSkins.push('golden');
+  }
+  if (p.referralCount >= 5) p.customDeathPhraseUnlocked = true;
+  if (p.referralCount >= 10) p.referralLeaderboardBadge = true;
+  saveProgress(p);
+  return p;
+}
+
 export { getActiveDailyMissions };

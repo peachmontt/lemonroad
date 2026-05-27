@@ -22,6 +22,7 @@ import {
   PAYMENT_DB_ERROR_MESSAGE,
   prismaOp,
 } from './_lib/prisma-ops';
+import { tryQualifyReferralOnRun } from './_lib/referrals';
 
 const postSchema = z.object({
   mode: z.enum(['free', 'paid']),
@@ -324,6 +325,12 @@ export default withMethods({
             }),
           );
         }
+      }
+
+      try {
+        await tryQualifyReferralOnRun(player, run);
+      } catch (err) {
+        console.error('[runs] referral qualify failed', { playerId: player.id, err });
       }
 
       json(res, {

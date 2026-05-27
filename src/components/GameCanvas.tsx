@@ -79,12 +79,6 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     if (ref) storePendingReferral(ref);
   }, []);
 
-  const openLemonClub = useCallback((tab: LemonClubTab = 'missions') => {
-    setLemonClubTab(tab);
-    setLemonClubOpen(true);
-    refreshProgression();
-  }, [refreshProgression]);
-
   const handleSelectSkin = useCallback(
     (id: Parameters<typeof selectSkin>[0]) => {
       selectSkin(id);
@@ -103,8 +97,19 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     if (evmAddress) trackWalletConnect(evmAddress);
   }, [evmAddress]);
 
-  const { player, runs, loading: runsLoading, setDisplayName, linkWallet, reloadRuns } = usePlayer();
+  const { player, runs, loading: runsLoading, setDisplayName, linkWallet, reloadRuns, referralStats, referralBackendReady, syncReferrals } = usePlayer();
   const dailyRank = useDailyRank(player?.playerId);
+
+  useEffect(() => {
+    if (!runsLoading) refreshProgression();
+  }, [runsLoading, refreshProgression]);
+
+  const openLemonClub = useCallback((tab: LemonClubTab = 'missions') => {
+    setLemonClubTab(tab);
+    setLemonClubOpen(true);
+    void syncReferrals().then(() => refreshProgression());
+  }, [refreshProgression, syncReferrals]);
+
   const {
     showInstallNudge,
     showNotificationNudge,
@@ -333,6 +338,8 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           open={lemonClubOpen}
           initialTab={lemonClubTab}
           progress={progress}
+          referralStats={referralStats}
+          referralBackendReady={referralBackendReady}
           onClose={() => setLemonClubOpen(false)}
           onSelectSkin={handleSelectSkin}
           onSelectDeathTitle={selectDeathTitle}

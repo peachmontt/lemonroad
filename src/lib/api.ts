@@ -197,3 +197,21 @@ export function preparePaidAttempt(
     body: JSON.stringify({ walletPubkey, paymentChain }),
   });
 }
+
+export interface ReferralStats {
+  code: string;
+  qualifiedCount: number;
+  pendingCount: number;
+  shareUrl: string;
+}
+
+export function fetchReferrals() {
+  return apiFetch<ReferralStats>('/api/referrals');
+}
+
+export function attributeReferral(code: string) {
+  return apiFetch<{ attributed: boolean; reason?: string }>('/api/referrals/attribute', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
