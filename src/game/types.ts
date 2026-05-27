@@ -208,7 +208,8 @@ export interface InputState {
   target: number;
   smoothed: number;
   keys: { left: boolean; right: boolean };
-  touchX: number | null;
+  dragX: number | null;
+  isDragging: boolean;
   tiltX: number;
   tiltGranted: boolean;
 }

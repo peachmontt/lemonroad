@@ -23,6 +23,7 @@ import { createDefaultFlags, createLemon, updateDyingLemon, updateLemon } from '
 import {
   appendRoadSegment,
   getLeadingRoadSegment,
+  getSegmentAtY,
   initRoad,
   trimRoad,
 } from './road';
@@ -39,8 +40,7 @@ export class GameEngine {
   private audio: AudioManager;
   private rafId = 0;
   private lastTime = 0;
-  private mouseX: number | null = null;
-  private canvasLeft = 0;
+  private pointerActive = false;
   private segmentCounter = 0;
   private lastSqueezeSound = 0;
   private layoutWidth = 0;
@@ -174,41 +174,43 @@ export class GameEngine {
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.input.keys.right = false;
     });
 
-    this.canvas.addEventListener('mousemove', (e) => {
-      this.mouseX = e.clientX;
-      const rect = this.canvas.getBoundingClientRect();
-      this.canvasLeft = rect.left;
+    this.canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      this.pointerActive = true;
+      this.input.isDragging = true;
+      this.updateDragPosition(e);
+      this.canvas.setPointerCapture(e.pointerId);
+      e.preventDefault();
     });
 
-    this.canvas.addEventListener('mouseleave', () => {
-      this.mouseX = null;
+    this.canvas.addEventListener('pointermove', (e) => {
+      if (!this.pointerActive) return;
+      this.updateDragPosition(e);
+      e.preventDefault();
     });
 
-    this.canvas.addEventListener(
-      'touchstart',
-      (e) => {
-        e.preventDefault();
-        const t = e.touches[0];
-        const rect = this.canvas.getBoundingClientRect();
-        this.input.touchX = t.clientX - rect.left;
-      },
-      { passive: false },
-    );
+    const releasePointer = (e: PointerEvent) => {
+      if (!this.pointerActive) return;
+      if (this.canvas.hasPointerCapture(e.pointerId)) {
+        this.canvas.releasePointerCapture(e.pointerId);
+      }
+      this.pointerActive = false;
+      this.input.isDragging = false;
+      this.input.dragX = null;
+    };
 
-    this.canvas.addEventListener(
-      'touchmove',
-      (e) => {
-        e.preventDefault();
-        const t = e.touches[0];
-        const rect = this.canvas.getBoundingClientRect();
-        this.input.touchX = t.clientX - rect.left;
-      },
-      { passive: false },
-    );
-
-    this.canvas.addEventListener('touchend', () => {
-      this.input.touchX = null;
+    this.canvas.addEventListener('pointerup', releasePointer);
+    this.canvas.addEventListener('pointercancel', releasePointer);
+    this.canvas.addEventListener('lostpointercapture', () => {
+      this.pointerActive = false;
+      this.input.isDragging = false;
+      this.input.dragX = null;
     });
+  }
+
+  private updateDragPosition(e: PointerEvent): void {
+    const rect = this.canvas.getBoundingClientRect();
+    this.input.dragX = e.clientX - rect.left;
   }
 
   setTilt(x: number, granted: boolean): void {
@@ -302,12 +304,10 @@ export class GameEngine {
       this.runDurationMs = performance.now() - s.playStartedAt;
     }
 
-    this.input.target = computeInputTarget(
-      this.input,
-      this.mouseX,
-      s.width,
-      this.canvasLeft,
-    );
+    const roadSeg = getSegmentAtY(s.road, s.lemonScreenY);
+    const centerX = roadSeg?.centerX ?? s.width / 2;
+
+    this.input.target = computeInputTarget(this.input, s.width, centerX);
     const inputSmoothed = updateInputSmoothed(this.input, dt);
 
     if (s.phase === 'idle') {

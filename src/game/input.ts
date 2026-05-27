@@ -6,7 +6,8 @@ export function createInputState(): InputState {
     target: 0,
     smoothed: 0,
     keys: { left: false, right: false },
-    touchX: null,
+    dragX: null,
+    isDragging: false,
     tiltX: 0,
     tiltGranted: false,
   };
@@ -14,22 +15,18 @@ export function createInputState(): InputState {
 
 export function computeInputTarget(
   input: InputState,
-  mouseX: number | null,
   canvasWidth: number,
-  canvasLeft: number,
+  centerX: number,
 ): number {
+  const maxSteeringDistance = canvasWidth / 2;
+
+  if (input.isDragging && input.dragX !== null) {
+    const steering = (input.dragX - centerX) / maxSteeringDistance;
+    return Math.max(-1, Math.min(1, steering));
+  }
+
   if (input.tiltGranted && Math.abs(input.tiltX) > 0.01) {
     return Math.max(-1, Math.min(1, input.tiltX));
-  }
-
-  if (input.touchX !== null) {
-    const rel = (input.touchX - canvasWidth / 2) / (canvasWidth / 2);
-    return Math.max(-1, Math.min(1, rel));
-  }
-
-  if (mouseX !== null) {
-    const rel = (mouseX - canvasLeft - canvasWidth / 2) / (canvasWidth / 2);
-    return Math.max(-1, Math.min(1, rel * 1.2));
   }
 
   let keyInput = 0;

@@ -19,7 +19,6 @@ interface StartOverlayProps {
   streakDays: number;
   bestDistance: number;
   tiltMsg: string | null;
-  needsTilt: boolean;
   player: PlayerResponse | null;
   runs: RunRecord[];
   runsLoading?: boolean;
@@ -40,7 +39,6 @@ export function StartOverlay({
   streakDays,
   bestDistance,
   tiltMsg,
-  needsTilt,
   player,
   runs,
   runsLoading = false,
@@ -80,10 +78,8 @@ export function StartOverlay({
         <p className="sub-tagline">No utility. Only road.</p>
 
         <div className="reward-banner">
-          FREE TRIES &middot; UP TO $600/MONTH IN USDT REWARDS
+          FREE TRIES - WIN UP TO $600/MONTH IN USDT REWARDS
         </div>
-
-        <p className="controls-hint">drag · mouse · A/D · touch · tilt</p>
 
         {(streakDays > 0 || bestDistance > 0) && (
           <p className="lemon-club-teaser">
@@ -100,27 +96,27 @@ export function StartOverlay({
             className={`mode-btn ${gameMode === 'free' ? 'active' : ''}`}
             onClick={() => onGameModeChange('free')}
           >
-            FREE FUN TRY
+            FREE RUN
           </button>
           <button
             type="button"
             className={`mode-btn ${gameMode === 'paid' ? 'active' : ''}`}
             onClick={() => onGameModeChange('paid')}
           >
-            GAME MODE (1 USDT)
+            DEGEN MODE (1 USDT)
           </button>
         </div>
 
         <div className="mode-content">
           {gameMode === 'free' ? (
             <p className="free-hint">
-              Free run · Daily rewards pool
+              🏆 Daily Free Rewards
               <br />
-              $20 daily rewards for free players
+              Top free players win from the $20 daily pool:
               <br />
-              <span className="free-hint-prizes">$10 / $6 / $4 for top 3</span>
+              <span className="free-hint-prizes">1st $10 • 2nd $6 • 3rd $4</span>
               <br />
-              Play free runs and compete for daily rewards
+              No payment needed. Just play free runs.
             </p>
           ) : (
             <p className="paid-hint">
@@ -143,12 +139,9 @@ export function StartOverlay({
                 ? hasPaidDeposit
                   ? 'START PAID RUN'
                   : 'PAY 1 USDT & PLAY'
-                : 'START FREE RUN'}
+                : 'PLAY FREE FOR REWARDS'}
           </button>
 
-          {needsTilt && (
-            <p className="tilt-hint">(will ask for tilt on iphone. scary.)</p>
-          )}
           {tiltMsg && <p className="tilt-msg">{tiltMsg}</p>}
         </div>
       </section>

@@ -18,10 +18,10 @@ import { DeathOverlay } from './DeathOverlay';
 import { FakeModal, type ModalTab } from './FakeModal';
 import { HudOverlay } from './HudOverlay';
 import {
-  hasSeenOnboarding,
-  markOnboardingSeen,
-  OnboardingOverlay,
-} from './OnboardingOverlay';
+  hasSeenControlsTutorial,
+  markControlsTutorialSeen,
+  ControlsTutorialOverlay,
+} from './ControlsTutorialOverlay';
 import { StartOverlay } from './StartOverlay';
 import type { WalletChannel } from './WalletConnectButton';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
@@ -71,8 +71,9 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   const [activeDepositTx, setActiveDepositTx] = useState<string | null>(null);
   const [activeWalletKey, setActiveWalletKey] = useState<string | null>(null);
   const [activePaymentChain, setActivePaymentChain] = useState<'solana' | 'evm'>('solana');
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showControlsTutorial, setShowControlsTutorial] = useState(false);
   const pendingStartRef = useRef<(() => void) | null>(null);
+  const controlsTutorialQueuedRef = useRef(false);
 
   useEffect(() => {
     const ref = parseReferralFromUrl();
@@ -153,23 +154,29 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     start();
   };
 
-  const dismissOnboarding = () => {
-    markOnboardingSeen();
-    setShowOnboarding(false);
+  const dismissControlsTutorial = () => {
+    markControlsTutorialSeen();
+    controlsTutorialQueuedRef.current = false;
+    setShowControlsTutorial(false);
     const pending = pendingStartRef.current;
     pendingStartRef.current = null;
     pending?.();
   };
 
   const queueStart = (fn: () => void | Promise<void>) => {
-    if (!hasSeenOnboarding()) {
-      pendingStartRef.current = () => {
-        void fn();
-      };
-      setShowOnboarding(true);
+    if (hasSeenControlsTutorial()) {
+      void fn();
       return;
     }
-    void fn();
+
+    pendingStartRef.current = () => {
+      void fn();
+    };
+
+    if (controlsTutorialQueuedRef.current) return;
+
+    controlsTutorialQueuedRef.current = true;
+    setShowControlsTutorial(true);
   };
 
   const handleStart = () => {
@@ -277,7 +284,9 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
         />
       )}
 
-      {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
+      {showControlsTutorial && (
+        <ControlsTutorialOverlay onDismiss={dismissControlsTutorial} />
+      )}
 
       {snapshot.phase === 'idle' && (
         <StartOverlay
@@ -291,7 +300,6 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           streakDays={progress.streakDays}
           bestDistance={progress.bestDistance}
           tiltMsg={tiltMsg}
-          needsTilt={needsPermission && status !== 'granted'}
           player={player}
           runs={runs}
           runsLoading={runsLoading}

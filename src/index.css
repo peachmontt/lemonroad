@@ -2593,7 +2593,180 @@ html.gameplay-active #root {
   }
 }
 
-/* ── Onboarding overlay ───────────────────────────── */
+/* ── Controls tutorial overlay ────────────────────── */
+.controls-tutorial-overlay {
+  z-index: 50;
+  justify-content: center;
+  align-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.controls-tutorial-overlay--ready {
+  opacity: 1;
+}
+
+.controls-tutorial-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 24px 22px;
+  background: #fff9e6;
+  border: 4px solid #000;
+  box-shadow: 8px 8px 0 #000;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.controls-tutorial-card p {
+  margin: 0;
+}
+
+.controls-tutorial-lead {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.controls-tutorial-sub {
+  font-size: 0.9rem;
+  color: #444;
+  font-weight: 600;
+}
+
+.controls-tutorial-btn {
+  margin-top: 4px;
+  padding: 12px 28px;
+  min-height: 44px;
+  background: #ffe135;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.controls-tutorial-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.controls-tutorial-hints {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 72px;
+  margin-bottom: 4px;
+}
+
+.controls-tutorial-hints--desktop {
+  min-height: 80px;
+}
+
+.controls-tutorial-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.controls-tutorial-hint-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.controls-tutorial-or {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #666;
+}
+
+.controls-tutorial-phone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 72px;
+  animation: controls-tutorial-tilt 1.6s ease-in-out infinite;
+}
+
+.controls-tutorial-phone-body {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.controls-tutorial-drag-track {
+  position: relative;
+  width: 88px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls-tutorial-drag-track--wide {
+  width: 140px;
+  height: 56px;
+}
+
+.controls-tutorial-center-line {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 1px;
+}
+
+.controls-tutorial-finger,
+.controls-tutorial-cursor {
+  position: relative;
+  z-index: 1;
+  font-size: 1.6rem;
+  line-height: 1;
+  animation: controls-tutorial-drag-lr 1.6s ease-in-out infinite;
+}
+
+.controls-tutorial-cursor {
+  font-size: 1.8rem;
+}
+
+@keyframes controls-tutorial-tilt {
+  0%,
+  100% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(14deg);
+  }
+}
+
+@keyframes controls-tutorial-drag-lr {
+  0%,
+  100% {
+    transform: translateX(-22px);
+  }
+  50% {
+    transform: translateX(22px);
+  }
+}
+
+/* ── Onboarding overlay (legacy class aliases) ────── */
 .onboarding-overlay {
   z-index: 50;
   justify-content: center;
@@ -2676,6 +2849,19 @@ html.gameplay-active #root {
 
   .onboarding-lead {
     font-size: 1.05rem;
+  }
+
+  .controls-tutorial-card {
+    padding: 20px 16px;
+    font-size: 0.92rem;
+  }
+
+  .controls-tutorial-lead {
+    font-size: 1.05rem;
+  }
+
+  .controls-tutorial-drag-track--wide {
+    width: 120px;
   }
 }
 
