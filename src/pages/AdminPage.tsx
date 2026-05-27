@@ -20,6 +20,7 @@ interface PoolStats {
     totalFormatted: string;
   };
   unsettledPools: {
+    day: string;
     hourStart: string;
     participants: number;
     deposited: string;
@@ -32,20 +33,21 @@ interface PoolStats {
     distance: number;
     juiceLevel: string;
     diedAt: string;
-    hourBucket: string | null;
+    dayBucket: string | null;
   }[];
   totals: { players: number; runs: number };
   serverTime: string;
   nextDailyResetAt?: string;
   nextWeeklyResetAt?: string;
-  nextDegenPayoutAt?: string;
   resetTimezone?: string;
 }
 
 interface SettleResult {
-  hour: string;
+  day: string;
+  poolBucket: string;
   participants: number;
   poolTotal: string;
+  poolTotalFormatted?: string;
   payouts: { place: number; wallet: string; amount: string; amountFormatted: string }[];
   rolloverOut: string;
   settleTx: string | null;
@@ -177,13 +179,13 @@ export function AdminPage() {
     setAuthed(true);
   };
 
-  const triggerSettle = async (hourBucket: string) => {
-    setSettling(hourBucket);
+  const triggerSettle = async (day: string) => {
+    setSettling(day);
     setSettleResult(null);
     try {
       const result = await apiFetch<SettleResult>('/api/admin/settle', {
         method: 'POST',
-        body: JSON.stringify({ hourBucket }),
+        body: JSON.stringify({ day }),
       });
       setSettleResult(result);
       await load();
@@ -255,13 +257,13 @@ export function AdminPage() {
                 variant="weekly"
               />
               <ResetCountdown
-                nextResetAt={stats.nextDegenPayoutAt ?? null}
-                className="admin-reset-countdown admin-reset-countdown-degen"
+                nextResetAt={stats.nextDailyResetAt ?? null}
+                className="admin-reset-countdown"
                 variant="degen"
               />
               {stats.resetTimezone && (
                 <p className="admin-reset-timezone">
-                  Game day resets at 21:00 {stats.resetTimezone} · Degen payouts settle at :05 UTC each hour
+                  Free rewards and degen payouts finalize at 21:00 {stats.resetTimezone}
                 </p>
               )}
             </div>
@@ -270,6 +272,8 @@ export function AdminPage() {
               <div className="admin-kpi"><span>{stats.totals.runs}</span>total runs</div>
               <div className="admin-kpi"><span>{stats.currentDayPool.totalFormatted}</span>free daily pool</div>
               <div className="admin-kpi"><span>{stats.currentDayPool.participants}</span>today&apos;s free players</div>
+              <div className="admin-kpi"><span>{stats.paidDayPool?.totalFormatted ?? '0 USDT'}</span>degen pool today</div>
+              <div className="admin-kpi"><span>{stats.paidDayPool?.participants ?? 0}</span>today&apos;s degen players</div>
             </div>
           </section>
 
@@ -281,7 +285,7 @@ export function AdminPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Hour (UTC)</th>
+                    <th>Game day</th>
                     <th>Players</th>
                     <th>Deposited (µUSDT)</th>
                     <th>Rollover in</th>
@@ -289,11 +293,9 @@ export function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.unsettledPools.map((p) => {
-                    const bucket = String(Math.floor(new Date(p.hourStart).getTime() / 3_600_000));
-                    return (
+                  {stats.unsettledPools.map((p) => (
                       <tr key={p.hourStart}>
-                        <td>{new Date(p.hourStart).toISOString().slice(0, 16)}</td>
+                        <td>{p.day}</td>
                         <td>{p.participants}</td>
                         <td>{p.deposited}</td>
                         <td>{p.rolloverIn}</td>
@@ -301,15 +303,14 @@ export function AdminPage() {
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
-                            onClick={() => void triggerSettle(bucket)}
-                            disabled={settling === bucket}
+                            onClick={() => void triggerSettle(p.day)}
+                            disabled={settling === p.day}
                           >
-                            {settling === bucket ? 'Settling...' : 'Settle'}
+                            {settling === p.day ? 'Settling...' : 'Settle'}
                           </button>
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))}
                 </tbody>
               </table>
             )}
@@ -317,8 +318,8 @@ export function AdminPage() {
 
           {settleResult && (
             <section className="admin-section admin-settle-result">
-              <h2>Last Settle Result — Hour {settleResult.hour}</h2>
-              <p>Players: {settleResult.participants} | Pool: {settleResult.poolTotal} µUSDT | Rollover: {settleResult.rolloverOut} µUSDT</p>
+              <h2>Last Settle Result — {settleResult.day}</h2>
+              <p>Players: {settleResult.participants} | Pool: {settleResult.poolTotalFormatted ?? `${settleResult.poolTotal} µUSDT`} | Rollover: {settleResult.rolloverOut} µUSDT</p>
               {settleResult.settleTx && (
                 <p>TX: <a href={solanaExplorerTxUrl(settleResult.settleTx)} target="_blank" rel="noreferrer">{settleResult.settleTx.slice(0, 16)}…</a></p>
               )}
@@ -457,7 +458,7 @@ export function AdminPage() {
                   <th>Wallet</th>
                   <th>Distance</th>
                   <th>Juice</th>
-                  <th>Hour</th>
+                  <th>Game day</th>
                   <th>Died at</th>
                 </tr>
               </thead>
@@ -468,7 +469,7 @@ export function AdminPage() {
                     <td>{r.walletPubkey ? `${r.walletPubkey.slice(0, 6)}…` : '—'}</td>
                     <td>{Math.floor(r.distance)}m</td>
                     <td>{r.juiceLevel}</td>
-                    <td>{r.hourBucket ?? '—'}</td>
+                    <td>{r.dayBucket ?? '—'}</td>
                     <td>{new Date(r.diedAt).toISOString().slice(11, 19)}</td>
                   </tr>
                 ))}

@@ -129,6 +129,8 @@ export function StartOverlay({
               <p className="paid-hint">
                 Game mode · Pay 1 USDT to play (Mainnet)
                 {hasPaidDeposit && ' · deposit ready'}
+                <br />
+                Top 3 split today&apos;s pool · 60% / 30% / 10%
               </p>
               <DegenPayoutCountdown />
             </>

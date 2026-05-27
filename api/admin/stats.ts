@@ -3,7 +3,6 @@ import { json, unauthorized, withMethods } from '../_lib/http';
 import { isAdminAuthorized } from '../_lib/session';
 import { currentDayBucket, dayBucketToDate, getNextDailyResetAt, RESET_TIMEZONE_LABEL } from '../_lib/day';
 import { getNextWeeklyResetAt } from '../../shared/gameTime';
-import { getNextHourlySettleAt } from '../../shared/hour';
 import {
   DAILY_FREE_POOL_USDT,
   dayBucketDateOrFilter,
@@ -16,12 +15,11 @@ export default withMethods({
 
     const currentDay = currentDayBucket();
     const todayStart = dayBucketToDate(currentDay);
-    const tomorrowStart = new Date(todayStart.getTime() + 86_400_000);
     const now = new Date();
 
     const [
       unsettledPools,
-      todayPools,
+      todayPool,
       recentPaidRuns,
       totalPlayers,
       totalRuns,
@@ -32,9 +30,7 @@ export default withMethods({
         orderBy: { hourStart: 'desc' },
         take: 10,
       }),
-      prisma.hourlyPool.findMany({
-        where: { hourStart: { gte: todayStart, lt: tomorrowStart } },
-      }),
+      prisma.hourlyPool.findUnique({ where: { hourStart: todayStart } }),
       prisma.gameRun.findMany({
         where: { mode: 'paid' },
         orderBy: { diedAt: 'desc' },
@@ -48,10 +44,10 @@ export default withMethods({
       }),
     ]);
 
-    const dayDeposited = todayPools.reduce((sum, p) => sum + p.depositedUsdt, 0n);
-    const dayRollover = todayPools.reduce((sum, p) => sum + p.rolloverIn, 0n);
+    const dayDeposited = todayPool?.depositedUsdt ?? 0n;
+    const dayRollover = todayPool?.rolloverIn ?? 0n;
     const dayTotal = dayDeposited + dayRollover;
-    const dayParticipants = todayPools.reduce((sum, p) => sum + p.participantCount, 0);
+    const dayParticipants = todayPool?.participantCount ?? 0;
 
     json(res, {
       currentDay,
@@ -70,6 +66,7 @@ export default withMethods({
         totalFormatted: formatUsdt(dayTotal),
       },
       unsettledPools: unsettledPools.map((p) => ({
+        day: currentDayBucket(p.hourStart),
         hourStart: p.hourStart.toISOString(),
         participants: p.participantCount,
         deposited: p.depositedUsdt.toString(),
@@ -82,13 +79,12 @@ export default withMethods({
         distance: r.distance,
         juiceLevel: r.juiceLevel,
         diedAt: r.diedAt.toISOString(),
-        hourBucket: r.hourBucket,
+        dayBucket: r.dayBucket,
       })),
       totals: { players: totalPlayers, runs: totalRuns },
       serverTime: now.toISOString(),
       nextDailyResetAt: getNextDailyResetAt(now).toISOString(),
       nextWeeklyResetAt: getNextWeeklyResetAt(now).toISOString(),
-      nextDegenPayoutAt: getNextHourlySettleAt(now).toISOString(),
       resetTimezone: RESET_TIMEZONE_LABEL,
     });
   },

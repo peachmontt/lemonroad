@@ -7,12 +7,12 @@ import {
 } from '../../shared/gameTime';
 
 /** Active game-day bucket in YYYY-MM-DD (GMT+3, resets at 21:00). */
-export function currentDayBucket(): string {
-  return currentGameDayBucket();
+export function currentDayBucket(now?: Date): string {
+  return currentGameDayBucket(now);
 }
 
-export function previousDayBucket(): string {
-  return previousGameDayBucket();
+export function previousDayBucket(now?: Date): string {
+  return previousGameDayBucket(now);
 }
 
 /** Parse a YYYY-MM-DD bucket into its anchor Date (21:00 GMT+3). */

@@ -1,16 +1,17 @@
 name: Settle Hour Cron
 
+# Deprecated: degen payouts now settle daily via cron-daily.yml at 21:05 GMT+3.
 on:
-  schedule:
-    - cron: '5 * * * *'  # 05 past every hour UTC
   workflow_dispatch:
 
 jobs:
   settle:
-    name: Settle previous hour
+    name: Manual degen daily settle (previous game day)
     runs-on: ubuntu-latest
     steps:
       - name: Call settle-hour endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           curl --fail -X GET https://www.lemonroad.xyz/api/cron/settle-hour \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+            -H "Authorization: Bearer $CRON_SECRET"

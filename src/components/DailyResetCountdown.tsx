@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getNextHourlySettleAt } from '../lib/hour';
+import { getNextDailyResetAt } from '../lib/gameTime';
 
 export function formatCountdown(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -13,7 +13,7 @@ export function formatCountdown(ms: number): string {
 const RESET_LABELS = {
   daily: (time: string) => `Daily rewards reset in ${time}`,
   weekly: (time: string) => `Weekly cup resets in ${time}`,
-  degen: (time: string) => `Next degen payout in ${time}`,
+  degen: (time: string) => `Degen payout in ${time}`,
 } as const;
 
 type ResetCountdownVariant = keyof typeof RESET_LABELS;
@@ -63,6 +63,19 @@ export function ResetCountdown({
   return <p className={className}>{label}</p>;
 }
 
+function useNextDailyResetIso(): string {
+  const [nextAt, setNextAt] = useState(() => getNextDailyResetAt().toISOString());
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setNextAt(getNextDailyResetAt().toISOString());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return nextAt;
+}
+
 interface DailyResetCountdownProps {
   nextResetAt: string | null;
   className?: string;
@@ -82,14 +95,6 @@ export function DegenPayoutCountdown({
 }: {
   className?: string;
 }) {
-  const [nextAt, setNextAt] = useState(() => getNextHourlySettleAt().toISOString());
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setNextAt(getNextHourlySettleAt().toISOString());
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
+  const nextAt = useNextDailyResetIso();
   return <ResetCountdown nextResetAt={nextAt} variant="degen" className={className} />;
 }

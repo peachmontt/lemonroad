@@ -1,7 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './_lib/db';
 import { currentDayBucket, previousDayBucket, dayBucketToDate, getNextDailyResetAt, RESET_TIMEZONE_LABEL } from './_lib/day';
-import { getNextHourlySettleAt } from './_lib/hour';
 import { dayBucketDateOrFilter } from './_lib/daily-pool';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
@@ -87,7 +86,7 @@ async function getDailyPoolLeaderboard(dayBucket: string) {
   }));
 
   const pools = await prisma.hourlyPool.findMany({
-    where: { hourStart: { gte: dayStart, lt: dayEnd } },
+    where: { hourStart: dayStart },
   });
 
   const poolTotal = pools.reduce(
@@ -244,7 +243,6 @@ export default withMethods({
       projectedRollover: distribution.rolloverOut.toString(),
       previousDay: previousDayBucket(),
       nextResetAt: getNextDailyResetAt().toISOString(),
-      nextDegenPayoutAt: getNextHourlySettleAt().toISOString(),
       resetTimezone: RESET_TIMEZONE_LABEL,
     });
   },

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '../_lib/db';
-import { currentHourBucket } from '../_lib/hour';
+import { currentDayPoolBucket } from '../_lib/daily-pool';
 import { badRequest, json, serviceUnavailable, withMethods, parseJsonBody } from '../_lib/http';
 import {
   getProgramId,
@@ -38,7 +38,7 @@ export default withMethods({
     }
 
     const { walletPubkey, paymentChain } = parsed.data;
-    const hourBucket = currentHourBucket();
+    const hourBucket = currentDayPoolBucket();
 
     console.log('[payment] prepare start', {
       walletPubkey: walletPubkey.slice(0, 8),

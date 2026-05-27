@@ -1,4 +1,4 @@
-import { dayBucketToDate } from './day';
+import { currentDayBucket, previousDayBucket, dayBucketToDate } from './day';
 
 export const DAILY_FREE_POOL_USDT = 20;
 export const DAILY_PRIZE_AMOUNTS: Record<number, string> = {
@@ -16,4 +16,19 @@ export function dayBucketDateOrFilter(bucket: string) {
   return {
     OR: [{ date: dayBucketToDate(bucket) }, { date: legacyDayBucketToDate(bucket) }],
   };
+}
+
+const MS_PER_HOUR = 3_600_000;
+
+/** Pool ledger id for the active game day (unix hour of 21:00 GMT+3 day start). */
+export function currentDayPoolBucket(now = new Date()): string {
+  return String(Math.floor(dayBucketToDate(currentDayBucket(now)).getTime() / MS_PER_HOUR));
+}
+
+export function previousDayPoolBucket(now = new Date()): string {
+  return String(Math.floor(dayBucketToDate(previousDayBucket(now)).getTime() / MS_PER_HOUR));
+}
+
+export function dayPoolBucketToDate(bucket: string): Date {
+  return new Date(Number(bucket) * MS_PER_HOUR);
 }

@@ -2,8 +2,8 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { getAuthenticatedPlayer } from './_lib/auth';
 import { prisma } from './_lib/db';
-import { currentHourBucket } from './_lib/hour';
 import { currentDayBucket, dayBucketToDate } from './_lib/day';
+import { currentDayPoolBucket } from './_lib/daily-pool';
 import {
   badRequest,
   json,
@@ -132,29 +132,30 @@ async function persistPaidDeposit(input: PaidPersistInput): Promise<string> {
       }),
   );
 
-  const hourStart = new Date(Number(hourBucket) * 3_600_000);
+  const poolStart = dayBucketToDate(currentDayBucket());
+  const dayBucketValue = currentDayBucket();
 
   await prismaOp('hourlyPool.upsert', { hourBucket }, () =>
     prisma.hourlyPool.upsert({
-      where: { hourStart },
-      create: { hourStart, depositedUsdt: USDT_PER_ATTEMPT, participantCount: 1 },
+      where: { hourStart: poolStart },
+      create: { hourStart: poolStart, depositedUsdt: USDT_PER_ATTEMPT, participantCount: 1 },
       update: { depositedUsdt: { increment: USDT_PER_ATTEMPT } },
     }),
   );
 
-  const distinctInHour = await prismaOp('gameRun.groupBy.participants', { hourBucket }, () =>
+  const distinctToday = await prismaOp('gameRun.groupBy.participants', { hourBucket }, () =>
     prisma.gameRun.groupBy({
       by: ['walletPubkey'],
-      where: { mode: 'paid', hourBucket, walletPubkey: { not: null } },
+      where: { mode: 'paid', dayBucket: dayBucketValue, walletPubkey: { not: null } },
     }),
   );
 
-  const wallets = new Set(distinctInHour.map((d) => d.walletPubkey));
+  const wallets = new Set(distinctToday.map((d) => d.walletPubkey));
   wallets.add(walletPubkey);
 
   await prismaOp('hourlyPool.update.participantCount', { hourBucket }, () =>
     prisma.hourlyPool.update({
-      where: { hourStart },
+      where: { hourStart: poolStart },
       data: { participantCount: wallets.size },
     }),
   );
@@ -234,7 +235,7 @@ export default withMethods({
         return badRequest(res, 'Paid runs require depositTx and walletPubkey');
       }
 
-      hourBucket = currentHourBucket();
+      hourBucket = currentDayPoolBucket();
 
       console.log('[payment] paid run submit', {
         depositTx: depositTx.slice(0, 16),

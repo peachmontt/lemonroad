@@ -1,6 +1,6 @@
 # Lemon Road
 
-Vite + React game with **Vercel serverless API**, **Postgres** (run history, display names), and optional **Solana** paid mode (1 USDT per attempt, hourly prize pool).
+Vite + React game with **Vercel serverless API**, **Postgres** (run history, display names), and optional **Solana** paid mode (1 USDT per attempt, daily degen prize pool).
 
 ## Quick local enable (database + API + UI)
 
@@ -57,7 +57,7 @@ Put that in `.env` after `bootstrap-local.sh`, or export it before `npm run db:m
    DATABASE_URL="postgresql://..." npm run db:migrate
    ```
 
-4. **Cron** is defined in `vercel.json` (`/api/cron/settle-hour` at minute 5 each hour). On Hobby, confirm cron availability in Vercel docs for your plan.
+4. **Cron** runs daily at 21:05 GMT+3 via GitHub Actions (`cron-daily.yml`: free rewards + degen pool settle). On Hobby, confirm cron availability in Vercel docs for your plan.
 
 ---
 
