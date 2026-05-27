@@ -74,6 +74,52 @@ export interface DeathRankResult {
   scoreToBeat: number | null;
 }
 
+export const DAILY_PRIZE_AMOUNTS: Record<number, string> = {
+  1: '$10',
+  2: '$6',
+  3: '$4',
+};
+
+export const CLOSE_TO_PRIZE_RATIO = 0.25;
+
+export type FreeRunResultState =
+  | 'in_top_3'
+  | 'close_to_prize'
+  | 'far_from_prize'
+  | 'unranked';
+
+export function getEstimatedReward(rank: number | null): string | null {
+  if (rank == null || rank > TOP_PRIZE_COUNT) return null;
+  return DAILY_PRIZE_AMOUNTS[rank] ?? null;
+}
+
+export function classifyFreeRunResult(deathRank: DeathRankResult): FreeRunResultState {
+  if (deathRank.rank == null) return 'unranked';
+  if (deathRank.inPrizeZone) return 'in_top_3';
+  if (
+    deathRank.gapFromPrizeZone != null &&
+    deathRank.scoreToBeat != null &&
+    deathRank.scoreToBeat > 0 &&
+    deathRank.gapFromPrizeZone / deathRank.scoreToBeat <= CLOSE_TO_PRIZE_RATIO
+  ) {
+    return 'close_to_prize';
+  }
+  return 'far_from_prize';
+}
+
+export function getResultRetryLabel(state: FreeRunResultState): string {
+  switch (state) {
+    case 'in_top_3':
+      return 'PROTECT YOUR SPOT';
+    case 'close_to_prize':
+      return 'RUN IT BACK';
+    case 'far_from_prize':
+      return 'TRY AGAIN';
+    default:
+      return 'RUN IT BACK';
+  }
+}
+
 export function computeDeathRank(
   entries: DailyLeaderboardEntry[],
   playerId: string | null | undefined,

@@ -2832,8 +2832,56 @@ html.gameplay-active #root {
   font-weight: 700;
 }
 
+.death-reward-panel .free-reward-trust {
+  margin: 8px 0 0;
+  font-weight: 500;
+}
+
 .death-reward-zone {
   color: #1a8f1a;
+}
+
+.death-reward-estimate {
+  color: #1a8f1a;
+}
+
+.daily-reset-countdown {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.free-hint + .daily-reset-countdown {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.free-reward-trust {
+  max-width: 320px;
+  margin: 8px auto 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  font-weight: 500;
+  color: #555;
+  text-align: center;
+}
+
+.free-reward-trust-panel {
+  margin: 8px 0 0;
+  max-width: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #333;
+  opacity: 0.85;
+}
+
+@media (max-width: 430px) {
+  .free-reward-trust {
+    max-width: min(340px, 92vw);
+    font-size: 0.68rem;
+  }
 }
 
 @media (max-width: 430px) {

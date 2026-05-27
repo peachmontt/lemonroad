@@ -1,15 +1,23 @@
-/** UTC day bucket in YYYY-MM-DD format. */
+import {
+  currentGameDayBucket,
+  previousGameDayBucket,
+  gameDayBucketToDate,
+  getNextDailyResetAt,
+  RESET_TIMEZONE_LABEL,
+} from '../../shared/gameTime';
+
+/** Active game-day bucket in YYYY-MM-DD (GMT+3, resets at 21:00). */
 export function currentDayBucket(): string {
-  return new Date().toISOString().slice(0, 10);
+  return currentGameDayBucket();
 }
 
 export function previousDayBucket(): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return previousGameDayBucket();
 }
 
-/** Parse a YYYY-MM-DD string into a Date at midnight UTC. */
+/** Parse a YYYY-MM-DD bucket into its anchor Date (21:00 GMT+3). */
 export function dayBucketToDate(bucket: string): Date {
-  return new Date(`${bucket}T00:00:00.000Z`);
+  return gameDayBucketToDate(bucket);
 }
+
+export { getNextDailyResetAt, RESET_TIMEZONE_LABEL };

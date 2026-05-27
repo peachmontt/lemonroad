@@ -21,12 +21,13 @@ export interface DailyRankContext {
   scoreToBeat: number | null;
   scoreToBeatMessage: string | null;
   gapToScoreToBeat: number | null;
+  nextResetAt: string | null;
   refresh: () => void;
   computeDeathRank: (runScore: number) => ReturnType<typeof computeDeathRank>;
 }
 
 export function useDailyRank(playerId: string | null | undefined): DailyRankContext {
-  const { loading, error, refresh, entries } = useDailyLeaderboard();
+  const { loading, error, refresh, entries, nextResetAt } = useDailyLeaderboard();
 
   const playerRank = playerId ? findPlayerRank(entries, playerId) : null;
   const { score: scoreToBeat, message: scoreToBeatMessage } = getScoreToBeat(
@@ -57,6 +58,7 @@ export function useDailyRank(playerId: string | null | undefined): DailyRankCont
       scoreToBeat,
       scoreToBeatMessage,
       gapToScoreToBeat,
+      nextResetAt,
       refresh,
       computeDeathRank: computeDeathRankForRun,
     }),
@@ -68,6 +70,7 @@ export function useDailyRank(playerId: string | null | undefined): DailyRankCont
       scoreToBeat,
       scoreToBeatMessage,
       gapToScoreToBeat,
+      nextResetAt,
       refresh,
       computeDeathRankForRun,
     ],

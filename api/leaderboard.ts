@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './_lib/db';
-import { currentDayBucket, previousDayBucket, dayBucketToDate } from './_lib/day';
+import { currentDayBucket, previousDayBucket, dayBucketToDate, getNextDailyResetAt, RESET_TIMEZONE_LABEL } from './_lib/day';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
 
@@ -170,7 +170,12 @@ export default withMethods({
         return badRequest(res, 'Invalid date (use today, yesterday, or YYYY-MM-DD)');
       }
       const data = await getDailyLeaderboard(dateStr);
-      return json(res, { scope: 'daily', ...data });
+      return json(res, {
+        scope: 'daily',
+        ...data,
+        nextResetAt: getNextDailyResetAt().toISOString(),
+        resetTimezone: RESET_TIMEZONE_LABEL,
+      });
     }
 
     if (scope === 'global') {
@@ -224,6 +229,8 @@ export default withMethods({
       })),
       projectedRollover: distribution.rolloverOut.toString(),
       previousDay: previousDayBucket(),
+      nextResetAt: getNextDailyResetAt().toISOString(),
+      resetTimezone: RESET_TIMEZONE_LABEL,
     });
   },
 });

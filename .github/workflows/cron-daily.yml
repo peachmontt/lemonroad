@@ -2,7 +2,7 @@ name: Daily Rewards
 
 on:
   schedule:
-    - cron: '5 0 * * *'  # 00:05 UTC every day
+    - cron: '5 18 * * *'  # 21:05 GMT+3 every day (18:05 UTC)
   workflow_dispatch:
 
 jobs:

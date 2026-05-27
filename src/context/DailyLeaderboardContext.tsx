@@ -16,6 +16,7 @@ interface DailyLeaderboardContextValue {
   error: string | null;
   refresh: () => void;
   entries: DailyLeaderboardEntry[];
+  nextResetAt: string | null;
 }
 
 const DailyLeaderboardContext = createContext<DailyLeaderboardContextValue | null>(
@@ -55,7 +56,14 @@ export function DailyLeaderboardProvider({ children }: { children: ReactNode }) 
   );
 
   const value = useMemo(
-    () => ({ today, loading, error, refresh: load, entries }),
+    () => ({
+      today,
+      loading,
+      error,
+      refresh: load,
+      entries,
+      nextResetAt: today?.nextResetAt ?? null,
+    }),
     [today, loading, error, load, entries],
   );
 

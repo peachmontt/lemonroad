@@ -67,6 +67,8 @@ export interface PoolLeaderboardResponse {
   }[];
   projectedRollover: string;
   previousDay: string;
+  nextResetAt?: string;
+  resetTimezone?: string;
 }
 
 export interface GlobalLeaderboardResponse {
@@ -148,6 +150,8 @@ export interface DailyLeaderboardResponse {
   scope: 'daily';
   date: string;
   entries: DailyLeaderboardEntry[];
+  nextResetAt?: string;
+  resetTimezone?: string;
 }
 
 export function fetchDailyLeaderboard(date: 'today' | 'yesterday' | string = 'today') {

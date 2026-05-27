@@ -5,12 +5,16 @@ import {
   pickCauseOfJuice,
   pickDeathQuote,
   pickDeathRoast,
-  pickRewardRetryLabel,
   pickRetryButtonLabel,
   pickShareButtonLabel,
 } from '../copy/death';
 import type { GameSnapshot } from '../game/types';
 import type { DailyRankContext } from '../hooks/useDailyRank';
+import {
+  classifyFreeRunResult,
+  getEstimatedReward,
+  getResultRetryLabel,
+} from '../lib/dailyRankLogic';
 import { submitRun } from '../lib/api';
 import { trackRunEnd } from '../lib/analytics';
 import { PAYMENT_SAVE_ERROR_MESSAGE } from '../config/payment';
@@ -23,6 +27,8 @@ import { ShareMenu } from './ShareMenu';
 import { WalletLinkPrompt } from './WalletLinkPrompt';
 import { WalletConfirmedCard } from './WalletConfirmedCard';
 import { PostDeathUnlocks } from './PostDeathCard';
+import { DailyResetCountdown } from './DailyResetCountdown';
+import { FreeRewardTrustCopy } from './FreeRewardTrustCopy';
 import type { PlayerProgress, UnlockNotification } from '../game/progression';
 
 interface DeathOverlayProps {
@@ -101,9 +107,10 @@ export function DeathOverlay({
     gameMode === 'free' && dailyRank
       ? dailyRank.computeDeathRank(meters)
       : null;
+  const resultState = deathRank ? classifyFreeRunResult(deathRank) : null;
   const displayRetryLabel =
-    deathRank?.gapFromPrizeZone != null
-      ? pickRewardRetryLabel(deathRank.gapFromPrizeZone)
+    gameMode === 'free' && resultState && resultState !== 'unranked'
+      ? getResultRetryLabel(resultState)
       : retryLabel;
   const isDead = snapshot.phase === 'dead';
   const [sharing, setSharing] = useState(false);
@@ -229,18 +236,34 @@ export function DeathOverlay({
                 <p>rank: {juiceTitle}</p>
                 {gameMode === 'free' && deathRank && (
                   <div className="death-reward-panel">
-                    {deathRank.rank != null ? (
-                      <p>You are #{deathRank.rank} today</p>
+                    {resultState === 'in_top_3' && deathRank.rank != null ? (
+                      <>
+                        <p>You&apos;re currently #{deathRank.rank}</p>
+                        {getEstimatedReward(deathRank.rank) && (
+                          <p className="death-reward-estimate">
+                            Estimated reward: {getEstimatedReward(deathRank.rank)}
+                          </p>
+                        )}
+                        <p>Stay in Top 3 until daily reset to win</p>
+                      </>
+                    ) : resultState === 'close_to_prize' &&
+                      deathRank.gapFromPrizeZone != null ? (
+                      <>
+                        <p>Almost juicy enough</p>
+                        <p>
+                          Only {deathRank.gapFromPrizeZone}m away from today&apos;s $4 spot
+                        </p>
+                      </>
+                    ) : resultState === 'far_from_prize' &&
+                      deathRank.gapFromPrizeZone != null ? (
+                      <p>Beat {deathRank.gapFromPrizeZone}m to enter today&apos;s rewards</p>
+                    ) : deathRank.rank != null ? (
+                      <p>You&apos;re currently #{deathRank.rank}</p>
                     ) : (
                       <p>Play a run to enter today&apos;s board</p>
                     )}
-                    {deathRank.inPrizeZone ? (
-                      <p className="death-reward-zone">In the top 3!</p>
-                    ) : deathRank.gapToTarget != null && deathRank.gapToTarget > 0 ? (
-                      <p>Need +{deathRank.gapToTarget}m to beat the next target</p>
-                    ) : dailyRank?.scoreToBeatMessage ? (
-                      <p>{dailyRank.scoreToBeatMessage}</p>
-                    ) : null}
+                    <DailyResetCountdown nextResetAt={dailyRank?.nextResetAt ?? null} />
+                    <FreeRewardTrustCopy className="free-reward-trust free-reward-trust-panel" />
                   </div>
                 )}
                 <p>cause of juice: {cause}</p>

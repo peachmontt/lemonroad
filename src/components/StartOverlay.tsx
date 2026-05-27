@@ -5,8 +5,11 @@ import type { GameMode } from '../types/game';
 import type { ModalTab } from './FakeModal';
 import { InfoPanelsAccordion } from './InfoPanelsAccordion';
 import { ProfileBar } from './ProfileBar';
+import { useDailyLeaderboard } from '../context/DailyLeaderboardContext';
 import type { PlayerResponse, RunRecord } from '../lib/api';
 import type { WalletChannel } from './WalletConnectButton';
+import { DailyResetCountdown } from './DailyResetCountdown';
+import { FreeRewardTrustCopy } from './FreeRewardTrustCopy';
 
 interface StartOverlayProps {
   gameMode: GameMode;
@@ -52,6 +55,7 @@ export function StartOverlay({
 
   const isReadyToPay =
     walletChannel === 'evm' ? !!evmAddress : !!publicKey;
+  const { nextResetAt } = useDailyLeaderboard();
 
   const handlePrimary = () => {
     if (gameMode === 'paid') {
@@ -109,15 +113,17 @@ export function StartOverlay({
 
         <div className="mode-content">
           {gameMode === 'free' ? (
-            <p className="free-hint">
-              🏆 Daily Free Rewards
-              <br />
-              Top free players win from the $20 daily pool:
-              <br />
-              <span className="free-hint-prizes">1st $10 • 2nd $6 • 3rd $4</span>
-              <br />
-              No payment needed. Just play free runs.
-            </p>
+            <>
+              <p className="free-hint">
+                🏆 Daily Free Rewards
+                <br />
+                Top free players win from the $20 daily pool:
+                <br />
+                <span className="free-hint-prizes">1st $10 • 2nd $6 • 3rd $4</span>
+              </p>
+              <DailyResetCountdown nextResetAt={nextResetAt} />
+              <FreeRewardTrustCopy />
+            </>
           ) : (
             <p className="paid-hint">
               Game mode · Pay 1 USDT to play (Mainnet)

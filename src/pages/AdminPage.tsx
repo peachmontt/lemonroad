@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { solanaExplorerTxUrl } from '../config/explorer';
+import { currentGameDayBucket, previousGameDayBucket } from '../lib/gameTime';
 
 interface PoolStats {
   currentDay: string;
@@ -80,14 +81,12 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return data;
 }
 
-function todayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
+function todayGameDay(): string {
+  return currentGameDayBucket();
 }
 
-function yesterdayUTC(): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
-  return d.toISOString().slice(0, 10);
+function yesterdayGameDay(): string {
+  return previousGameDayBucket();
 }
 
 export function AdminPage() {
@@ -100,7 +99,7 @@ export function AdminPage() {
   const [settleResult, setSettleResult] = useState<SettleResult | null>(null);
 
   // Daily rewards state
-  const [rewardsDate, setRewardsDate] = useState(yesterdayUTC);
+  const [rewardsDate, setRewardsDate] = useState(yesterdayGameDay);
   const [rewards, setRewards] = useState<DailyRewardRow[]>([]);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [rewardsError, setRewardsError] = useState<string | null>(null);
@@ -304,7 +303,7 @@ export function AdminPage() {
                 <input
                   type="date"
                   value={rewardsDate}
-                  max={todayUTC()}
+                  max={todayGameDay()}
                   onChange={(e) => {
                     setRewardsDate(e.target.value);
                     void loadRewards(e.target.value);

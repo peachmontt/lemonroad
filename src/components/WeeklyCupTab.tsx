@@ -1,13 +1,39 @@
-import { getDaysUntilWeekEnd } from '../game/weeklyCup';
+import { useEffect, useState } from 'react';
+import { getNextWeeklyResetAt } from '../lib/gameTime';
 import type { PlayerProgress } from '../game/progression';
 
 interface WeeklyCupTabProps {
   progress: PlayerProgress;
 }
 
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
 export function WeeklyCupTab({ progress }: WeeklyCupTabProps) {
   const cup = progress.weeklyCup;
-  const daysLeft = getDaysUntilWeekEnd();
+  const [weekLabel, setWeekLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tick = () => {
+      const target = getNextWeeklyResetAt().getTime();
+      const remaining = target - Date.now();
+      if (remaining <= 0) {
+        setWeekLabel(null);
+        return;
+      }
+      setWeekLabel(`Weekly cup resets in ${formatCountdown(remaining)}`);
+    };
+
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   return (
     <div className="lemon-club-tab-panel">
@@ -24,7 +50,7 @@ export function WeeklyCupTab({ progress }: WeeklyCupTabProps) {
         <p>Your best this week: {Math.floor(cup.weeklyBestScore)}m</p>
         <p>Runs this week: {cup.runsThisWeek}</p>
         <p>Estimated rank: {cup.placeholderRank}</p>
-        <p>Ends in: {daysLeft} day{daysLeft === 1 ? '' : 's'}</p>
+        {weekLabel && <p className="daily-reset-countdown">{weekLabel}</p>}
       </div>
     </div>
   );
