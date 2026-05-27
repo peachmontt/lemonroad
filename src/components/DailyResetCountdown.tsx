@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { getNextHourlySettleAt } from '../lib/hour';
 
-function formatCountdown(ms: number): string {
+export function formatCountdown(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -9,16 +10,27 @@ function formatCountdown(ms: number): string {
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
-interface DailyResetCountdownProps {
+const RESET_LABELS = {
+  daily: (time: string) => `Daily rewards reset in ${time}`,
+  weekly: (time: string) => `Weekly cup resets in ${time}`,
+  degen: (time: string) => `Next degen payout in ${time}`,
+} as const;
+
+type ResetCountdownVariant = keyof typeof RESET_LABELS;
+
+interface ResetCountdownProps {
   nextResetAt: string | null;
+  variant: ResetCountdownVariant;
   className?: string;
 }
 
-export function DailyResetCountdown({
+export function ResetCountdown({
   nextResetAt,
-  className = 'daily-reset-countdown',
-}: DailyResetCountdownProps) {
+  variant,
+  className = 'reset-countdown',
+}: ResetCountdownProps) {
   const [label, setLabel] = useState<string | null>(null);
+  const formatLabel = RESET_LABELS[variant];
 
   useEffect(() => {
     if (!nextResetAt) {
@@ -38,15 +50,46 @@ export function DailyResetCountdown({
         setLabel(null);
         return;
       }
-      setLabel(`Daily rewards reset in ${formatCountdown(remaining)}`);
+      setLabel(formatLabel(formatCountdown(remaining)));
     };
 
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [nextResetAt]);
+  }, [nextResetAt, formatLabel]);
 
   if (!label) return null;
 
   return <p className={className}>{label}</p>;
+}
+
+interface DailyResetCountdownProps {
+  nextResetAt: string | null;
+  className?: string;
+}
+
+export function DailyResetCountdown({
+  nextResetAt,
+  className = 'daily-reset-countdown',
+}: DailyResetCountdownProps) {
+  return (
+    <ResetCountdown nextResetAt={nextResetAt} variant="daily" className={className} />
+  );
+}
+
+export function DegenPayoutCountdown({
+  className = 'daily-reset-countdown degen-payout-countdown',
+}: {
+  className?: string;
+}) {
+  const [nextAt, setNextAt] = useState(() => getNextHourlySettleAt().toISOString());
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setNextAt(getNextHourlySettleAt().toISOString());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return <ResetCountdown nextResetAt={nextAt} variant="degen" className={className} />;
 }

@@ -68,6 +68,7 @@ export interface PoolLeaderboardResponse {
   projectedRollover: string;
   previousDay: string;
   nextResetAt?: string;
+  nextDegenPayoutAt?: string;
   resetTimezone?: string;
 }
 

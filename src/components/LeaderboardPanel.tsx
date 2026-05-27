@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchPoolLeaderboard, type PoolLeaderboardResponse } from '../lib/api';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { DegenPayoutCountdown } from './DailyResetCountdown';
 import { LemonLoader } from './LemonLoader';
 
 interface LeaderboardPanelProps {
@@ -56,6 +57,7 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
         <p className="leaderboard-rules">
           60% / 30% / 10% — 2nd needs 5+ · 3rd needs 15+
         </p>
+        <DegenPayoutCountdown className="daily-reset-countdown degen-payout-countdown" />
         {data.projectedPayouts.length > 0 && (
           <ul className="payout-preview">
             {data.projectedPayouts.map((p) => (

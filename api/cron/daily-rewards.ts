@@ -1,6 +1,7 @@
 import webPush from 'web-push';
 import { prisma } from '../_lib/db';
 import { previousDayBucket, dayBucketToDate } from '../_lib/day';
+import { dayBucketDateOrFilter } from '../_lib/daily-pool';
 import { json, unauthorized, withMethods } from '../_lib/http';
 
 const TOP_WINNERS = 3;
@@ -94,7 +95,7 @@ export default withMethods({
 
     // Fetch leaderboard entries for yesterday, valid free runs only
     const entries = await prisma.dailyLeaderboard.findMany({
-      where: { date, rewardStatus: 'PENDING' },
+      where: { ...dayBucketDateOrFilter(dayBucket), rewardStatus: 'PENDING' },
       orderBy: [{ bestDistance: 'desc' }, { createdAt: 'asc' }],
       include: {
         player: { select: { id: true, walletPubkey: true, sessionId: true } },

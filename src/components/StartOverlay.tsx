@@ -8,7 +8,7 @@ import { ProfileBar } from './ProfileBar';
 import { useDailyLeaderboard } from '../context/DailyLeaderboardContext';
 import type { PlayerResponse, RunRecord } from '../lib/api';
 import type { WalletChannel } from './WalletConnectButton';
-import { DailyResetCountdown } from './DailyResetCountdown';
+import { DailyResetCountdown, DegenPayoutCountdown } from './DailyResetCountdown';
 import { FreeRewardTrustCopy } from './FreeRewardTrustCopy';
 
 interface StartOverlayProps {
@@ -125,10 +125,13 @@ export function StartOverlay({
               <FreeRewardTrustCopy />
             </>
           ) : (
-            <p className="paid-hint">
-              Game mode · Pay 1 USDT to play (Mainnet)
-              {hasPaidDeposit && ' · deposit ready'}
-            </p>
+            <>
+              <p className="paid-hint">
+                Game mode · Pay 1 USDT to play (Mainnet)
+                {hasPaidDeposit && ' · deposit ready'}
+              </p>
+              <DegenPayoutCountdown />
+            </>
           )}
 
           {paidError && <p className="tilt-msg mode-error">{paidError}</p>}

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getAuthenticatedPlayer } from './_lib/auth';
 import { prisma } from './_lib/db';
 import { currentHourBucket } from './_lib/hour';
-import { currentDayBucket } from './_lib/day';
+import { currentDayBucket, dayBucketToDate } from './_lib/day';
 import {
   badRequest,
   json,
@@ -296,7 +296,7 @@ export default withMethods({
       );
 
       if (mode === 'free') {
-        const dateVal = new Date(`${dayBucket}T00:00:00.000Z`);
+        const dateVal = dayBucketToDate(dayBucket);
         const existing = await prismaOp('dailyLeaderboard.findUnique', { playerId: player.id }, () =>
           prisma.dailyLeaderboard.findUnique({
             where: { date_playerId: { date: dateVal, playerId: player.id } },

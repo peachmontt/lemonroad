@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './_lib/db';
 import { currentDayBucket, previousDayBucket, dayBucketToDate, getNextDailyResetAt, RESET_TIMEZONE_LABEL } from './_lib/day';
+import { getNextHourlySettleAt } from './_lib/hour';
+import { dayBucketDateOrFilter } from './_lib/daily-pool';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
 
@@ -118,13 +120,25 @@ async function getDailyLeaderboard(dateStr: string) {
   const date = dayBucketToDate(dateStr);
   const isToday = dateStr === currentDayBucket();
 
-  const entries = await prisma.dailyLeaderboard.findMany({
-    where: { date },
+  const rows = await prisma.dailyLeaderboard.findMany({
+    where: dayBucketDateOrFilter(dateStr),
     orderBy: [{ bestDistance: 'desc' }, { createdAt: 'asc' }],
     include: {
       player: { select: { id: true, displayName: true } },
     },
   });
+
+  const bestByPlayer = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const existing = bestByPlayer.get(row.playerId);
+    if (!existing || row.bestDistance > existing.bestDistance) {
+      bestByPlayer.set(row.playerId, row);
+    }
+  }
+
+  const entries = [...bestByPlayer.values()].sort(
+    (a, b) => b.bestDistance - a.bestDistance || a.createdAt.getTime() - b.createdAt.getTime(),
+  );
 
   // For past days, join reward payout status
   let rewardMap = new Map<string, { status: string } | null>();
@@ -230,6 +244,7 @@ export default withMethods({
       projectedRollover: distribution.rolloverOut.toString(),
       previousDay: previousDayBucket(),
       nextResetAt: getNextDailyResetAt().toISOString(),
+      nextDegenPayoutAt: getNextHourlySettleAt().toISOString(),
       resetTimezone: RESET_TIMEZONE_LABEL,
     });
   },

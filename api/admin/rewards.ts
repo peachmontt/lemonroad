@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../_lib/db';
 import { previousDayBucket, dayBucketToDate } from '../_lib/day';
+import { dayBucketDateOrFilter } from '../_lib/daily-pool';
 import { badRequest, json, unauthorized, withMethods, parseJsonBody } from '../_lib/http';
 import { isAdminAuthorized } from '../_lib/session';
 
@@ -26,11 +27,9 @@ export default withMethods({
       return badRequest(res, 'Invalid date (use yesterday or YYYY-MM-DD)');
     }
 
-    const date = dayBucketToDate(dateStr);
-
     const rewards = await prisma.dailyReward.findMany({
       where: {
-        date,
+        ...dayBucketDateOrFilter(dateStr),
         ...(rawStatus ? { status: rawStatus as 'PENDING' | 'PAID' | 'REJECTED' } : {}),
       },
       orderBy: { position: 'asc' },

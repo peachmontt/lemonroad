@@ -4,5 +4,4 @@ export {
   previousHourBucket,
   getNextHourlySettleAt,
   HOURLY_SETTLE_MINUTE_UTC,
-  hourBucketLabel,
 } from '../../shared/hour';

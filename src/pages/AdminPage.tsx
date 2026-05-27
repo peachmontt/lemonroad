@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { solanaExplorerTxUrl } from '../config/explorer';
+import { ResetCountdown } from '../components/DailyResetCountdown';
 import { currentGameDayBucket, previousGameDayBucket } from '../lib/gameTime';
 
 interface PoolStats {
   currentDay: string;
   currentDayPool: {
+    participants: number;
+    deposited: string;
+    rolloverIn: string;
+    total: string;
+    totalFormatted: string;
+  };
+  paidDayPool?: {
     participants: number;
     deposited: string;
     rolloverIn: string;
@@ -28,6 +36,10 @@ interface PoolStats {
   }[];
   totals: { players: number; runs: number };
   serverTime: string;
+  nextDailyResetAt?: string;
+  nextWeeklyResetAt?: string;
+  nextDegenPayoutAt?: string;
+  resetTimezone?: string;
 }
 
 interface SettleResult {
@@ -231,11 +243,33 @@ export function AdminPage() {
         <>
           <section className="admin-section">
             <h2>Totals</h2>
+            <div className="admin-reset-countdowns">
+              <ResetCountdown
+                nextResetAt={stats.nextDailyResetAt ?? null}
+                className="admin-reset-countdown"
+                variant="daily"
+              />
+              <ResetCountdown
+                nextResetAt={stats.nextWeeklyResetAt ?? null}
+                className="admin-reset-countdown"
+                variant="weekly"
+              />
+              <ResetCountdown
+                nextResetAt={stats.nextDegenPayoutAt ?? null}
+                className="admin-reset-countdown admin-reset-countdown-degen"
+                variant="degen"
+              />
+              {stats.resetTimezone && (
+                <p className="admin-reset-timezone">
+                  Game day resets at 21:00 {stats.resetTimezone} · Degen payouts settle at :05 UTC each hour
+                </p>
+              )}
+            </div>
             <div className="admin-kpis">
               <div className="admin-kpi"><span>{stats.totals.players}</span>players</div>
               <div className="admin-kpi"><span>{stats.totals.runs}</span>total runs</div>
-              <div className="admin-kpi"><span>{stats.currentDayPool.totalFormatted}</span>current day pool</div>
-              <div className="admin-kpi"><span>{stats.currentDayPool.participants}</span>today's players</div>
+              <div className="admin-kpi"><span>{stats.currentDayPool.totalFormatted}</span>free daily pool</div>
+              <div className="admin-kpi"><span>{stats.currentDayPool.participants}</span>today&apos;s free players</div>
             </div>
           </section>
 

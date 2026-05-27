@@ -1,7 +1,13 @@
 import { prisma } from '../_lib/db';
 import { json, unauthorized, withMethods } from '../_lib/http';
 import { isAdminAuthorized } from '../_lib/session';
-import { currentDayBucket, dayBucketToDate } from '../_lib/day';
+import { currentDayBucket, dayBucketToDate, getNextDailyResetAt, RESET_TIMEZONE_LABEL } from '../_lib/day';
+import { getNextWeeklyResetAt } from '../../shared/gameTime';
+import { getNextHourlySettleAt } from '../../shared/hour';
+import {
+  DAILY_FREE_POOL_USDT,
+  dayBucketDateOrFilter,
+} from '../_lib/daily-pool';
 import { formatUsdt } from '../_lib/pool-math';
 
 export default withMethods({
@@ -19,6 +25,7 @@ export default withMethods({
       recentPaidRuns,
       totalPlayers,
       totalRuns,
+      todayFreePlayers,
     ] = await Promise.all([
       prisma.hourlyPool.findMany({
         where: { settledAt: null, participantCount: { gt: 0 } },
@@ -36,6 +43,9 @@ export default withMethods({
       }),
       prisma.player.count(),
       prisma.gameRun.count(),
+      prisma.dailyLeaderboard.count({
+        where: dayBucketDateOrFilter(currentDay),
+      }),
     ]);
 
     const dayDeposited = todayPools.reduce((sum, p) => sum + p.depositedUsdt, 0n);
@@ -46,6 +56,13 @@ export default withMethods({
     json(res, {
       currentDay,
       currentDayPool: {
+        participants: todayFreePlayers,
+        deposited: '0',
+        rolloverIn: '0',
+        total: String(DAILY_FREE_POOL_USDT),
+        totalFormatted: `${DAILY_FREE_POOL_USDT} USDT`,
+      },
+      paidDayPool: {
         participants: dayParticipants,
         deposited: dayDeposited.toString(),
         rolloverIn: dayRollover.toString(),
@@ -69,6 +86,10 @@ export default withMethods({
       })),
       totals: { players: totalPlayers, runs: totalRuns },
       serverTime: now.toISOString(),
+      nextDailyResetAt: getNextDailyResetAt(now).toISOString(),
+      nextWeeklyResetAt: getNextWeeklyResetAt(now).toISOString(),
+      nextDegenPayoutAt: getNextHourlySettleAt(now).toISOString(),
+      resetTimezone: RESET_TIMEZONE_LABEL,
     });
   },
 });

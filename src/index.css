@@ -2349,6 +2349,28 @@ html.gameplay-active #root {
   padding-bottom: 6px;
 }
 
+.admin-reset-countdowns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.admin-reset-countdown {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-reset-timezone {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #666;
+  font-weight: 600;
+}
+
 .admin-kpis {
   display: flex;
   gap: 16px;
