@@ -92,6 +92,8 @@ export function updateHazards(state: GameState, scrollDelta: number): void {
       h.passed = true;
       if (hazardNearZone(h, lemon.x, lemonY)) {
         registerNearMiss(state, lemon.x, lemonY);
+        const prev = state.runSession.hazardDodges[h.kind] ?? 0;
+        state.runSession.hazardDodges[h.kind] = prev + 1;
       } else {
         resetDodgeStreak(state);
       }

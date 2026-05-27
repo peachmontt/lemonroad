@@ -384,6 +384,7 @@ function drawTaxman(ctx: CanvasRenderingContext2D, state: GameState): void {
 function drawLemon(ctx: CanvasRenderingContext2D, state: GameState): void {
   const { lemon, lemonScreenY: ly } = state;
   const dancing = state.time < state.flags.dancingUntil;
+  const skinId = state.selectedSkinId ?? 'default';
 
   ctx.save();
   ctx.translate(lemon.x, ly);
@@ -395,19 +396,22 @@ function drawLemon(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.scale(lemon.scale * sq, lemon.scale / Math.max(0.5, sq));
 
   const r = LEMON_RADIUS;
+  const skinColors = getSkinColors(skinId);
 
   ctx.beginPath();
   ctx.ellipse(0, 0, r, r * 1.1, 0, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.lemon;
+  ctx.fillStyle = skinColors.fill;
   ctx.fill();
-  ctx.strokeStyle = COLORS.outline;
+  ctx.strokeStyle = skinColors.stroke;
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.fillStyle = COLORS.lemonDark;
+  ctx.fillStyle = skinColors.dark;
   ctx.beginPath();
   ctx.ellipse(-6, -4, 4, 6, -0.3, 0, Math.PI * 2);
   ctx.fill();
+
+  applySkinExtras(ctx, skinId, r);
 
   ctx.fillStyle = COLORS.outline;
   ctx.beginPath();
@@ -432,6 +436,71 @@ function drawLemon(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.stroke();
 
   ctx.restore();
+}
+
+function getSkinColors(skinId: string): { fill: string; dark: string; stroke: string } {
+  switch (skinId) {
+    case 'golden':
+      return { fill: '#FFD700', dark: '#E6C200', stroke: COLORS.outline };
+    case 'burnt':
+      return { fill: '#B8860B', dark: '#5C4033', stroke: '#3E2723' };
+    case 'diamond_hands':
+      return { fill: '#FFE135', dark: '#4FC3F7', stroke: COLORS.outline };
+    case 'rugged':
+      return { fill: '#FFE135', dark: '#DEB887', stroke: COLORS.outline };
+    case 'whale_bait':
+      return { fill: '#FFE135', dark: '#7B1FA2', stroke: COLORS.outline };
+    default:
+      return { fill: COLORS.lemon, dark: COLORS.lemonDark, stroke: COLORS.outline };
+  }
+}
+
+function applySkinExtras(ctx: CanvasRenderingContext2D, skinId: string, r: number): void {
+  switch (skinId) {
+    case 'golden':
+      ctx.fillStyle = '#FFF8DC';
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(-r * 0.5 + i * 12, -r * 0.6, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    case 'burnt':
+      ctx.fillStyle = '#3E2723';
+      ctx.beginPath();
+      ctx.arc(8, 6, 3, 0, Math.PI * 2);
+      ctx.arc(-10, 8, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'diamond_hands':
+      ctx.fillStyle = 'rgba(79, 195, 247, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 0.7, r * 0.5, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'rugged':
+      ctx.strokeStyle = COLORS.outline;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-8, -2);
+      ctx.lineTo(6, 8);
+      ctx.stroke();
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(-4, -8, 14, 5);
+      ctx.strokeRect(-4, -8, 14, 5);
+      break;
+    case 'whale_bait':
+      ctx.fillStyle = '#7B1FA2';
+      ctx.beginPath();
+      ctx.arc(r * 0.55, -r * 0.3, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#7B1FA2';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r * 0.7, -r * 0.5, 6, Math.PI, Math.PI * 1.8);
+      ctx.stroke();
+      break;
+  }
 }
 
 function drawKnifeSlash(ctx: CanvasRenderingContext2D, state: GameState): void {

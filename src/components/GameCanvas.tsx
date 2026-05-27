@@ -2,6 +2,11 @@ import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { useGameEngine } from '../hooks/useGameEngine';
+import { useProgression } from '../hooks/useProgression';
+import { appendRunHistory } from '../game/runHistory';
+import { updateProgressAfterRun } from '../game/progression';
+import { parseReferralFromUrl, storePendingReferral } from '../game/referrals';
+import type { RunSummary } from '../game/types';
 import { usePaidAttempt } from '../hooks/usePaidAttempt';
 import { useEvmPaidAttempt } from '../hooks/useEvmPaidAttempt';
 import { usePlayer } from '../hooks/usePlayer';
@@ -22,6 +27,9 @@ import type { WalletChannel } from './WalletConnectButton';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
 import { InstallNudgeCard } from './pwa/InstallNudgeCard';
 import { NotificationNudgeCard } from './pwa/NotificationNudgeCard';
+import { LemonClubMenu } from './LemonClubMenu';
+import { LemonClubFab } from './LemonClubFab';
+import type { LemonClubTab } from './LemonClubTabs';
 
 interface GameCanvasProps {
   modalTab: ModalTab | null;
@@ -31,8 +39,31 @@ interface GameCanvasProps {
 
 export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { snapshot, start, reset, setTilt, toggleMute, playDurationMs } =
-    useGameEngine(canvasRef);
+  const {
+    progress,
+    recentUnlocks,
+    setRecentUnlocks,
+    refresh: refreshProgression,
+    selectSkin,
+    selectDeathTitle,
+    claimMission,
+    simulateReferral,
+  } = useProgression();
+  const [lemonClubOpen, setLemonClubOpen] = useState(false);
+  const [lemonClubTab, setLemonClubTab] = useState<LemonClubTab>('missions');
+
+  const handleRunEnd = useCallback(
+    (summary: RunSummary) => {
+      const { unlocks } = updateProgressAfterRun(summary);
+      appendRunHistory(summary);
+      setRecentUnlocks(unlocks);
+      refreshProgression();
+    },
+    [refreshProgression, setRecentUnlocks],
+  );
+
+  const { snapshot, start, reset, setTilt, toggleMute, playDurationMs, setSelectedSkin } =
+    useGameEngine(canvasRef, handleRunEnd);
   const [tiltMsg, setTiltMsg] = useState<string | null>(null);
   const [gameMode, setGameMode] = useState<GameMode>('free');
   const [walletChannel, setWalletChannel] = useState<WalletChannel>('solana');
@@ -42,6 +73,25 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   const [activePaymentChain, setActivePaymentChain] = useState<'solana' | 'evm'>('solana');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const pendingStartRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const ref = parseReferralFromUrl();
+    if (ref) storePendingReferral(ref);
+  }, []);
+
+  const openLemonClub = useCallback((tab: LemonClubTab = 'missions') => {
+    setLemonClubTab(tab);
+    setLemonClubOpen(true);
+    refreshProgression();
+  }, [refreshProgression]);
+
+  const handleSelectSkin = useCallback(
+    (id: Parameters<typeof selectSkin>[0]) => {
+      selectSkin(id);
+      setSelectedSkin(id);
+    },
+    [selectSkin, setSelectedSkin],
+  );
 
   const { publicKey } = useWallet();
   const { address: evmAddress } = useAccount();
@@ -170,24 +220,44 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     setActiveDepositTx(null);
     setActiveWalletKey(null);
     setTiltMsg(null);
+    setRecentUnlocks([]);
   };
 
   const isGameplay = snapshot.phase !== 'idle';
+  const showLemonClubFab = !lemonClubOpen;
+  const isDeadPhase = snapshot.phase === 'dying' || snapshot.phase === 'dead';
 
   useEffect(() => {
+    const isIdle = snapshot.phase === 'idle';
+    const isDead = snapshot.phase === 'dying' || snapshot.phase === 'dead';
+
     document.body.classList.toggle('gameplay-active', isGameplay);
     document.documentElement.classList.toggle('gameplay-active', isGameplay);
+    document.body.classList.toggle('home-screen', isIdle);
+    document.documentElement.classList.toggle('home-screen', isIdle);
+    document.body.classList.toggle('dead-screen', isDead);
+    document.documentElement.classList.toggle('dead-screen', isDead);
     window.dispatchEvent(new Event('resize'));
     return () => {
-      document.body.classList.remove('gameplay-active');
-      document.documentElement.classList.remove('gameplay-active');
+      document.body.classList.remove(
+        'gameplay-active',
+        'home-screen',
+        'dead-screen',
+      );
+      document.documentElement.classList.remove(
+        'gameplay-active',
+        'home-screen',
+        'dead-screen',
+      );
     };
-  }, [isGameplay]);
+  }, [isGameplay, snapshot.phase]);
 
-  const gameRootClass = useMemo(
-    () => (isGameplay ? 'game-root gameplay-screen' : 'game-root'),
-    [isGameplay],
-  );
+  const gameRootClass = useMemo(() => {
+    const parts = ['game-root'];
+    if (isGameplay) parts.push('gameplay-screen');
+    if (isDeadPhase) parts.push('death-screen');
+    return parts.join(' ');
+  }, [isGameplay, isDeadPhase]);
 
   return (
     <div className={gameRootClass}>
@@ -213,6 +283,8 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           onStart={handleStart}
           onStartPaid={() => void handleStartPaid()}
           onOpenModal={onOpenModal}
+          streakDays={progress.streakDays}
+          bestDistance={progress.bestDistance}
           tiltMsg={tiltMsg}
           needsTilt={needsPermission && status !== 'granted'}
           player={player}
@@ -236,6 +308,8 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           player={player}
           dailyRank={activeMode === 'free' ? dailyRank : null}
           onRetry={handleRetry}
+          recentUnlocks={recentUnlocks}
+          progress={progress}
           onRunSaved={() => {
             void reloadRuns();
             dailyRank.refresh();
@@ -253,6 +327,23 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
       )}
 
       {modalTab && <FakeModal tab={modalTab} onClose={onCloseModal} />}
+
+      {lemonClubOpen && snapshot.phase !== 'playing' && (
+        <LemonClubMenu
+          open={lemonClubOpen}
+          initialTab={lemonClubTab}
+          progress={progress}
+          onClose={() => setLemonClubOpen(false)}
+          onSelectSkin={handleSelectSkin}
+          onSelectDeathTitle={selectDeathTitle}
+          onClaimMission={claimMission}
+          onSimulateReferral={simulateReferral}
+        />
+      )}
+
+      {showLemonClubFab && (snapshot.phase === 'idle' || isDeadPhase) && (
+        <LemonClubFab onClick={() => openLemonClub('missions')} />
+      )}
 
       {snapshot.phase !== 'playing' && showInstallNudge && (
         <div className="pwa-nudge-overlay">

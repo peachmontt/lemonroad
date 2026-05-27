@@ -178,6 +178,13 @@ export function updateActiveEvent(state: GameState, now: number, dt: number): vo
     if (ev.id === 'market_crash' && state.phase === 'playing') {
       awardLemonHands(state, state.lemon.x, state.lemonScreenY);
     }
+    if (state.phase === 'playing') {
+      const count = (state.runSession.survivedEvents[ev.id] ?? 0) + 1;
+      state.runSession.survivedEvents[ev.id] = count;
+      if (ev.id === 'knife') {
+        state.runSession.whaleEventSurvivals += 1;
+      }
+    }
     endEvent(state, ev.id);
     state.activeEvent = null;
     return;

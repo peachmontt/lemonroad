@@ -22,6 +22,8 @@ import { ShareCard } from './ShareCard';
 import { ShareMenu } from './ShareMenu';
 import { WalletLinkPrompt } from './WalletLinkPrompt';
 import { WalletConfirmedCard } from './WalletConfirmedCard';
+import { PostDeathUnlocks } from './PostDeathCard';
+import type { PlayerProgress, UnlockNotification } from '../game/progression';
 
 interface DeathOverlayProps {
   snapshot: GameSnapshot;
@@ -35,6 +37,8 @@ interface DeathOverlayProps {
   onRetry: () => void;
   onRunSaved?: () => void;
   onWalletLinked?: (walletPubkey: string) => Promise<void>;
+  recentUnlocks?: UnlockNotification[];
+  progress?: PlayerProgress | null;
 }
 
 function DeathScene() {
@@ -74,6 +78,8 @@ export function DeathOverlay({
   onRetry,
   onRunSaved,
   onWalletLinked,
+  recentUnlocks = [],
+  progress = null,
 }: DeathOverlayProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const meters = Math.floor(snapshot.distance);
@@ -204,15 +210,18 @@ export function DeathOverlay({
 
   return (
     <div className={`overlay death-overlay ${isDead ? 'visible' : 'juicing'}`}>
-      {isDead && <DeathScene />}
+      <div className="death-overlay-backdrop" aria-hidden="true" />
 
-      <div className="death-content">
+      <div className="death-overlay-inner">
+        {isDead && <DeathScene />}
+        <div className="death-content">
         <h1 className="juiced-title">YOU GOT JUICED</h1>
 
         {isDead && (
           <>
             <p className="death-roast">{roast}</p>
             <p className="death-quote">&ldquo;{quote}&rdquo;</p>
+            <PostDeathUnlocks unlocks={recentUnlocks} progress={progress} />
 
             <div className="death-panel">
               <div className="death-stats">
@@ -283,6 +292,7 @@ export function DeathOverlay({
             </div>
           </>
         )}
+        </div>
       </div>
 
       {shareReady && (

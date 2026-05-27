@@ -22,12 +22,14 @@ import {
 import { createDefaultFlags, createLemon, updateDyingLemon, updateLemon } from './lemon';
 import {
   appendRoadSegment,
+  getLeadingRoadSegment,
   initRoad,
   trimRoad,
 } from './road';
 import { renderGame, renderPausedPreview, setRenderTime } from './renderer';
 import { capBonusScore, getTotalScore, updateFloatingTexts } from './scoring';
-import type { GameSnapshot, GameState, InputState } from './types';
+import type { GameSnapshot, GameState, InputState, RunSummary } from './types';
+import { createRunSessionStats } from './types';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
@@ -43,7 +45,9 @@ export class GameEngine {
   private lastSqueezeSound = 0;
   private layoutWidth = 0;
   private onSnapshot: ((s: GameSnapshot) => void) | null = null;
+  private onRunEnd: ((summary: RunSummary) => void) | null = null;
   private snapshotAccum = 0;
+  private runDurationMs = 0;
 
   constructor(canvas: HTMLCanvasElement, audio: AudioManager) {
     this.canvas = canvas;
@@ -96,7 +100,18 @@ export class GameEngine {
       height: h,
       dpr,
       lemonScreenY: h * LEMON_SCREEN_Y_RATIO,
+      selectedSkinId: 'default',
+      runSession: createRunSessionStats(),
+      playStartedAt: 0,
     };
+  }
+
+  setRunEndCallback(cb: (summary: RunSummary) => void): void {
+    this.onRunEnd = cb;
+  }
+
+  setSelectedSkin(skinId: string): void {
+    this.state.selectedSkinId = skinId;
   }
 
   setSnapshotCallback(cb: (s: GameSnapshot) => void): void {
@@ -222,6 +237,9 @@ export class GameEngine {
     this.state.nextHazardAt = 4;
     this.state.nextEventAt = 6;
     this.state.eventQueue = ['liquidity_added'];
+    this.state.runSession = createRunSessionStats();
+    this.state.playStartedAt = performance.now();
+    this.runDurationMs = 0;
     this.segmentCounter = 0;
     this.lastTime = performance.now();
   }
@@ -280,6 +298,10 @@ export class GameEngine {
     s.time += dt;
     setRenderTime(s.time);
 
+    if (s.phase === 'playing' && s.playStartedAt > 0) {
+      this.runDurationMs = performance.now() - s.playStartedAt;
+    }
+
     this.input.target = computeInputTarget(
       this.input,
       this.mouseX,
@@ -297,6 +319,7 @@ export class GameEngine {
       updateDyingLemon(s.lemon, dt);
       if (s.time - s.deathTime > 2) {
         s.phase = 'dead';
+        this.emitRunEnd();
       }
       updateFloatingTexts(s, dt);
       return;
@@ -422,11 +445,65 @@ export class GameEngine {
   private triggerDeath(): void {
     const s = this.state;
     if (s.phase !== 'playing') return;
+
+    const seg = getLeadingRoadSegment(s.road);
+    const noRoad = s.flags.rugBurning || !seg?.hasRoad;
+    s.runSession.deathLastHazard = s.lastHitKind;
+    s.runSession.activeEventAtDeath = s.activeEvent?.id ?? null;
+    s.runSession.deathCause = noRoad ? 'no_road' : 'off_road';
+
     s.phase = 'dying';
     s.deathTime = s.time;
     s.flags.screenShake = 8;
     this.audio.play('scream');
     this.audio.play('error');
+  }
+
+  private buildRunSummary(): RunSummary {
+    const s = this.state;
+    const rs = s.runSession;
+    const total = Math.floor(getTotalScore(s));
+    const bestGap =
+      typeof localStorage !== 'undefined'
+        ? (() => {
+            try {
+              const raw = localStorage.getItem('lemonroad_progress_v1');
+              if (!raw) return undefined;
+              const p = JSON.parse(raw) as { bestDistance?: number };
+              const best = p.bestDistance ?? 0;
+              if (best <= 0 || total >= best) return undefined;
+              return best - total;
+            } catch {
+              return undefined;
+            }
+          })()
+        : undefined;
+
+    return {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      date: new Date().toISOString(),
+      distance: total,
+      baseDistance: Math.floor(s.distance),
+      bonusScore: Math.floor(s.bonusScore),
+      durationMs: this.runDurationMs || Math.max(0, performance.now() - s.playStartedAt),
+      deathCause: rs.deathCause ?? 'off_road',
+      activeEventAtDeath: rs.activeEventAtDeath,
+      lastHazardHit: rs.deathLastHazard,
+      selectedSkin: s.selectedSkinId,
+      deathTitle: null,
+      survivedEvents: { ...rs.survivedEvents },
+      hazardDodges: { ...rs.hazardDodges },
+      whaleEventSurvivals: rs.whaleEventSurvivals,
+      wasClosestToRewardZone: bestGap != null && bestGap <= 50,
+      rankDeltaPlaceholder: bestGap,
+    };
+  }
+
+  private emitRunEnd(): void {
+    const s = this.state;
+    if (s.runSession.runEnded || !this.onRunEnd) return;
+    s.runSession.runEnded = true;
+    this.onRunEnd(this.buildRunSummary());
   }
 
   private idleWiggle(dt: number): void {

@@ -16,6 +16,8 @@ interface StartOverlayProps {
   onStart: () => void;
   onStartPaid: () => void;
   onOpenModal: (tab: ModalTab) => void;
+  streakDays: number;
+  bestDistance: number;
   tiltMsg: string | null;
   needsTilt: boolean;
   player: PlayerResponse | null;
@@ -35,6 +37,8 @@ export function StartOverlay({
   onStart,
   onStartPaid,
   onOpenModal,
+  streakDays,
+  bestDistance,
   tiltMsg,
   needsTilt,
   player,
@@ -80,6 +84,13 @@ export function StartOverlay({
         </div>
 
         <p className="controls-hint">drag · mouse · A/D · touch · tilt</p>
+
+        {(streakDays > 0 || bestDistance > 0) && (
+          <p className="lemon-club-teaser">
+            {streakDays > 0 && <>Daily streak: {streakDays} days 🔥 · </>}
+            {bestDistance > 0 && <>Best: {Math.floor(bestDistance)}m</>}
+          </p>
+        )}
       </section>
 
       <section className="mode-section">

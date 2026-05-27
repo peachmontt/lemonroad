@@ -110,6 +110,47 @@ export interface ActiveEvent {
   startedAt: number;
 }
 
+export interface RunSessionStats {
+  survivedEvents: Partial<Record<MemeEventId, number>>;
+  hazardDodges: Partial<Record<HazardKind, number>>;
+  whaleEventSurvivals: number;
+  deathLastHazard: HazardKind | null;
+  activeEventAtDeath: MemeEventId | null;
+  deathCause: 'off_road' | 'no_road' | null;
+  runEnded: boolean;
+}
+
+export function createRunSessionStats(): RunSessionStats {
+  return {
+    survivedEvents: {},
+    hazardDodges: {},
+    whaleEventSurvivals: 0,
+    deathLastHazard: null,
+    activeEventAtDeath: null,
+    deathCause: null,
+    runEnded: false,
+  };
+}
+
+export interface RunSummary {
+  id: string;
+  date: string;
+  distance: number;
+  baseDistance: number;
+  bonusScore: number;
+  durationMs: number;
+  deathCause: 'off_road' | 'no_road';
+  activeEventAtDeath: MemeEventId | null;
+  lastHazardHit: HazardKind | null;
+  selectedSkin: string;
+  deathTitle: string | null;
+  survivedEvents: Partial<Record<MemeEventId, number>>;
+  hazardDodges: Partial<Record<HazardKind, number>>;
+  whaleEventSurvivals: number;
+  wasClosestToRewardZone?: boolean;
+  rankDeltaPlaceholder?: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   time: number;
@@ -146,6 +187,9 @@ export interface GameState {
   height: number;
   dpr: number;
   lemonScreenY: number;
+  selectedSkinId: string;
+  runSession: RunSessionStats;
+  playStartedAt: number;
 }
 
 export interface GameSnapshot {

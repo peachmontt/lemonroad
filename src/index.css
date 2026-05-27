@@ -16,6 +16,7 @@ body,
   width: 100%;
   height: 100%;
   min-height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
   font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
   background: var(--page-bg);
@@ -24,8 +25,6 @@ body,
 }
 
 body {
-  min-height: 100dvh;
-  min-height: 100vh;
   overflow-x: hidden;
 }
 
@@ -80,6 +79,10 @@ html.gameplay-active #root {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+.game-root.gameplay-screen.death-screen {
+  background: #140101;
 }
 
 .gameplay-screen .game-canvas {
@@ -159,8 +162,8 @@ html.gameplay-active #root {
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  min-height: 100%;
-  padding: 20px 16px calc(32px + env(safe-area-inset-bottom));
+  min-height: 0;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
   background: var(--page-bg);
   pointer-events: auto;
   overflow-y: auto;
@@ -189,7 +192,7 @@ html.gameplay-active #root {
 .mode-section {
   width: 100%;
   max-width: 720px;
-  margin: 22px auto 0;
+  margin: 18px auto 0;
   text-align: center;
 }
 
@@ -202,7 +205,7 @@ html.gameplay-active #root {
 }
 
 .mode-content {
-  min-height: 190px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -227,7 +230,7 @@ html.gameplay-active #root {
 }
 
 .accordion-section .info-panels-accordion {
-  margin: 16px 0;
+  margin: 12px 0;
 }
 
 .actions-section {
@@ -244,11 +247,14 @@ html.gameplay-active #root {
 .site-footer {
   width: 100%;
   max-width: 720px;
-  margin-top: 34px;
+  margin-top: 32px;
+  padding-bottom: 0;
 }
 
+.site-footer .footer,
 .site-footer .footer-links {
   margin-top: 0;
+  padding: 0;
 }
 
 .start-primary-btn {
@@ -270,14 +276,19 @@ html.gameplay-active #root {
 }
 
 @media (min-width: 768px) {
-  .mode-content {
-    min-height: 185px;
+  .start-overlay,
+  .home-page {
+    padding-bottom: calc(36px + env(safe-area-inset-bottom));
+  }
+
+  .site-footer {
+    margin-top: 36px;
   }
 }
 
 @media (max-width: 430px) {
-  .mode-content {
-    min-height: 220px;
+  .site-footer {
+    margin-top: 28px;
   }
 }
 
@@ -377,14 +388,14 @@ html.gameplay-active #root {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .footer,
 .footer-links {
   width: 100%;
   margin-top: 20px;
-  padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+  padding: 8px 12px 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -525,15 +536,54 @@ html.gameplay-active #root {
 
 .death-overlay {
   justify-content: flex-start;
-  align-items: center;
-  padding: 16px max(12px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px))
-    max(12px, env(safe-area-inset-left, 0px));
+  align-items: stretch;
+  padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: rgba(0, 0, 0, 0.7);
+  background: transparent;
   pointer-events: auto;
+}
+
+.death-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.7);
+  pointer-events: none;
   transition: background 0.35s ease;
+}
+
+.death-overlay.visible .death-overlay-backdrop {
+  background: rgba(40, 2, 2, 0.97);
+}
+
+.death-overlay-inner {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: 100dvh;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 16px max(12px, env(safe-area-inset-right, 0px))
+    max(24px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.death-overlay-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.7);
+  transition: background 0.35s ease;
+}
+
+.death-overlay.visible .death-overlay-inner::before {
+  background: rgba(40, 2, 2, 0.97);
 }
 
 .death-overlay.juicing .juiced-title {
@@ -541,12 +591,12 @@ html.gameplay-active #root {
 }
 
 .death-overlay.visible {
-  background: rgba(40, 2, 2, 0.97);
+  background: transparent;
 }
 
 .death-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -575,9 +625,9 @@ html.gameplay-active #root {
 }
 
 .death-scene {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   overflow: hidden;
   pointer-events: none;
 }
@@ -1453,7 +1503,7 @@ html.gameplay-active #root {
     letter-spacing: 0.02em;
   }
 
-  .death-overlay {
+  .death-overlay-inner {
     padding-top: 12px;
   }
 
@@ -1882,11 +1932,11 @@ html.gameplay-active #root {
   .start-overlay,
   .home-page {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
   }
 
   .site-footer .footer-links {
-    padding-bottom: calc(44px + env(safe-area-inset-bottom));
+    padding-bottom: 0;
   }
 }
 
@@ -2629,3 +2679,529 @@ html.gameplay-active #root {
   }
 }
 
+/* ── Lemon Club ───────────────────────────────────── */
+body.lemon-club-open,
+html.lemon-club-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+body.lemon-club-open .lemon-club-body {
+  touch-action: pan-y;
+}
+
+.lemon-club-teaser {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #444;
+}
+
+/* Floating action button */
+:root {
+  --lemon-club-fab-bottom: 24px;
+  --lemon-club-fab-right: 16px;
+}
+
+body.home-screen,
+html.home-screen {
+  --lemon-club-fab-bottom: 64px;
+}
+
+body.dead-screen,
+html.dead-screen {
+  --lemon-club-fab-bottom: 16px;
+}
+
+.lemon-club-fab {
+  position: fixed;
+  right: var(--lemon-club-fab-right);
+  bottom: calc(var(--lemon-club-fab-bottom) + env(safe-area-inset-bottom, 0px));
+  z-index: 900;
+  height: 44px;
+  min-width: auto;
+  max-width: 92px;
+  padding: 0 14px;
+  border: 3px solid #000;
+  border-radius: 999px;
+  background: #ffe135;
+  box-shadow: 4px 4px 0 #000;
+  font-family: 'Comic Neue', cursive;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.lemon-club-fab-label {
+  display: none;
+}
+
+.lemon-club-fab-label--compact {
+  display: inline;
+}
+
+@media (min-width: 768px) {
+  .lemon-club-fab {
+    right: 24px;
+    min-width: 130px;
+    max-width: none;
+    height: 48px;
+    padding: 0 18px;
+    font-size: 0.95rem;
+  }
+
+  body.home-screen,
+  html.home-screen {
+    --lemon-club-fab-bottom: 64px;
+  }
+
+  .lemon-club-fab-label--compact {
+    display: none;
+  }
+
+  .lemon-club-fab-label--full {
+    display: inline;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --lemon-club-fab-right: 10px;
+  }
+
+  body.home-screen,
+  html.home-screen {
+    --lemon-club-fab-bottom: 54px;
+  }
+
+  body.dead-screen,
+  html.dead-screen {
+    --lemon-club-fab-bottom: 16px;
+  }
+
+  .site-footer .footer-links {
+    padding-right: 0;
+  }
+}
+
+/* Backdrop + modal shell */
+.lemon-club-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+}
+
+.lemon-club-panel {
+  background: #fffff0;
+  border: 5px solid #000;
+  width: 100%;
+  max-width: 100%;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  box-shadow: 0 -8px 0 #000;
+  border-radius: 18px 18px 0 0;
+  box-sizing: border-box;
+}
+
+.lemon-club-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  border-bottom: 2px solid #000;
+  background: #fffff0;
+}
+
+.lemon-club-header-text {
+  flex: 1;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.lemon-club-header h2 {
+  margin: 0;
+  font-family: 'Comic Neue', cursive;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.lemon-club-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.35;
+}
+
+.lemon-club-close {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 3px solid #000;
+  background: #ffe135;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lemon-club-tabs-wrap {
+  flex-shrink: 0;
+  border-bottom: 2px solid #000;
+  background: #fffff0;
+}
+
+.lemon-club-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding: 10px 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.lemon-club-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.lemon-club-tab {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 3px solid #000;
+  background: #fff;
+  font-family: 'Comic Neue', cursive;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.lemon-club-tab.active {
+  background: #ffe135;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.lemon-club-tab-label--short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .lemon-club-tab-label--full {
+    display: none;
+  }
+
+  .lemon-club-tab-label--short {
+    display: inline;
+  }
+}
+
+.lemon-club-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+}
+
+.lemon-club-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lemon-club-tagline {
+  margin: 0;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.lemon-club-muted {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.lemon-club-stat {
+  margin: 0;
+  font-weight: 700;
+}
+
+.lemon-club-card {
+  width: 100%;
+  box-sizing: border-box;
+  border: 3px solid #000;
+  background: #fff;
+  padding: 12px;
+  box-shadow: 4px 4px 0 #000;
+  overflow: visible;
+}
+
+.lemon-club-card h4 {
+  margin: 0 0 6px;
+  font-family: 'Comic Neue', cursive;
+  line-height: 1.25;
+  word-wrap: break-word;
+}
+
+.lemon-club-card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.8);
+}
+
+.lemon-club-card.selected {
+  outline: 3px solid #ffe135;
+}
+
+.lemon-club-progress {
+  height: 10px;
+  border: 2px solid #000;
+  background: #eee;
+  margin-top: 8px;
+}
+
+.lemon-club-progress-bar {
+  height: 100%;
+  background: #ffe135;
+}
+
+.lemon-club-progress-label {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.lemon-club-reward {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+}
+
+.lemon-club-claim {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.lemon-club-claimed {
+  margin: 8px 0 0;
+  font-weight: 800;
+  color: #1a8f1a;
+}
+
+.lemon-club-skin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.lemon-club-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.lemon-club-badge {
+  min-height: 110px;
+}
+
+.lemon-club-skin-emoji,
+.lemon-club-badge-emoji {
+  font-size: 1.6rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.lemon-club-locked-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #888;
+}
+
+.lemon-club-section-title {
+  margin: 8px 0 0;
+  font-family: 'Comic Neue', cursive;
+}
+
+.lemon-club-title-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.lemon-club-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.lemon-club-title.unlocked {
+  opacity: 1;
+  filter: none;
+}
+
+.lemon-club-code {
+  font-family: monospace;
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+  word-break: break-all;
+}
+
+.lemon-club-preview-banner {
+  padding: 8px 10px;
+  background: #ffe135;
+  border: 2px dashed #000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.lemon-club-reward-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.lemon-club-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.lemon-club-actions .btn {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.lemon-club-dev-btn {
+  margin-top: 8px;
+}
+
+.lemon-club-shame-card {
+  margin-bottom: 0;
+}
+
+.lemon-club-shame-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 4px 0;
+  word-wrap: break-word;
+}
+
+.lemon-club-shame-link {
+  align-self: flex-start;
+}
+
+.lemon-club-fine {
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.death-unlock-toast {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #ffe135;
+  border: 2px solid #000;
+  font-weight: 800;
+  text-align: center;
+}
+
+.death-title-equipped {
+  margin: 4px 0;
+  font-weight: 700;
+  color: #555;
+  text-align: center;
+}
+
+.hall-of-shame-page {
+  min-height: 100dvh;
+  background: var(--page-bg, #fff8c8);
+  padding: 24px 16px 40px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.hall-of-shame-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.hall-of-shame-header h1 {
+  font-family: 'Comic Neue', cursive;
+  margin: 0 0 8px;
+}
+
+.hall-of-shame-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .lemon-club-badge-grid,
+  .lemon-club-skin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) {
+  .lemon-club-backdrop {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .lemon-club-panel {
+    width: min(720px, calc(100vw - 48px));
+    max-width: min(720px, calc(100vw - 48px));
+    max-height: min(760px, calc(100vh - 48px));
+    border-radius: 16px;
+    box-shadow: 10px 10px 0 #000;
+  }
+
+  .lemon-club-header {
+    padding-top: 16px;
+  }
+
+  .lemon-club-badge-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lemon-club-skin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .lemon-club-badge-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
