@@ -467,12 +467,14 @@ html.gameplay-active #root {
   color: #660000;
 }
 
-/* HUD pins its content to a centred column so it never hugs screen edges on desktop */
+/* HUD: fixed regions — top info, bottom stats, playfield stays clear */
 .hud-overlay {
-  align-items: stretch;
-  justify-content: space-between;
-  padding: 10px 12px 14px;
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
 .hud-overlay > * {
@@ -480,58 +482,79 @@ html.gameplay-active #root {
 }
 
 .hud-top {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
   display: flex;
   justify-content: space-between;
   align-items: center;
   max-width: 480px;
   margin: 0 auto;
-  width: 100%;
+  gap: 8px;
+  z-index: 3;
+}
+
+.hud-reward-strip {
+  position: absolute;
+  top: calc(max(8px, env(safe-area-inset-top)) + 44px);
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  max-width: 480px;
+  margin: 0 auto;
+  z-index: 3;
 }
 
 .hud-logo {
-  font-weight: 700;
-  font-size: 1.1rem;
+  font-weight: 800;
+  font-size: clamp(0.75rem, 3.5vw, 1rem);
+  letter-spacing: 0.04em;
   background: #ffe135;
   border: 3px solid #000;
-  padding: 4px 10px;
+  padding: 3px 8px;
   box-shadow: 3px 3px 0 #000;
 }
 
 .mute-btn {
   font-family: inherit;
   font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1;
   background: #fff;
   border: 3px solid #000;
-  padding: 4px 10px;
+  padding: 6px 10px;
+  min-width: 44px;
+  min-height: 44px;
   cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .hud-stats {
-  margin-top: auto;
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.85);
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.95);
   border: 3px solid #000;
   padding: 8px 12px;
   font-size: 0.95rem;
   box-shadow: 3px 3px 0 #000;
-  max-width: 260px;
+  max-width: min(280px, calc(100vw - 24px));
+  color: #000;
 }
 
 .hud-stats p {
   margin: 2px 0;
 }
 
-.hud-event {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: #ff0;
-  border: 4px solid #000;
-  padding: 8px 16px;
-  animation: shake 0.6s infinite;
+.hud-stat-distance {
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.hud-combo {
+  color: #ff6b00;
+  font-weight: 800;
 }
 
 .death-overlay {
@@ -2568,11 +2591,8 @@ html.gameplay-active #root {
   100% { transform: rotate(-360deg) scale(1); }
 }
 
-/* ── HUD daily reward strip ───────────────────────── */
+/* ── HUD daily reward strip (position set in .hud-overlay block above) ── */
 .hud-reward-strip {
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
   pointer-events: none;
 }
 
@@ -2600,11 +2620,6 @@ html.gameplay-active #root {
   text-overflow: ellipsis;
 }
 
-.hud-combo {
-  color: #ff6b00;
-  font-weight: 800;
-}
-
 @media (min-width: 768px) {
   .hud-reward-full {
     display: block;
@@ -2612,6 +2627,16 @@ html.gameplay-active #root {
 
   .hud-reward-compact {
     display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .hud-reward-full {
+    display: none;
+  }
+
+  .hud-reward-compact {
+    display: block;
   }
 }
 
@@ -2906,10 +2931,37 @@ html.gameplay-active #root {
   }
 }
 
+@media (max-width: 520px) {
+  .hud-logo {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+  }
+
+  .mute-btn {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .hud-stats {
+    font-size: 0.85rem;
+    max-width: min(240px, 88vw);
+  }
+
+  .hud-stat-distance {
+    font-size: 1.05rem;
+  }
+
+  .hud-reward-compact {
+    font-size: 0.68rem;
+    padding: 4px 8px;
+  }
+}
+
 @media (max-width: 430px) {
   .hud-stats {
-    max-width: 220px;
-    font-size: 0.85rem;
+    max-width: 88vw;
   }
 
   .onboarding-card {

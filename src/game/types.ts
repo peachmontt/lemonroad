@@ -190,6 +190,8 @@ export interface GameState {
   selectedSkinId: string;
   runSession: RunSessionStats;
   playStartedAt: number;
+  /** Visual-only offset synced with road scroll for background scenery */
+  decorScrollY: number;
 }
 
 export interface GameSnapshot {

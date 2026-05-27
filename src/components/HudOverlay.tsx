@@ -61,16 +61,13 @@ export function HudOverlay({
       )}
 
       <div className="hud-stats">
-        <p>{Math.floor(snapshot.distance)}m</p>
+        <p className="hud-stat-distance">{Math.floor(snapshot.distance)}m</p>
         <p>juice level: {snapshot.juiceLevel}</p>
         <p>citric velocity: {velocity}</p>
         {snapshot.dodgeStreak >= 2 && (
           <p className="hud-combo">combo x{snapshot.dodgeStreak}</p>
         )}
       </div>
-      {snapshot.activeEventLabel && (
-        <p className="hud-event">{snapshot.activeEventLabel}</p>
-      )}
     </div>
   );
 }

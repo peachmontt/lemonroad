@@ -103,6 +103,7 @@ export class GameEngine {
       selectedSkinId: 'default',
       runSession: createRunSessionStats(),
       playStartedAt: 0,
+      decorScrollY: 0,
     };
   }
 
@@ -355,6 +356,7 @@ export class GameEngine {
       for (const seg of s.road) {
         seg.y += scrollDelta;
       }
+      s.decorScrollY += scrollDelta;
       const baseDistGain = scrollDelta * 0.12;
       s.distance += baseDistGain;
       if (s.flags.scoreMultiplier > 1) {
@@ -515,6 +517,7 @@ export class GameEngine {
     for (const seg of s.road) {
       seg.y += speed;
     }
+    s.decorScrollY += speed;
     while (true) {
       if (s.road.length === 0) break;
       const topY = Math.min(...s.road.map((r) => r.y));

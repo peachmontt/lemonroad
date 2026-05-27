@@ -1,15 +1,72 @@
-import { COLORS, LEMON_RADIUS } from './constants';
+import { COLORS, isNarrowScreen, LEMON_RADIUS } from './constants';
 import { getHazardLabel } from './hazards';
 import { getSegmentAtY } from './road';
+import {
+  drawFieldDecorations,
+  drawRoadsideSigns,
+  drawSideDust,
+  hash,
+} from './scenery';
 import type { GameState } from './types';
 
-let _t = 0;
-function stateTime(): number {
-  return _t;
+export function setRenderTime(_t: number): void {
+  // Reserved for time-synced effects; road scenery uses decorScrollY.
 }
 
-export function setRenderTime(t: number): void {
-  _t = t;
+/** Clearance below DOM HUD (logo + daily strip) before canvas banners */
+function hudClearanceY(width: number): number {
+  return isNarrowScreen(width) ? 112 : 148;
+}
+
+type ComicBannerOpts = {
+  text: string;
+  y: number;
+  fontSize: number;
+  bg: string;
+  fg: string;
+  strokeText?: boolean;
+  /** When false, draw label only (no box) */
+  box?: boolean;
+};
+
+function drawComicBanner(
+  ctx: CanvasRenderingContext2D,
+  state: GameState,
+  opts: ComicBannerOpts,
+): number {
+  ctx.save();
+  ctx.font = `bold ${opts.fontSize}px "Comic Neue", Comic Sans MS, cursive`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  const tw = ctx.measureText(opts.text).width;
+  const padX = 16;
+  const padY = 10;
+  const boxW = Math.min(tw + padX * 2, state.width - 24);
+  const boxH = opts.fontSize + padY * 2;
+  const bx = (state.width - boxW) / 2;
+  const by = opts.y;
+  const drawBox = opts.box !== false;
+
+  if (drawBox) {
+    ctx.fillStyle = opts.bg;
+    ctx.strokeStyle = COLORS.outline;
+    ctx.lineWidth = 3;
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeRect(bx, by, boxW, boxH);
+  }
+
+  const textX = drawBox ? bx + (boxW - tw) / 2 : (state.width - tw) / 2;
+  const textY = drawBox ? by + boxH - padY : by + opts.fontSize;
+  ctx.fillStyle = opts.fg;
+  if (opts.strokeText) {
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = COLORS.outline;
+    ctx.strokeText(opts.text, textX, textY);
+  }
+  ctx.fillText(opts.text, textX, textY);
+  ctx.restore();
+  return drawBox ? by + boxH : by + opts.fontSize + padY;
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): void {
@@ -24,13 +81,17 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
     ctx.translate(dx, dy);
   }
 
-  drawGrass(ctx, width, height);
+  drawGrass(ctx, state);
+
+  drawFieldDecorations(ctx, state);
+  drawSideDust(ctx, state);
 
   if (flags.greenTint > 0) {
-    ctx.fillStyle = `rgba(0, 255, 0, ${0.08 * flags.greenTint})`;
+    ctx.fillStyle = `rgba(255, 210, 60, ${0.1 * flags.greenTint})`;
     ctx.fillRect(0, 0, width, height);
   }
 
+  drawRoadsideSigns(ctx, state);
   drawSpeedLines(ctx, state);
   drawRoad(ctx, state);
   drawRugPullFire(ctx, state);
@@ -50,19 +111,25 @@ export function renderGame(ctx: CanvasRenderingContext2D, state: GameState): voi
   ctx.restore();
 }
 
-function drawGrass(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-  ctx.fillStyle = COLORS.grass;
+function drawGrass(ctx: CanvasRenderingContext2D, state: GameState): void {
+  const { width: w, height: h, decorScrollY } = state;
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, COLORS.grassWarm);
+  grad.addColorStop(0.45, COLORS.grass);
+  grad.addColorStop(1, COLORS.grassDark);
+  ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
-  // Smoothly scrolling dark patches — no random jitter so the colour is stable
-  ctx.fillStyle = COLORS.grassDark;
-  const patches = Math.min(32, Math.floor(w / 20));
-  const scrollY = (stateTime() * 50) % h;
-  for (let i = 0; i < patches; i++) {
-    const x = (i * 97) % w;
-    const y = ((i * 53) + scrollY) % h;
-    ctx.fillRect(x, y, 5, 9);
-    // wrap-around second copy so patches appear continuous at bottom edge
-    if (y + 9 > h) ctx.fillRect(x, y - h, 5, 9);
+
+  if (isNarrowScreen(w)) return;
+
+  const firstI = Math.floor(decorScrollY / 40) - 1;
+  const lastI = Math.ceil((decorScrollY + h) / 40) + 1;
+  for (let i = firstI; i <= lastI; i++) {
+    const y = i * 40 - decorScrollY;
+    if (y < -12 || y > h + 12) continue;
+    const x = (i * 97) % Math.max(1, w - 80) + 40;
+    ctx.fillStyle = i % 3 === 0 ? COLORS.grassWarm : COLORS.grassDark;
+    ctx.fillRect(x, y, 4, 7);
   }
 }
 
@@ -77,9 +144,102 @@ function drawRoad(ctx: CanvasRenderingContext2D, state: GameState): void {
     if (inRun && runStart < 0) {
       runStart = i;
     } else if (!inRun && runStart >= 0) {
-      drawRoadRun(ctx, segs, runStart, i);
+      drawRoadRun(ctx, segs, runStart, i, state.width);
       runStart = -1;
     }
+  }
+}
+
+type RoadPt = { centerX: number; y: number; width: number };
+
+function smoothCoord(segs: RoadPt[], k: number, from: number, end: number): RoadPt {
+  const lo = Math.max(from, k - 6);
+  const hi = Math.min(end, k + 6);
+  let cx = 0;
+  let w = 0;
+  let n = 0;
+  for (let i = lo; i <= hi; i++) {
+    cx += segs[i].centerX;
+    w += segs[i].width;
+    n++;
+  }
+  return { centerX: cx / n, y: segs[k].y, width: w / n };
+}
+
+function traceRoadPath(
+  ctx: CanvasRenderingContext2D,
+  segs: RoadPt[],
+  from: number,
+  end: number,
+): void {
+  const s0 = smoothCoord(segs, from, from, end);
+  ctx.beginPath();
+  ctx.moveTo(s0.centerX - s0.width / 2, s0.y);
+  for (let k = from + 1; k <= end; k++) {
+    const s = smoothCoord(segs, k, from, end);
+    ctx.lineTo(s.centerX - s.width / 2, s.y);
+  }
+  for (let k = end; k >= from; k--) {
+    const s = smoothCoord(segs, k, from, end);
+    ctx.lineTo(s.centerX + s.width / 2, s.y);
+  }
+  ctx.closePath();
+}
+
+function traceRoadEdge(
+  ctx: CanvasRenderingContext2D,
+  segs: RoadPt[],
+  from: number,
+  end: number,
+  side: 'left' | 'right',
+): void {
+  const s0 = smoothCoord(segs, from, from, end);
+  const half0 = s0.width / 2;
+  ctx.beginPath();
+  ctx.moveTo(
+    side === 'left' ? s0.centerX - half0 : s0.centerX + half0,
+    s0.y,
+  );
+  for (let k = from + 1; k <= end; k++) {
+    const s = smoothCoord(segs, k, from, end);
+    const half = s.width / 2;
+    ctx.lineTo(
+      side === 'left' ? s.centerX - half : s.centerX + half,
+      s.y,
+    );
+  }
+}
+
+function drawRoadTexture(
+  ctx: CanvasRenderingContext2D,
+  segs: { centerX: number; y: number; width: number }[],
+  from: number,
+  end: number,
+): void {
+  const yMin = segs[from].y;
+  const yMax = segs[end].y;
+  const span = Math.max(1, yMax - yMin);
+  const runSeed = from * 31 + end;
+  const midCx = (segs[from].centerX + segs[end].centerX) / 2;
+  const midW = (segs[from].width + segs[end].width) / 2;
+
+  const dotCount = Math.min(8, 4 + Math.floor((end - from) / 10));
+  for (let d = 0; d < dotCount; d++) {
+    const h = hash(runSeed + d);
+    const hy = hash(runSeed + d + 50);
+    const px = midCx + (h - 0.5) * midW * 0.5;
+    const py = yMin + hy * span;
+    ctx.fillStyle = `rgba(0,0,0,${0.05 + h * 0.03})`;
+    ctx.fillRect(px - 1, py - 1, 2, 2);
+  }
+
+  const patchCount = Math.min(2, 1 + Math.floor((end - from) / 35));
+  for (let p = 0; p < patchCount; p++) {
+    const h = hash(runSeed + 100 + p);
+    const pw = 10 + hash(runSeed + 110 + p) * 12;
+    const ph = 5 + hash(runSeed + 120 + p) * 6;
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(midCx - pw / 2, yMin + h * span * 0.85, pw, ph);
   }
 }
 
@@ -88,43 +248,44 @@ function drawRoadRun(
   segs: { centerX: number; y: number; width: number; hasRoad: boolean }[],
   from: number,
   toExcl: number,
+  screenWidth: number,
 ): void {
   const end = toExcl - 1;
   if (end <= from) return;
 
-  // Single filled shape — no per-segment strokes so there are no horizontal seams
-  ctx.beginPath();
-  ctx.moveTo(segs[from].centerX - segs[from].width / 2, segs[from].y);
-  for (let k = from + 1; k <= end; k++) {
-    ctx.lineTo(segs[k].centerX - segs[k].width / 2, segs[k].y);
-  }
-  for (let k = end; k >= from; k--) {
-    ctx.lineTo(segs[k].centerX + segs[k].width / 2, segs[k].y);
-  }
-  ctx.closePath();
+  const narrow = isNarrowScreen(screenWidth);
+
+  traceRoadPath(ctx, segs, from, end);
   ctx.fillStyle = COLORS.road;
   ctx.fill();
 
-  // Left edge line
-  ctx.beginPath();
-  ctx.moveTo(segs[from].centerX - segs[from].width / 2, segs[from].y);
-  for (let k = from + 1; k <= end; k++) {
-    ctx.lineTo(segs[k].centerX - segs[k].width / 2, segs[k].y);
+  if (!narrow) {
+    ctx.save();
+    traceRoadPath(ctx, segs, from, end);
+    ctx.clip();
+    drawRoadTexture(ctx, segs, from, end);
+    ctx.restore();
   }
-  ctx.strokeStyle = COLORS.roadEdge;
-  ctx.lineWidth = 3;
+
   ctx.lineJoin = 'round';
-  ctx.stroke();
+  ctx.lineCap = 'round';
 
-  // Right edge line
-  ctx.beginPath();
-  ctx.moveTo(segs[from].centerX + segs[from].width / 2, segs[from].y);
-  for (let k = from + 1; k <= end; k++) {
-    ctx.lineTo(segs[k].centerX + segs[k].width / 2, segs[k].y);
+  if (narrow) {
+    ctx.strokeStyle = COLORS.grassDark;
+    ctx.lineWidth = 14;
+    traceRoadEdge(ctx, segs, from, end, 'left');
+    ctx.stroke();
+    traceRoadEdge(ctx, segs, from, end, 'right');
+    ctx.stroke();
   }
+
+  ctx.strokeStyle = COLORS.roadEdge;
+  ctx.lineWidth = narrow ? 3 : 4;
+  traceRoadEdge(ctx, segs, from, end, 'left');
+  ctx.stroke();
+  traceRoadEdge(ctx, segs, from, end, 'right');
   ctx.stroke();
 
-  // Dashed centre line (every ~32 px)
   ctx.fillStyle = COLORS.roadLine;
   for (let k = from; k < end - 1; k += 4) {
     const a = segs[k];
@@ -253,7 +414,7 @@ function drawSpeedLines(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.strokeStyle = 'rgba(255,255,220,0.35)';
   ctx.lineWidth = 2;
   for (let i = 0; i < count; i++) {
-    const y = (i * 89 + state.time * speed * 40) % state.height;
+    const y = (i * 89 + state.decorScrollY * 2.5) % state.height;
     const seg = getSegmentAtY(state.road, y);
     if (!seg) continue;
     const half = seg.width * 0.35;
@@ -532,78 +693,76 @@ function drawRugBurnIndicator(ctx: CanvasRenderingContext2D, state: GameState): 
   if (!state.flags.rugBurning) return;
   if (state.activeEvent?.id === 'rug_pull') return;
 
-  ctx.save();
   const flash = Math.sin(state.time * 14) > 0;
-  ctx.font = 'bold 14px "Comic Neue", Comic Sans MS, cursive';
-  const text = '🔥 ROAD ON FIRE 🔥';
-  const tw = ctx.measureText(text).width;
-  const bx = state.width / 2 - tw / 2 - 10;
-  const by = 62;
-  ctx.fillStyle = flash ? '#FF2200' : '#FF5500';
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.fillRect(bx, by, tw + 20, 26);
-  ctx.strokeRect(bx, by, tw + 20, 26);
-  ctx.fillStyle = '#FFFF99';
-  ctx.fillText(text, state.width / 2 - tw / 2, by + 18);
-  ctx.restore();
+  drawComicBanner(ctx, state, {
+    text: '🔥 ROAD ON FIRE 🔥',
+    y: hudClearanceY(state.width),
+    fontSize: 14,
+    bg: flash ? '#FF2200' : '#FF5500',
+    fg: '#FFFF99',
+  });
 }
 
 function drawEventBanner(ctx: CanvasRenderingContext2D, state: GameState): void {
   if (!state.activeEvent) return;
-  ctx.save();
+  // Influencer uses center popup only — avoid duplicate label at top
+  if (state.activeEvent.id === 'influencer_call') return;
 
   const isRugPull = state.activeEvent.id === 'rug_pull';
   const text = state.activeEvent.label;
-  ctx.font = `bold ${isRugPull ? 32 : 28}px "Comic Neue", Comic Sans MS, cursive`;
-  const tw = ctx.measureText(text).width;
-  const bx = state.width / 2 - tw / 2 - 16;
-  const by = 58;
-  const bh = isRugPull ? 48 : 44;
+  const narrow = isNarrowScreen(state.width);
+  const fontPx = narrow ? (isRugPull ? 20 : 18) : isRugPull ? 28 : 24;
+  const by = hudClearanceY(state.width);
 
   if (isRugPull) {
-    // Alternating fire-red / orange flash
     const flash = Math.sin(state.time * 22) > 0;
-    const bgColor = flash ? '#FF2200' : '#FF7700';
-    const borderColor = flash ? '#FF7700' : '#FFDD00';
-
-    // Glow halo behind banner
-    ctx.shadowColor = '#FF4400';
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(bx, by, tw + 32, bh);
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(bx, by, tw + 32, bh);
-    ctx.fillStyle = '#FFFF99';
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3;
-    ctx.strokeText(text, state.width / 2 - tw / 2, by + bh - 10);
-    ctx.fillText(text, state.width / 2 - tw / 2, by + bh - 10);
-    // Sub-text
-    ctx.font = 'bold 13px "Comic Neue", Comic Sans MS, cursive';
-    ctx.fillStyle = '#FFDDAA';
-    ctx.fillText('🔥 LIQUIDITY GONE 🔥', state.width / 2 - 66, by + bh + 18);
-  } else {
-    ctx.fillStyle = '#FFFF00';
-    ctx.strokeStyle = COLORS.outline;
-    ctx.lineWidth = 3;
-    ctx.fillRect(bx, by, tw + 32, bh);
-    ctx.strokeRect(bx, by, tw + 32, bh);
-    ctx.fillStyle = COLORS.outline;
-    ctx.fillText(text, state.width / 2 - tw / 2, by + bh - 8);
-    if (state.activeEvent.id === 'bull_run') {
-      ctx.font = 'bold 16px "Comic Neue", Comic Sans MS, cursive';
-      ctx.fillText('>> NUMBER GO UP', state.width / 2 - 68, by + bh + 18);
-    }
-    if (state.activeEvent.id === 'dancing') {
-      ctx.font = 'bold 14px "Comic Neue", Comic Sans MS, cursive';
-      ctx.fillText('WAGMI (probably)', state.width / 2 - 55, by + bh + 18);
-    }
+    const bottom = drawComicBanner(ctx, state, {
+      text,
+      y: by,
+      fontSize: fontPx,
+      bg: flash ? '#FF2200' : '#FF7700',
+      fg: '#FFFF99',
+      strokeText: true,
+    });
+    drawComicBanner(ctx, state, {
+      text: '🔥 LIQUIDITY GONE 🔥',
+      y: bottom + 6,
+      fontSize: 12,
+      bg: '#000',
+      fg: '#FFDDAA',
+      box: false,
+    });
+    return;
   }
 
-  ctx.restore();
+  const bottom = drawComicBanner(ctx, state, {
+    text,
+    y: by,
+    fontSize: fontPx,
+    bg: '#FFFF00',
+    fg: COLORS.outline,
+  });
+
+  if (state.activeEvent.id === 'bull_run') {
+    drawComicBanner(ctx, state, {
+      text: '>> NUMBER GO UP',
+      y: bottom + 4,
+      fontSize: narrow ? 13 : 15,
+      bg: '#000',
+      fg: COLORS.outline,
+      box: false,
+    });
+  }
+  if (state.activeEvent.id === 'dancing') {
+    drawComicBanner(ctx, state, {
+      text: 'WAGMI (probably)',
+      y: bottom + 4,
+      fontSize: narrow ? 12 : 14,
+      bg: '#000',
+      fg: COLORS.outline,
+      box: false,
+    });
+  }
 }
 
 function drawCollectibles(ctx: CanvasRenderingContext2D, state: GameState): void {
@@ -646,60 +805,43 @@ function drawPhaseBanner(ctx: CanvasRenderingContext2D, state: GameState): void 
   const banner = state.phaseBanner;
   if (!banner || state.time >= banner.until) return;
 
-  ctx.save();
-  const text = banner.label;
-  const fontSize = state.width < 400 ? 22 : 28;
-  ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
-  const tw = ctx.measureText(text).width;
-  const bx = state.width / 2 - tw / 2 - 16;
-  const by = state.height * 0.22;
-  ctx.fillStyle = '#00E5FF';
-  ctx.strokeStyle = COLORS.outline;
-  ctx.lineWidth = 3;
-  ctx.fillRect(bx, by, tw + 32, 44);
-  ctx.strokeRect(bx, by, tw + 32, 44);
-  ctx.fillStyle = COLORS.outline;
-  ctx.fillText(text, state.width / 2 - tw / 2, by + 30);
-  ctx.restore();
+  const fontSize = isNarrowScreen(state.width) ? 18 : 24;
+  drawComicBanner(ctx, state, {
+    text: banner.label,
+    y: Math.max(hudClearanceY(state.width) + 8, state.height * 0.2),
+    fontSize,
+    bg: '#00E5FF',
+    fg: '#000',
+  });
 }
 
 function drawInfluencerPopup(ctx: CanvasRenderingContext2D, state: GameState): void {
   if (state.time >= state.flags.influencerPopupUntil) return;
   if (state.activeEvent?.id !== 'influencer_call') return;
 
-  ctx.save();
-  const text = 'THIS IS THE NEXT 100X';
-  const fontSize = state.width < 400 ? 16 : 20;
-  ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
-  const maxW = state.width - 32;
-  const tw = Math.min(ctx.measureText(text).width, maxW - 32);
-  const bx = state.width / 2 - tw / 2 - 16;
-  const by = state.height * 0.38;
-  ctx.fillStyle = '#00C853';
-  ctx.strokeStyle = COLORS.outline;
-  ctx.lineWidth = 3;
-  ctx.fillRect(bx, by, tw + 32, 52);
-  ctx.strokeRect(bx, by, tw + 32, 52);
-  ctx.fillStyle = '#fff';
-  ctx.fillText(text, state.width / 2 - tw / 2, by + 32);
-  ctx.restore();
+  const fontSize = isNarrowScreen(state.width) ? 15 : 18;
+  drawComicBanner(ctx, state, {
+    text: 'THIS IS THE NEXT 100X',
+    y: state.height * 0.32,
+    fontSize,
+    bg: '#00C853',
+    fg: '#fff',
+    strokeText: true,
+  });
 }
 
 function drawClaimFailed(ctx: CanvasRenderingContext2D, state: GameState): void {
   if (state.time >= state.flags.claimFailedUntil) return;
 
-  ctx.save();
-  const text = 'CLAIM FAILED';
-  const fontSize = state.width < 400 ? 24 : 32;
-  ctx.font = `bold ${fontSize}px "Comic Neue", Comic Sans MS, cursive`;
-  const tw = ctx.measureText(text).width;
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = '#FF1744';
-  ctx.strokeStyle = COLORS.outline;
-  ctx.lineWidth = 4;
-  ctx.strokeText(text, state.width / 2 - tw / 2, state.height * 0.45);
-  ctx.fillText(text, state.width / 2 - tw / 2, state.height * 0.45);
-  ctx.restore();
+  const fontSize = isNarrowScreen(state.width) ? 22 : 28;
+  drawComicBanner(ctx, state, {
+    text: 'CLAIM FAILED',
+    y: state.height * 0.4,
+    fontSize,
+    bg: '#FF1744',
+    fg: '#fff',
+    strokeText: true,
+  });
 }
 
 export function renderPausedPreview(ctx: CanvasRenderingContext2D, state: GameState): void {

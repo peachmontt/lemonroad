@@ -10,6 +10,13 @@ export const OFF_ROAD_DEATH_FRAMES = 8;   // ~130 ms grace at 60 fps
 export const COLLISION_MARGIN = 6;
 export const MAX_PLAYFIELD_WIDTH = 520;
 
+/** Viewports below this use simplified visuals (less roadside clutter) */
+export const NARROW_SCREEN_MAX = 520;
+
+export function isNarrowScreen(width: number): boolean {
+  return width < NARROW_SCREEN_MAX;
+}
+
 /** Road width — uses most of the playfield so it reads well on desktop */
 export function getRoadStartWidth(canvasWidth: number): number {
   const cap = Math.min(canvasWidth * 0.88, 480);
@@ -23,10 +30,11 @@ export function getRoadMinWidth(canvasWidth: number): number {
 }
 
 export const COLORS = {
-  grass: '#7CFC00',
-  grassDark: '#5cb85c',
-  road: '#4a4a4a',
-  roadEdge: '#e8e8e8',
+  grass: '#C8DB6E',
+  grassDark: '#A8C45A',
+  grassWarm: '#E5D078',
+  road: '#434343',
+  roadEdge: '#f0f0f0',
   roadLine: '#FFFF00',
   outline: '#000000',
   lemon: '#FFE135',
