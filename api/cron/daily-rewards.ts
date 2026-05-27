@@ -7,6 +7,35 @@ const TOP_WINNERS = 3;
 const REWARD_CURRENCY = 'USDT';
 const REWARD_AMOUNTS: Record<number, string> = { 1: '10', 2: '6', 3: '4' };
 
+const PUSH_TITLE = 'Lemon Road';
+
+const WINNER_BODIES = [
+  'You got juicy today. Check your lemon prize 🍋',
+  'You squeezed into the daily top 🍋',
+  'Top squeezer alert. Check your lemon reward 🍋',
+] as const;
+
+const PLAYED_NOT_TOP_BODIES = [
+  'The lemon gods demand a better run 🍋',
+  'Not enough juice for the top. One more run? 🍋',
+  'You were close. One better run could change it 🍋',
+  'Almost juicy enough. Run it back before reset 🍋',
+  'You nearly squeezed into the top. Try again 🍋',
+  "So close to the daily top. Don't waste it 🍋",
+] as const;
+
+const DEFAULT_BODY = 'A new daily squeeze is live. Play free and climb the board.';
+
+function pickOne<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function dailyRewardPushBody(playerId: string, winnerIds: Set<string>, participantIds: Set<string>): string {
+  if (winnerIds.has(playerId)) return pickOne(WINNER_BODIES);
+  if (participantIds.has(playerId)) return pickOne(PLAYED_NOT_TOP_BODIES);
+  return DEFAULT_BODY;
+}
+
 function configurePush(): boolean {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -144,6 +173,8 @@ export default withMethods({
       subscribers: 0,
     };
 
+    const participantIds = new Set(entries.map((e) => e.playerId));
+
     if (pushEnabled) {
       const subscriptions = await prisma.pushSubscription.findMany({
         where: { enabled: true },
@@ -151,18 +182,11 @@ export default withMethods({
       pushResults.subscribers = subscriptions.length;
 
       for (const sub of subscriptions) {
-        const isWinner = winnerIds.has(sub.playerId);
-        const payload = isWinner
-          ? {
-              title: 'Lemon Road',
-              body: 'You squeezed into the daily top. Claim your lemon prize.',
-              url: '/',
-            }
-          : {
-              title: 'Lemon Road',
-              body: 'A new daily squeeze is live. Play free and climb the board.',
-              url: '/',
-            };
+        const payload = {
+          title: PUSH_TITLE,
+          body: dailyRewardPushBody(sub.playerId, winnerIds, participantIds),
+          url: '/',
+        };
 
         const ok = await sendPushToSubscription(sub, payload);
         if (ok) pushResults.sent++;
