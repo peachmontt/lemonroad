@@ -1974,7 +1974,7 @@ html.gameplay-active #root {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  min-width: 140px;
+  min-width: 200px;
   list-style: none;
   margin: 0;
   padding: 4px 0;
@@ -1984,21 +1984,53 @@ html.gameplay-active #root {
   z-index: 50;
 }
 
+.wallet-connect-menu-heading {
+  padding: 8px 12px 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #444;
+}
+
 .wallet-connect-menu-item {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   width: 100%;
   padding: 8px 12px;
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
   text-align: left;
   cursor: pointer;
 }
 
+.wallet-connect-menu-item-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.wallet-connect-menu-item-sub {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #555;
+  line-height: 1.2;
+}
+
 .wallet-connect-menu-item:hover {
   background: #ffe135;
+}
+
+.wallet-connect-menu-item:hover .wallet-connect-menu-item-sub {
+  color: #333;
+}
+
+.wallet-connect-menu-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .wallet-connect-error {

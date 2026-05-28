@@ -22,7 +22,7 @@ export function connectEvmFromUserAction(
   chainId: number,
 ): void {
   if (!connector) {
-    throw new Error('No EVM wallet found. Install MetaMask.');
+    throw new Error('No EVM wallet found. Install MetaMask or OKX Wallet.');
   }
   connect({ connector, chainId });
 }

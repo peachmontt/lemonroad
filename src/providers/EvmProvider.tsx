@@ -1,7 +1,7 @@
 import type { Chain } from 'viem';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet, polygon, polygonAmoy } from 'wagmi/chains';
-import { metaMask } from 'wagmi/connectors';
+import { injected, metaMask } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useMemo } from 'react';
 import { EVM_CHAIN_ID } from '../config/evm';
@@ -48,6 +48,7 @@ export function EvmProvider({ children }: { children: ReactNode }) {
             iconUrl: `${origin}/icon-512.png`,
           },
         }),
+        injected({ target: 'okxWallet' }),
       ],
       transports,
       ssr: false,

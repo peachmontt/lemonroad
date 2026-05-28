@@ -3,8 +3,15 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import type { Connector } from 'wagmi';
-import { EVM_CHAIN_ID, EVM_CHAIN_NAME } from '../config/evm';
-import { solanaClusterLabel } from '../config/explorer';
+import { EVM_CHAIN_ID } from '../config/evm';
+import {
+  evmPaymentHint,
+  evmWalletLabel,
+  solanaPaymentHint,
+  solanaWalletsLabel,
+  type EvmWalletKind,
+} from '../config/wallets';
+import { formatEvmWalletError, getEvmConnector } from '../lib/evmConnectors';
 import {
   connectEvmFromUserAction,
   connectSolanaFromUserAction,
@@ -27,23 +34,19 @@ function shortAddress(addr: string): string {
   return `${addr.slice(0, 4)}…${addr.slice(-4)}`;
 }
 
-function pickEvmConnector(connectors: readonly Connector[]): Connector | undefined {
-  const preferredIds = ['metaMaskSDK', 'metaMask', 'io.metamask'];
-  for (const id of preferredIds) {
-    const match = connectors.find((c) => c.id === id);
-    if (match) return match;
-  }
-  return connectors.find((c) => c.type === 'injected') ?? connectors[0];
+function formatRememberedProvider(provider: string): string {
+  const lower = provider.toLowerCase();
+  if (lower.includes('phantom')) return 'Phantom';
+  if (lower.includes('solflare')) return 'Solflare';
+  if (lower.includes('okx')) return 'OKX Wallet';
+  if (lower.includes('metamask')) return 'MetaMask';
+  return provider;
 }
 
-function formatEvmConnectError(message: string): string {
-  if (/provider not found/i.test(message)) {
-    return 'Could not open MetaMask. Install the app or try again from MetaMask’s in-app browser.';
-  }
-  if (/dependency "@metamask\/connect-evm" not found/i.test(message)) {
-    return 'MetaMask SDK is unavailable. Please try again later.';
-  }
-  return message;
+function connectorToEvmKind(connector: Connector | undefined): EvmWalletKind {
+  if (!connector) return 'metamask';
+  if (connector.id === 'okxWallet' || /okx/i.test(connector.name)) return 'okx';
+  return 'metamask';
 }
 
 function shouldConnectAfterModalSelection(
@@ -53,6 +56,31 @@ function shouldConnectAfterModalSelection(
   if (!currentName) return false;
   if (previousName === null) return true;
   return currentName !== previousName;
+}
+
+function WalletMenuOption({
+  title,
+  subtitle,
+  disabled,
+  onClick,
+}: {
+  title: string;
+  subtitle: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      className="wallet-connect-menu-item"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <span className="wallet-connect-menu-item-title">{title}</span>
+      <span className="wallet-connect-menu-item-sub">{subtitle}</span>
+    </button>
+  );
 }
 
 export function WalletConnectButton({
@@ -67,12 +95,13 @@ export function WalletConnectButton({
     connecting: solanaConnecting,
   } = useWallet();
   const { setVisible: openSolanaModal, visible: solanaModalVisible } = useWalletModal();
-  const { address: evmAddress } = useAccount();
+  const { address: evmAddress, connector: activeEvmConnector } = useAccount();
   const { connect, connectors, isPending: evmConnecting, error: evmConnectError } = useConnect();
   const { disconnect: disconnectEvm } = useDisconnect();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [evmLocalError, setEvmLocalError] = useState<string | null>(null);
+  const [evmErrorKind, setEvmErrorKind] = useState<EvmWalletKind>('metamask');
   const [solanaLocalError, setSolanaLocalError] = useState<string | null>(null);
   const [rememberedWallet, setRememberedWallet] = useState<RememberedWallet | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -81,10 +110,11 @@ export function WalletConnectButton({
     walletName: null,
   });
 
-  const evmConnector = pickEvmConnector(connectors);
-  const evmChainLabel = EVM_CHAIN_NAME[EVM_CHAIN_ID] ?? `chain ${EVM_CHAIN_ID}`;
+  const solanaTitle = solanaWalletsLabel();
+  const solanaSub = solanaPaymentHint();
+  const evmSub = evmPaymentHint();
+  const activeEvmKind = connectorToEvmKind(activeEvmConnector);
 
-  // Read saved wallet for display only — never triggers connect on page load.
   useEffect(() => {
     setRememberedWallet(readRememberedWallet());
   }, []);
@@ -98,10 +128,11 @@ export function WalletConnectButton({
 
   useEffect(() => {
     if (evmAddress) {
-      saveRememberedWallet('metamask', evmAddress);
+      const kind = connectorToEvmKind(activeEvmConnector);
+      saveRememberedWallet(kind === 'okx' ? 'okx' : 'metamask', evmAddress);
       setRememberedWallet(readRememberedWallet());
     }
-  }, [evmAddress]);
+  }, [evmAddress, activeEvmConnector]);
 
   const runSolanaConnect = useCallback(async () => {
     setSolanaLocalError(null);
@@ -112,17 +143,21 @@ export function WalletConnectButton({
     }
   }, [connectSolana, wallet?.adapter]);
 
-  const handleEvmConnect = useCallback(() => {
-    setEvmLocalError(null);
-    try {
-      onActiveChannelChange('evm');
-      connectEvmFromUserAction(connect, evmConnector, EVM_CHAIN_ID);
-    } catch (error) {
-      setEvmLocalError(formatWalletConnectError(error));
-    }
-  }, [connect, evmConnector, onActiveChannelChange]);
+  const handleEvmConnect = useCallback(
+    (kind: EvmWalletKind) => {
+      setEvmLocalError(null);
+      setEvmErrorKind(kind);
+      try {
+        onActiveChannelChange('evm');
+        const connector = getEvmConnector(connectors, kind);
+        connectEvmFromUserAction(connect, connector, EVM_CHAIN_ID);
+      } catch (error) {
+        setEvmLocalError(formatWalletConnectError(error));
+      }
+    },
+    [connect, connectors, onActiveChannelChange],
+  );
 
-  // Connect Solana only after the user picks a wallet in the modal (never on page load).
   useEffect(() => {
     const session = solanaModalSessionRef.current;
     if (!session.open || solanaModalVisible) return;
@@ -165,7 +200,8 @@ export function WalletConnectButton({
   const evmConnected = !!evmAddress;
   const evmErrorMessage =
     evmLocalError ??
-    (evmConnectError ? formatEvmConnectError(evmConnectError.message) : null);
+    (evmConnectError ? formatEvmWalletError(evmConnectError.message, evmErrorKind) : null);
+  const connecting = solanaConnecting || evmConnecting;
 
   const beginSolanaConnectFlow = () => {
     setMenuOpen(false);
@@ -185,12 +221,10 @@ export function WalletConnectButton({
     openSolanaModal(true);
   };
 
-  const openSolana = beginSolanaConnectFlow;
-
-  const switchToEvm = () => {
+  const switchToEvm = (kind: EvmWalletKind) => {
     setMenuOpen(false);
     if (publicKey) void disconnectSolana();
-    handleEvmConnect();
+    handleEvmConnect(kind);
   };
 
   const switchToSolana = () => {
@@ -198,6 +232,8 @@ export function WalletConnectButton({
     if (evmAddress) disconnectEvm();
     beginSolanaConnectFlow();
   };
+
+  const otherEvmKind: EvmWalletKind = activeEvmKind === 'okx' ? 'metamask' : 'okx';
 
   if (activeChannel === 'solana' && solanaConnected) {
     const addr = publicKey!.toBase58();
@@ -214,19 +250,28 @@ export function WalletConnectButton({
         {menuOpen && (
           <ul className="wallet-connect-menu" role="menu">
             <li role="none">
-              <button type="button" role="menuitem" className="wallet-connect-menu-item" onClick={openSolana}>
-                Change wallet
-              </button>
-            </li>
-            <li role="none">
               <button
                 type="button"
                 role="menuitem"
                 className="wallet-connect-menu-item"
-                onClick={switchToEvm}
+                onClick={beginSolanaConnectFlow}
               >
-                Use EVM wallet
+                Change wallet
               </button>
+            </li>
+            <li role="none">
+              <WalletMenuOption
+                title={evmWalletLabel('metamask')}
+                subtitle={evmSub}
+                onClick={() => switchToEvm('metamask')}
+              />
+            </li>
+            <li role="none">
+              <WalletMenuOption
+                title={evmWalletLabel('okx')}
+                subtitle={evmSub}
+                onClick={() => switchToEvm('okx')}
+              />
             </li>
             <li role="none">
               <button
@@ -255,20 +300,25 @@ export function WalletConnectButton({
           className="btn wallet-btn wallet-btn-connected"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
+          title={evmWalletLabel(activeEvmKind)}
         >
           {shortAddress(evmAddress!)}
         </button>
         {menuOpen && (
           <ul className="wallet-connect-menu" role="menu">
             <li role="none">
-              <button
-                type="button"
-                role="menuitem"
-                className="wallet-connect-menu-item"
+              <WalletMenuOption
+                title={`Switch to ${solanaTitle}`}
+                subtitle={solanaSub}
                 onClick={switchToSolana}
-              >
-                Use Solana wallet
-              </button>
+              />
+            </li>
+            <li role="none">
+              <WalletMenuOption
+                title={`Switch to ${evmWalletLabel(otherEvmKind)}`}
+                subtitle={evmSub}
+                onClick={() => switchToEvm(otherEvmKind)}
+              />
             </li>
             <li role="none">
               <button
@@ -294,38 +344,51 @@ export function WalletConnectButton({
       <button
         type="button"
         className="btn wallet-btn"
-        disabled={solanaConnecting || evmConnecting}
+        disabled={connecting}
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen((open) => !open)}
       >
-        {solanaConnecting || evmConnecting ? 'Connecting…' : 'Connect'}
+        {connecting ? 'Connecting…' : 'Wallets'}
       </button>
       {menuOpen && (
-        <ul className="wallet-connect-menu" role="menu">
-          <li role="none">
-            <button type="button" role="menuitem" className="wallet-connect-menu-item" onClick={openSolana}>
-              Solana ({solanaClusterLabel()})
-            </button>
+        <ul className="wallet-connect-menu" role="menu" aria-label="Choose a wallet">
+          <li role="none" className="wallet-connect-menu-heading">
+            Choose a wallet
           </li>
           <li role="none">
-            <button
-              type="button"
-              role="menuitem"
-              className="wallet-connect-menu-item"
+            <WalletMenuOption
+              title={solanaTitle}
+              subtitle={solanaSub}
+              onClick={beginSolanaConnectFlow}
+            />
+          </li>
+          <li role="none">
+            <WalletMenuOption
+              title={evmWalletLabel('metamask')}
+              subtitle={evmSub}
               disabled={evmConnecting}
               onClick={() => {
                 setMenuOpen(false);
-                handleEvmConnect();
+                handleEvmConnect('metamask');
               }}
-            >
-              EVM ({evmChainLabel})
-            </button>
+            />
+          </li>
+          <li role="none">
+            <WalletMenuOption
+              title={evmWalletLabel('okx')}
+              subtitle={evmSub}
+              disabled={evmConnecting}
+              onClick={() => {
+                setMenuOpen(false);
+                handleEvmConnect('okx');
+              }}
+            />
           </li>
         </ul>
       )}
       {rememberedWallet && !solanaConnected && !evmConnected && !solanaLocalError && !evmErrorMessage && (
         <p className="wallet-connect-remembered">
-          Previously used: {rememberedWallet.provider}
+          Last used: {formatRememberedProvider(rememberedWallet.provider)}
           {rememberedWallet.address ? ` (${shortAddress(rememberedWallet.address)})` : ''}
         </p>
       )}
