@@ -10,6 +10,7 @@ import type { PlayerResponse, RunRecord } from '../lib/api';
 import type { WalletChannel } from './WalletConnectButton';
 import { DailyResetCountdown, DegenPayoutCountdown } from './DailyResetCountdown';
 import { FreeRewardTrustCopy } from './FreeRewardTrustCopy';
+import { HomeMemeStickers } from './HomeMemeStickers';
 
 interface StartOverlayProps {
   gameMode: GameMode;
@@ -67,6 +68,7 @@ export function StartOverlay({
 
   return (
     <div className="overlay start-overlay home-page">
+      <HomeMemeStickers />
       <header className="top-bar">
         <ProfileBar
           player={player}
