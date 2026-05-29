@@ -55,9 +55,7 @@ export function DeathRewardWallet({
     );
   }
 
-  const showForm = canPrompt && inTop3 && !dismissed;
-
-  if (showForm) {
+  if (inTop3 && !dismissed && canPrompt) {
     return (
       <div className="death-reward-wallet death-reward-wallet--prompt">
         <WalletLinkPrompt
@@ -68,6 +66,14 @@ export function DeathRewardWallet({
           onCancel={walletPubkey ? onCancelChange : undefined}
         />
       </div>
+    );
+  }
+
+  if (inTop3 && !dismissed && !canPrompt && !walletPubkey) {
+    return (
+      <p className="death-reward-wallet-hint death-reward-wallet-hint--pending">
+        Saving your run… wallet options appear in a moment.
+      </p>
     );
   }
 

@@ -1,5 +1,5 @@
 import { toPng } from 'html-to-image';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   getJuiceTitle,
   pickCauseOfJuice,
@@ -10,10 +10,14 @@ import {
 } from '../copy/death';
 import type { GameSnapshot } from '../game/types';
 import type { DailyRankContext } from '../hooks/useDailyRank';
+import { useDailyLeaderboard } from '../context/DailyLeaderboardContext';
 import {
   classifyFreeRunResult,
+  computeDeathRank,
+  findPlayerRank,
   getEstimatedReward,
   getResultRetryLabel,
+  TOP_PRIZE_COUNT,
 } from '../lib/dailyRankLogic';
 import { submitRun } from '../lib/api';
 import { trackRunEnd } from '../lib/analytics';
@@ -104,10 +108,24 @@ export function DeathOverlay({
   const [cause] = useState(() => pickCauseOfJuice());
   const [shareLabel] = useState(() => pickShareButtonLabel());
   const [retryLabel] = useState(() => pickRetryButtonLabel());
-  const deathRank =
-    gameMode === 'free' && dailyRank
-      ? dailyRank.computeDeathRank(meters)
-      : null;
+  const { entries } = useDailyLeaderboard();
+  const playerId = player?.playerId;
+
+  const deathRank = useMemo(() => {
+    if (gameMode !== 'free') return null;
+
+    const projected = computeDeathRank(entries, playerId, meters);
+    const boardRank = playerId ? findPlayerRank(entries, playerId) : null;
+    const rank = projected.rank ?? boardRank ?? dailyRank?.playerRank ?? null;
+    if (rank == null) return projected;
+
+    return {
+      ...projected,
+      rank,
+      inPrizeZone: rank <= TOP_PRIZE_COUNT,
+    };
+  }, [gameMode, entries, playerId, meters, dailyRank?.playerRank]);
+
   const resultState = deathRank ? classifyFreeRunResult(deathRank) : null;
   const displayRetryLabel =
     gameMode === 'free' && resultState && resultState !== 'unranked'
@@ -122,10 +140,10 @@ export function DeathOverlay({
   const savedRef = useRef(false);
 
   const linkedWallet = player?.walletPubkey ?? null;
-  const walletStatusLoading = playerLoading;
-  const inTop3 = resultState === 'in_top_3';
+  const walletStatusLoading = playerLoading && !player;
+  const inTop3 = deathRank?.inPrizeZone ?? false;
   const showRewardWallet =
-    isDead && gameMode === 'free' && !!deathRank && !!onWalletLinked;
+    isDead && gameMode === 'free' && !!onWalletLinked;
   const [shareReady, setShareReady] = useState<{
     dataUrl: string;
     file: File;
