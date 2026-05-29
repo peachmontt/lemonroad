@@ -1,4 +1,5 @@
 import { useWallet } from '@solana/wallet-adapter-react';
+import type { WalletName } from '@solana/wallet-adapter-base';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
@@ -15,9 +16,12 @@ import { formatEvmWalletError, getEvmConnector } from '../lib/evmConnectors';
 import {
   connectEvmFromUserAction,
   connectSolanaFromUserAction,
+  disconnectEvmFromUserAction,
+  disconnectSolanaFromUserAction,
   formatWalletConnectError,
 } from '../lib/walletConnection';
 import {
+  clearRememberedWallet,
   readRememberedWallet,
   saveRememberedWallet,
   type RememberedWallet,
@@ -90,8 +94,10 @@ export function WalletConnectButton({
   const {
     publicKey,
     wallet,
+    connected: solanaAdapterConnected,
     connect: connectSolana,
     disconnect: disconnectSolana,
+    select: selectSolanaWallet,
     connecting: solanaConnecting,
   } = useWallet();
   const { setVisible: openSolanaModal, visible: solanaModalVisible } = useWalletModal();
@@ -142,6 +148,29 @@ export function WalletConnectButton({
       setSolanaLocalError(formatWalletConnectError(error));
     }
   }, [connectSolana, wallet?.adapter]);
+
+  const runSolanaDisconnect = useCallback(async () => {
+    await disconnectSolanaFromUserAction(
+      disconnectSolana,
+      selectSolanaWallet as (walletName: WalletName | null) => void,
+    );
+  }, [disconnectSolana, selectSolanaWallet]);
+
+  const runEvmDisconnect = useCallback(() => {
+    disconnectEvmFromUserAction(disconnectEvm);
+  }, [disconnectEvm]);
+
+  const handleDisconnectActiveWallet = useCallback(async () => {
+    setMenuOpen(false);
+    if (activeChannel === 'solana' || publicKey) {
+      await runSolanaDisconnect();
+    }
+    if (activeChannel === 'evm' || evmAddress) {
+      runEvmDisconnect();
+    }
+    clearRememberedWallet();
+    setRememberedWallet(null);
+  }, [activeChannel, publicKey, evmAddress, runSolanaDisconnect, runEvmDisconnect]);
 
   const handleEvmConnect = useCallback(
     (kind: EvmWalletKind) => {
@@ -196,7 +225,7 @@ export function WalletConnectButton({
     };
   }, []);
 
-  const solanaConnected = !!publicKey;
+  const solanaConnected = solanaAdapterConnected && !!publicKey;
   const evmConnected = !!evmAddress;
   const evmErrorMessage =
     evmLocalError ??
@@ -223,13 +252,13 @@ export function WalletConnectButton({
 
   const switchToEvm = (kind: EvmWalletKind) => {
     setMenuOpen(false);
-    if (publicKey) void disconnectSolana();
+    if (publicKey) void runSolanaDisconnect();
     handleEvmConnect(kind);
   };
 
   const switchToSolana = () => {
     setMenuOpen(false);
-    if (evmAddress) disconnectEvm();
+    if (evmAddress) runEvmDisconnect();
     beginSolanaConnectFlow();
   };
 
@@ -279,8 +308,7 @@ export function WalletConnectButton({
                 role="menuitem"
                 className="wallet-connect-menu-item"
                 onClick={() => {
-                  setMenuOpen(false);
-                  void disconnectSolana();
+                  void handleDisconnectActiveWallet();
                 }}
               >
                 Disconnect
@@ -326,8 +354,7 @@ export function WalletConnectButton({
                 role="menuitem"
                 className="wallet-connect-menu-item"
                 onClick={() => {
-                  setMenuOpen(false);
-                  disconnectEvm();
+                  void handleDisconnectActiveWallet();
                 }}
               >
                 Disconnect
