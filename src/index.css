@@ -1109,7 +1109,7 @@ html.gameplay-active #root {
   padding: 14px 16px;
 }
 
-.wallet-link-skip {
+.wallet-link-later {
   font-size: 0.95rem;
   padding: 12px 16px;
   background: #fff;
@@ -1582,7 +1582,7 @@ html.gameplay-active #root {
     padding: 13px 12px;
   }
 
-  .wallet-link-skip {
+  .wallet-link-later {
     font-size: 0.92rem;
     padding: 11px 12px;
   }
@@ -2922,6 +2922,134 @@ html.gameplay-active #root {
 
 .death-reward-estimate {
   color: #1a8f1a;
+}
+
+.death-reward-wallet {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 2px dashed rgba(0, 0, 0, 0.35);
+}
+
+.death-reward-wallet--loading .lemon-loader {
+  padding: 6px 0 2px;
+  gap: 4px;
+}
+
+.death-reward-wallet--loading .lemon-loader-ring {
+  width: 36px;
+  height: 36px;
+}
+
+.death-reward-wallet--loading .lemon-loader-icon {
+  font-size: 1.2rem;
+}
+
+.death-reward-wallet--loading .lemon-loader-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.death-reward-wallet-saved {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.death-reward-wallet-address {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.death-reward-wallet-change {
+  margin: 0 0 0 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+  color: #000;
+}
+
+.death-reward-wallet-change:hover {
+  color: #4a3800;
+}
+
+.death-reward-wallet-hint {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #4a3800;
+  opacity: 0.9;
+}
+
+.wallet-link-prompt--embedded {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.wallet-link-prompt--embedded .wallet-link-title {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.wallet-link-prompt--embedded .wallet-link-label {
+  margin: 0 0 4px;
+  font-size: 0.68rem;
+}
+
+.wallet-link-prompt--embedded .wallet-link-input {
+  margin: 0 0 6px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  border-width: 2px;
+}
+
+.wallet-link-prompt--embedded .wallet-link-error {
+  margin: -2px 0 4px;
+  font-size: 0.72rem;
+}
+
+.wallet-link-prompt--embedded .wallet-link-help {
+  margin: 0 0 6px;
+  font-size: 0.62rem;
+  text-align: left;
+}
+
+.wallet-link-prompt--embedded .wallet-link-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.wallet-link-prompt--embedded .wallet-link-actions .btn {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.72rem;
+  padding: 5px 10px;
+  line-height: 1.15;
+}
+
+.wallet-link-prompt--embedded .wallet-link-save {
+  flex: 1 1 45%;
+}
+
+.wallet-link-prompt--embedded .wallet-link-later {
+  flex: 1 1 45%;
+  background: #fff9e6;
+  opacity: 1;
 }
 
 .daily-reset-countdown {

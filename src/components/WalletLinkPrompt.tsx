@@ -5,21 +5,22 @@ interface WalletLinkPromptProps {
   onSave: (walletPubkey: string) => Promise<void>;
   onDismiss: () => void;
   variant?: 'initial' | 'change';
+  embedded?: boolean;
   onCancel?: () => void;
 }
 
-const VALIDATION_ERROR = 'Please enter a valid Solana wallet address.';
+const VALIDATION_ERROR = 'This does not look like a valid Solana wallet address.';
 
 export function WalletLinkPrompt({
   onSave,
   onDismiss,
   variant = 'initial',
+  embedded = false,
   onCancel,
 }: WalletLinkPromptProps) {
   const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const [showInvalid, setShowInvalid] = useState(false);
 
   const trimmed = value.trim();
@@ -61,128 +62,86 @@ export function WalletLinkPrompt({
   };
 
   return (
-    <>
-      <form className="wallet-link-prompt" onSubmit={handleSubmit} noValidate>
-        <p className="wallet-link-title">
-          {isChange
-            ? 'Update your Solana wallet address for the daily prize draw.'
-            : 'Add your Solana wallet address to participate in the daily prize draw.'}
+    <form
+      className={`wallet-link-prompt${embedded ? ' wallet-link-prompt--embedded' : ''}`}
+      onSubmit={handleSubmit}
+      noValidate
+    >
+      <p className="wallet-link-title">
+        {isChange
+          ? 'Update your Solana wallet for daily rewards.'
+          : 'Add wallet to receive your prize if you stay in Top 3.'}
+      </p>
+
+      <label className="wallet-link-label" htmlFor="wallet-address-input">
+        Solana wallet
+      </label>
+      <input
+        id="wallet-address-input"
+        className={`wallet-link-input${showInvalid ? ' wallet-link-input--invalid' : ''}`}
+        type="text"
+        inputMode="text"
+        autoCapitalize="off"
+        autoCorrect="off"
+        placeholder="Your public wallet address"
+        value={value}
+        onChange={(event) => {
+          setValue(event.target.value);
+          setError(null);
+          setShowInvalid(false);
+        }}
+        onBlur={() => {
+          if (trimmed && !isValid) rejectInvalid();
+        }}
+        onKeyDown={handleInputKeyDown}
+        disabled={saving}
+        autoComplete="off"
+        spellCheck={false}
+        aria-invalid={showInvalid}
+        aria-describedby={
+          error ? 'wallet-link-error' : 'wallet-link-seed-warning'
+        }
+      />
+
+      {error && (
+        <p id="wallet-link-error" className="wallet-link-error" role="alert">
+          {error}
         </p>
-
-        <label className="wallet-link-label" htmlFor="wallet-address-input">
-          Solana wallet address
-        </label>
-        <input
-          id="wallet-address-input"
-          className={`wallet-link-input${showInvalid ? ' wallet-link-input--invalid' : ''}`}
-          type="text"
-          inputMode="text"
-          autoCapitalize="off"
-          autoCorrect="off"
-          placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
-          value={value}
-          onChange={(event) => {
-            setValue(event.target.value);
-            setError(null);
-            setShowInvalid(false);
-          }}
-          onBlur={() => {
-            if (trimmed && !isValid) rejectInvalid();
-          }}
-          onKeyDown={handleInputKeyDown}
-          disabled={saving}
-          autoComplete="off"
-          spellCheck={false}
-          aria-invalid={showInvalid}
-          aria-describedby={error ? 'wallet-link-error' : isChange ? undefined : 'wallet-link-skip-help'}
-        />
-
-        {error && (
-          <p id="wallet-link-error" className="wallet-link-error" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="wallet-link-actions">
-          <button
-            type="submit"
-            className="btn btn-primary wallet-link-save"
-            disabled={saving || !isValid}
-          >
-            {saving ? 'Saving…' : isChange ? 'Update wallet' : 'Save wallet'}
-          </button>
-
-          {isChange && onCancel && (
-            <button
-              type="button"
-              className="btn btn-secondary wallet-link-skip"
-              onClick={onCancel}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-          )}
-
-          {!isChange && (
-            <button
-              type="button"
-              className="btn btn-secondary wallet-link-skip"
-              onClick={() => setShowSkipConfirm(true)}
-              disabled={saving}
-            >
-              Skip prize draw
-            </button>
-          )}
-        </div>
-
-        {!isChange && (
-          <p id="wallet-link-skip-help" className="wallet-link-help">
-            If you skip this step, you can still play, but you will not be eligible for the daily prize
-            draw.
-          </p>
-        )}
-      </form>
-
-      {showSkipConfirm && (
-        <div
-          className="wallet-skip-modal-backdrop"
-          onClick={() => setShowSkipConfirm(false)}
-          role="presentation"
-        >
-          <div
-            className="modal-panel wallet-skip-modal-panel"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="wallet-skip-modal-title"
-          >
-            <h2 id="wallet-skip-modal-title">Skip prize draw?</h2>
-            <p className="modal-disclaimer">
-              Are you sure you want to skip? Without a wallet address, you cannot participate in the
-              daily prize draw.
-            </p>
-            <div className="wallet-skip-modal-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowSkipConfirm(false)}
-              >
-                Go back
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  setShowSkipConfirm(false);
-                  onDismiss();
-                }}
-              >
-                Yes, skip
-              </button>
-            </div>
-          </div>
-        </div>
       )}
-    </>
+
+      <p id="wallet-link-seed-warning" className="wallet-link-help">
+        Never enter your seed phrase.
+      </p>
+
+      <div className="wallet-link-actions">
+        <button
+          type="submit"
+          className="btn btn-primary wallet-link-save"
+          disabled={saving || !isValid}
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+
+        {isChange && onCancel ? (
+          <button
+            type="button"
+            className="btn btn-secondary wallet-link-later"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-secondary wallet-link-later"
+            onClick={onDismiss}
+            disabled={saving}
+          >
+            Add later
+          </button>
+        )}
+      </div>
+    </form>
   );
 }

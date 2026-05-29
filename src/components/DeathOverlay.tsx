@@ -24,8 +24,7 @@ import { computeRank } from '../utils/rank';
 import { buildShareCaption } from '../utils/share';
 import { ShareCard } from './ShareCard';
 import { ShareMenu } from './ShareMenu';
-import { WalletLinkPrompt } from './WalletLinkPrompt';
-import { WalletConfirmedCard } from './WalletConfirmedCard';
+import { DeathRewardWallet } from './DeathRewardWallet';
 import { PostDeathUnlocks } from './PostDeathCard';
 import { DailyResetCountdown } from './DailyResetCountdown';
 import { FreeRewardTrustCopy } from './FreeRewardTrustCopy';
@@ -39,6 +38,7 @@ interface DeathOverlayProps {
   walletPubkey: string | null;
   paymentChain?: 'solana' | 'evm';
   player?: PlayerResponse | null;
+  playerLoading?: boolean;
   dailyRank?: DailyRankContext | null;
   onRetry: () => void;
   onRunSaved?: () => void;
@@ -80,6 +80,7 @@ export function DeathOverlay({
   walletPubkey,
   paymentChain = 'solana',
   player,
+  playerLoading = false,
   dailyRank,
   onRetry,
   onRunSaved,
@@ -121,22 +122,10 @@ export function DeathOverlay({
   const savedRef = useRef(false);
 
   const linkedWallet = player?.walletPubkey ?? null;
-
-  const showWalletInput =
-    isDead &&
-    runSaved &&
-    gameMode === 'free' &&
-    !walletPromptDismissed &&
-    !!player &&
-    !!onWalletLinked &&
-    (!linkedWallet || changingWallet);
-
-  const showWalletConfirmation =
-    isDead &&
-    runSaved &&
-    gameMode === 'free' &&
-    !!linkedWallet &&
-    !changingWallet;
+  const walletStatusLoading = playerLoading;
+  const inTop3 = resultState === 'in_top_3';
+  const showRewardWallet =
+    isDead && gameMode === 'free' && !!deathRank && !!onWalletLinked;
   const [shareReady, setShareReady] = useState<{
     dataUrl: string;
     file: File;
@@ -264,6 +253,23 @@ export function DeathOverlay({
                     )}
                     <DailyResetCountdown nextResetAt={dailyRank?.nextResetAt ?? null} />
                     <FreeRewardTrustCopy className="free-reward-trust free-reward-trust-panel" />
+                    {showRewardWallet && (
+                      <DeathRewardWallet
+                        walletLoading={walletStatusLoading}
+                        walletPubkey={linkedWallet}
+                        inTop3={inTop3}
+                        dismissed={walletPromptDismissed}
+                        changingWallet={changingWallet}
+                        canPrompt={runSaved}
+                        onSave={async (addr) => {
+                          await onWalletLinked!(addr);
+                          setChangingWallet(false);
+                        }}
+                        onDismiss={() => setWalletPromptDismissed(true)}
+                        onChangeWallet={() => setChangingWallet(true)}
+                        onCancelChange={() => setChangingWallet(false)}
+                      />
+                    )}
                   </div>
                 )}
                 <p>cause of juice: {cause}</p>
@@ -271,25 +277,6 @@ export function DeathOverlay({
               </div>
             </div>
             {saveError && <p className="tilt-msg">{saveError}</p>}
-
-            {showWalletInput && onWalletLinked && (
-              <WalletLinkPrompt
-                variant={linkedWallet ? 'change' : 'initial'}
-                onSave={async (addr) => {
-                  await onWalletLinked(addr);
-                  setChangingWallet(false);
-                }}
-                onDismiss={() => setWalletPromptDismissed(true)}
-                onCancel={linkedWallet ? () => setChangingWallet(false) : undefined}
-              />
-            )}
-
-            {showWalletConfirmation && linkedWallet && (
-              <WalletConfirmedCard
-                walletPubkey={linkedWallet}
-                onChangeWallet={() => setChangingWallet(true)}
-              />
-            )}
 
             <div className="death-actions">
               <button

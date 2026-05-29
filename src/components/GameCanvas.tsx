@@ -319,6 +319,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           walletPubkey={activeWalletKey}
           paymentChain={activePaymentChain}
           player={player}
+          playerLoading={runsLoading}
           dailyRank={activeMode === 'free' ? dailyRank : null}
           onRetry={handleRetry}
           recentUnlocks={recentUnlocks}
