@@ -18,17 +18,15 @@ export async function connectSolanaFromUserAction(
   await connect();
 }
 
-/** User-initiated Solana disconnect. Always deselects wallet so UI and localStorage clear. */
+/** User-initiated Solana disconnect. */
 export async function disconnectSolanaFromUserAction(
   disconnect: SolanaDisconnectFn,
-  select: SolanaSelectFn,
 ): Promise<void> {
   try {
     await disconnect();
   } catch {
-    // Adapter may reject; still force deselect so the UI updates.
+    // Adapter may reject; caller decides whether to deselect.
   }
-  select(null);
 }
 
 /** User-initiated EVM connect. Never call during initial render or page load. */

@@ -94,7 +94,6 @@ export function WalletConnectButton({
   const {
     publicKey,
     wallet,
-    connected: solanaAdapterConnected,
     connect: connectSolana,
     disconnect: disconnectSolana,
     select: selectSolanaWallet,
@@ -102,7 +101,7 @@ export function WalletConnectButton({
   } = useWallet();
   const { setVisible: openSolanaModal, visible: solanaModalVisible } = useWalletModal();
   const { address: evmAddress, connector: activeEvmConnector } = useAccount();
-  const { connect, connectors, isPending: evmConnecting, error: evmConnectError } = useConnect();
+  const { connect, connectors, isPending: evmConnecting, error: evmConnectError, reset: resetEvmConnect } = useConnect();
   const { disconnect: disconnectEvm } = useDisconnect();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -115,6 +114,7 @@ export function WalletConnectButton({
     open: false,
     walletName: null,
   });
+  const walletActionGenerationRef = useRef(0);
 
   const solanaTitle = solanaWalletsLabel();
   const solanaSub = solanaPaymentHint();
@@ -140,20 +140,25 @@ export function WalletConnectButton({
     }
   }, [evmAddress, activeEvmConnector]);
 
+  const invalidatePendingSolanaDeselect = useCallback(() => {
+    walletActionGenerationRef.current += 1;
+  }, []);
+
   const runSolanaConnect = useCallback(async () => {
+    invalidatePendingSolanaDeselect();
     setSolanaLocalError(null);
     try {
       await connectSolanaFromUserAction(connectSolana, wallet?.adapter ?? null);
     } catch (error) {
       setSolanaLocalError(formatWalletConnectError(error));
     }
-  }, [connectSolana, wallet?.adapter]);
+  }, [connectSolana, wallet?.adapter, invalidatePendingSolanaDeselect]);
 
   const runSolanaDisconnect = useCallback(async () => {
-    await disconnectSolanaFromUserAction(
-      disconnectSolana,
-      selectSolanaWallet as (walletName: WalletName | null) => void,
-    );
+    const actionId = ++walletActionGenerationRef.current;
+    await disconnectSolanaFromUserAction(disconnectSolana);
+    if (actionId !== walletActionGenerationRef.current) return;
+    (selectSolanaWallet as (walletName: WalletName | null) => void)(null);
   }, [disconnectSolana, selectSolanaWallet]);
 
   const runEvmDisconnect = useCallback(() => {
@@ -176,6 +181,7 @@ export function WalletConnectButton({
     (kind: EvmWalletKind) => {
       setEvmLocalError(null);
       setEvmErrorKind(kind);
+      resetEvmConnect();
       try {
         onActiveChannelChange('evm');
         const connector = getEvmConnector(connectors, kind);
@@ -184,7 +190,7 @@ export function WalletConnectButton({
         setEvmLocalError(formatWalletConnectError(error));
       }
     },
-    [connect, connectors, onActiveChannelChange],
+    [connect, connectors, onActiveChannelChange, resetEvmConnect],
   );
 
   useEffect(() => {
@@ -225,7 +231,7 @@ export function WalletConnectButton({
     };
   }, []);
 
-  const solanaConnected = solanaAdapterConnected && !!publicKey;
+  const solanaConnected = !!publicKey;
   const evmConnected = !!evmAddress;
   const evmErrorMessage =
     evmLocalError ??
@@ -233,6 +239,7 @@ export function WalletConnectButton({
   const connecting = solanaConnecting || evmConnecting;
 
   const beginSolanaConnectFlow = () => {
+    invalidatePendingSolanaDeselect();
     setMenuOpen(false);
     setEvmLocalError(null);
     setSolanaLocalError(null);
@@ -252,8 +259,10 @@ export function WalletConnectButton({
 
   const switchToEvm = (kind: EvmWalletKind) => {
     setMenuOpen(false);
-    if (publicKey) void runSolanaDisconnect();
-    handleEvmConnect(kind);
+    void (async () => {
+      if (publicKey) await runSolanaDisconnect();
+      handleEvmConnect(kind);
+    })();
   };
 
   const switchToSolana = () => {

@@ -1,10 +1,11 @@
 import type { Chain } from 'viem';
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet, polygon, polygonAmoy } from 'wagmi/chains';
-import { injected, metaMask } from 'wagmi/connectors';
+import { metaMask } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useMemo } from 'react';
 import { EVM_CHAIN_ID } from '../config/evm';
+import { createOkxWalletConnector } from '../lib/evmConnectors';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -48,7 +49,7 @@ export function EvmProvider({ children }: { children: ReactNode }) {
             iconUrl: `${origin}/icon-512.png`,
           },
         }),
-        injected({ target: 'okxWallet' }),
+        createOkxWalletConnector(),
       ],
       transports,
       ssr: false,
