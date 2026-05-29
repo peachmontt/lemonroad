@@ -8,6 +8,7 @@ import {
   dayBucketDateOrFilter,
 } from '../_lib/daily-pool';
 import { formatUsdt } from '../_lib/pool-math';
+import { getPayoutTotals } from '../_lib/payout-stats';
 
 export default withMethods({
   GET: async (req, res) => {
@@ -24,6 +25,7 @@ export default withMethods({
       totalPlayers,
       totalRuns,
       todayFreePlayers,
+      payoutTotals,
     ] = await Promise.all([
       prisma.hourlyPool.findMany({
         where: { settledAt: null, participantCount: { gt: 0 } },
@@ -42,6 +44,7 @@ export default withMethods({
       prisma.dailyLeaderboard.count({
         where: dayBucketDateOrFilter(currentDay),
       }),
+      getPayoutTotals(),
     ]);
 
     const dayDeposited = todayPool?.depositedUsdt ?? 0n;
@@ -81,7 +84,14 @@ export default withMethods({
         diedAt: r.diedAt.toISOString(),
         dayBucket: r.dayBucket,
       })),
-      totals: { players: totalPlayers, runs: totalRuns },
+      totals: {
+        players: totalPlayers,
+        runs: totalRuns,
+        totalPaidUsdt: payoutTotals.totalPaidUsdt,
+        totalPaidFormatted: payoutTotals.totalPaidFormatted,
+        pendingPayoutsUsdt: payoutTotals.pendingPayoutsUsdt,
+        pendingPayoutsFormatted: payoutTotals.pendingPayoutsFormatted,
+      },
       serverTime: now.toISOString(),
       nextDailyResetAt: getNextDailyResetAt(now).toISOString(),
       nextWeeklyResetAt: getNextWeeklyResetAt(now).toISOString(),

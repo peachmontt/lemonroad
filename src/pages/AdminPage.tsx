@@ -35,7 +35,12 @@ interface PoolStats {
     diedAt: string;
     dayBucket: string | null;
   }[];
-  totals: { players: number; runs: number };
+  totals: {
+    players: number;
+    runs: number;
+    totalPaidFormatted?: string;
+    pendingPayoutsFormatted?: string;
+  };
   serverTime: string;
   nextDailyResetAt?: string;
   nextWeeklyResetAt?: string;
@@ -271,8 +276,10 @@ export function AdminPage() {
               <div className="admin-kpi"><span>{stats.totals.players}</span>players</div>
               <div className="admin-kpi"><span>{stats.totals.runs}</span>total runs</div>
               <div className="admin-kpi"><span>{stats.currentDayPool.totalFormatted}</span>free daily pool</div>
+              <div className="admin-kpi"><span>{stats.totals.totalPaidFormatted ?? '0 USDT'}</span>total paid</div>
               <div className="admin-kpi"><span>{stats.currentDayPool.participants}</span>today&apos;s free players</div>
               <div className="admin-kpi"><span>{stats.paidDayPool?.totalFormatted ?? '0 USDT'}</span>degen pool today</div>
+              <div className="admin-kpi"><span>{stats.totals.pendingPayoutsFormatted ?? '0 USDT'}</span>pending payouts</div>
               <div className="admin-kpi"><span>{stats.paidDayPool?.participants ?? 0}</span>today&apos;s degen players</div>
             </div>
           </section>
