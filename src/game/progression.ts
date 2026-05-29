@@ -31,6 +31,8 @@ export interface PlayerProgress {
   streakDays: number;
   lastPlayDate: string | null;
   playDates: string[];
+  dailyRunsDate: string | null;
+  dailyRunsCount: number;
   referralCode: string;
   referralCount: number;
   lemonXp: number;
@@ -65,6 +67,8 @@ function defaultProgress(): PlayerProgress {
     streakDays: 0,
     lastPlayDate: null,
     playDates: [],
+    dailyRunsDate: null,
+    dailyRunsCount: 0,
     referralCode: generateReferralCode(),
     referralCount: 0,
     lemonXp: 0,
@@ -251,7 +255,12 @@ export function updateProgressAfterRun(summary: RunSummary): {
 
   p.weeklyCup = updateWeeklyCupAfterRun(p.weeklyCup, summary.distance);
 
-  const runsToday = p.playDates.filter((d) => d === today).length;
+  if (p.dailyRunsDate !== today) {
+    p.dailyRunsDate = today;
+    p.dailyRunsCount = 0;
+  }
+  p.dailyRunsCount += 1;
+  const runsToday = p.dailyRunsCount;
 
   p.activeDailyMissions = updateMissionProgress(p.activeDailyMissions, {
     summary,

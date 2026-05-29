@@ -250,7 +250,10 @@ export function countCompletedMissions(missions: DailyMission[]): number {
   return missions.filter((m) => m.claimed).length;
 }
 
-export function countRunsToday(lastPlayDates: string[]): number {
-  const today = getLocalDateString();
-  return lastPlayDates.filter((d) => d === today).length;
+export function countRunsToday(
+  dailyRunsDate: string | null,
+  dailyRunsCount: number,
+  date = getLocalDateString(),
+): number {
+  return dailyRunsDate === date ? dailyRunsCount : 0;
 }

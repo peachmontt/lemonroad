@@ -70,7 +70,7 @@ export function WalletLinkPrompt({
       <p className="wallet-link-title">
         {isChange
           ? 'Update your Solana wallet for daily rewards.'
-          : 'Add wallet to receive your prize if you stay in Top 3.'}
+          : 'Where should we send your prize?'}
       </p>
 
       <label className="wallet-link-label" htmlFor="wallet-address-input">
@@ -83,7 +83,7 @@ export function WalletLinkPrompt({
         inputMode="text"
         autoCapitalize="off"
         autoCorrect="off"
-        placeholder="Your public wallet address"
+        placeholder="Paste your public wallet address"
         value={value}
         onChange={(event) => {
           setValue(event.target.value);
@@ -110,7 +110,9 @@ export function WalletLinkPrompt({
       )}
 
       <p id="wallet-link-seed-warning" className="wallet-link-help">
-        Never enter your seed phrase.
+        Use your public Solana address from Phantom, Solflare, OKX Wallet, or
+        another Solana wallet. Never enter your seed phrase. We only need your
+        public address.
       </p>
 
       <div className="wallet-link-actions">
@@ -119,7 +121,7 @@ export function WalletLinkPrompt({
           className="btn btn-primary wallet-link-save"
           disabled={saving || !isValid}
         >
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving…' : 'Save wallet'}
         </button>
 
         {isChange && onCancel ? (
