@@ -286,50 +286,41 @@ html.gameplay-active #root {
   }
 }
 
-/* ── Home meme stickers (decorative, non-interactive) ── */
+/* ── Home meme stickers (desktop only, decorative, non-interactive) ── */
 .home-meme-stickers {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  overflow: hidden;
-}
-
-.home-meme-sticker {
-  position: absolute;
-  pointer-events: none;
-  max-width: min(148px, 28vw);
-  padding: 8px 11px;
-  background: #fff;
-  color: #e85d04;
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-  text-align: center;
-  border: 2px solid #000;
-  border-radius: 12px;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.18);
-  transform: rotate(var(--sticker-rotate, -3deg));
-  opacity: 0;
-  animation:
-    meme-sticker-bob 5.5s ease-in-out infinite,
-    meme-sticker-fade-in 0.55s ease-out forwards;
-}
-
-.home-meme-sticker--left {
-  left: max(8px, env(safe-area-inset-left, 0px));
-}
-
-.home-meme-sticker--right {
-  right: max(8px, env(safe-area-inset-right, 0px));
+  display: none;
 }
 
 @media (min-width: 768px) {
+  .home-meme-stickers {
+    display: block;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+  }
+
   .home-meme-sticker {
+    position: absolute;
+    pointer-events: none;
     max-width: 168px;
-    font-size: 0.72rem;
     padding: 9px 12px;
+    background: #fff;
+    color: #e85d04;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    text-align: center;
+    border: 2px solid #000;
+    border-radius: 12px;
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.18);
+    transform: rotate(var(--sticker-rotate, -3deg));
+    opacity: 0;
+    animation:
+      meme-sticker-bob 5.5s ease-in-out infinite,
+      meme-sticker-fade-in 0.55s ease-out forwards;
   }
 
   .home-meme-sticker--left {
@@ -348,22 +339,6 @@ html.gameplay-active #root {
 
   .home-meme-sticker--right {
     right: max(18px, calc((100vw - 720px) / 2 - 210px));
-  }
-}
-
-@media (max-width: 767px) {
-  .home-meme-sticker {
-    max-width: min(120px, 34vw);
-    font-size: 0.62rem;
-    padding: 6px 9px;
-  }
-
-  .home-meme-sticker--left {
-    left: max(4px, env(safe-area-inset-left, 0px));
-  }
-
-  .home-meme-sticker--right {
-    right: max(52px, env(safe-area-inset-right, 0px));
   }
 }
 

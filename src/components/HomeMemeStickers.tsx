@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  DESKTOP_MIN_WIDTH_PX,
   DESKTOP_STICKER_POSITIONS,
   HOME_MEME_MESSAGES,
-  MOBILE_BREAKPOINT_PX,
-  MOBILE_STICKER_POSITIONS,
   type StickerPosition,
 } from './homeMemeStickersData';
 
@@ -29,12 +28,10 @@ function randomInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-function buildStickers(isMobile: boolean): HomeMemeSticker[] {
-  const maxCount = isMobile ? 2 : 3;
-  const count = randomInt(1, maxCount);
-  const positions = isMobile ? MOBILE_STICKER_POSITIONS : DESKTOP_STICKER_POSITIONS;
+function buildStickers(): HomeMemeSticker[] {
+  const count = randomInt(1, 3);
   const messages = shuffle(HOME_MEME_MESSAGES).slice(0, count);
-  const slots = shuffle(positions).slice(0, count);
+  const slots = shuffle(DESKTOP_STICKER_POSITIONS).slice(0, count);
 
   return messages.map((text, index) => ({
     id: `${text}-${index}`,
@@ -45,13 +42,13 @@ function buildStickers(isMobile: boolean): HomeMemeSticker[] {
   }));
 }
 
-function detectMobileViewport(): boolean {
+function isDesktopViewport(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX - 1}px)`).matches;
+  return window.matchMedia(`(min-width: ${DESKTOP_MIN_WIDTH_PX}px)`).matches;
 }
 
 export function HomeMemeStickers() {
-  const stickers = useMemo(() => buildStickers(detectMobileViewport()), []);
+  const stickers = useMemo(() => (isDesktopViewport() ? buildStickers() : []), []);
 
   if (stickers.length === 0) return null;
 

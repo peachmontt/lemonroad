@@ -26,6 +26,8 @@ export type StickerPosition = {
   top: string;
 };
 
+export const DESKTOP_MIN_WIDTH_PX = 768;
+
 /** Safe gutters on wide layouts — clear of centered ~720px content column. */
 export const DESKTOP_STICKER_POSITIONS: StickerPosition[] = [
   { side: 'left', top: '22%' },
@@ -35,13 +37,3 @@ export const DESKTOP_STICKER_POSITIONS: StickerPosition[] = [
   { side: 'right', top: '52%' },
   { side: 'right', top: '68%' },
 ];
-
-/** Edge zones only — avoids crowding narrow center column, footer, and FAB. */
-export const MOBILE_STICKER_POSITIONS: StickerPosition[] = [
-  { side: 'left', top: '20%' },
-  { side: 'left', top: '44%' },
-  { side: 'right', top: '36%' },
-  { side: 'right', top: '58%' },
-];
-
-export const MOBILE_BREAKPOINT_PX = 768;
