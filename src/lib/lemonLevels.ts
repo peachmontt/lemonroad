@@ -50,6 +50,5 @@ export function formatLemonLevelShort(level: number): string {
 
 export function formatXpGained(amount: number): string {
   const n = Math.round(amount);
-  const prefix = n >= 0 ? '+' : '';
-  return `${prefix}${n.toLocaleString()} XP`;
+  return `${n.toLocaleString()} XP`;
 }
