@@ -220,13 +220,14 @@ export function attributeReferral(code: string) {
   });
 }
 
-/** Top 10 Lemon XP gainers over the last 3 months (includes current user row when outside top 10). */
+/** Top 100 ladder (NPC rivals + real players); may include current user when ranked below 100. */
 export interface TopLemonsEntry {
   rank: number;
   username: string;
   xpGainedLastThreeMonths: number;
   totalLemonXp: number;
   isCurrentUser: boolean;
+  isNpc: boolean;
 }
 
 export function fetchTopLemonsLeaderboard() {

@@ -20,11 +20,13 @@ function TopLemonsRow({ entry, highlight }: { entry: TopLemonsEntry; highlight?:
 
   return (
     <div
-      className={`lemon-club-card top-lemons-row${highlight ? ' top-lemons-row--you' : ''}`}
+      className={`lemon-club-card top-lemons-row${highlight ? ' top-lemons-row--you' : ''}${entry.isNpc ? ' top-lemons-row--npc' : ''}`}
+      role="listitem"
     >
       <p className="top-lemons-row-line">
         <span className="top-lemons-rank">#{entry.rank}</span>{' '}
-        <span className="top-lemons-name">{entry.username}</span>{' '}
+        <span className="top-lemons-name">{entry.username}</span>
+        {entry.isNpc && <span className="top-lemons-npc-tag">NPC</span>}{' '}
         <span className="top-lemons-xp">{formatXpGained(entry.xpGainedLastThreeMonths)}</span>{' '}
         <span className="top-lemons-level">{formatLemonLevelShort(level.level)}</span>
       </p>
@@ -61,14 +63,14 @@ export function TopLemonsTab(_props: TopLemonsTabProps) {
     };
   }, []);
 
-  const outside = view?.currentUserOutsideTop10;
+  const outside = view?.currentUserOutside;
   const outsideLevel = outside ? getLemonLevel(outside.totalLemonXp) : null;
 
   return (
     <div className="lemon-club-tab-panel top-lemons-panel">
-      <h3 className="top-lemons-title">🏆 Top Lemons</h3>
+      <h3 className="top-lemons-title">🏆 Top 100 Lemons</h3>
       <p className="lemon-club-muted top-lemons-subtitle">
-        Top 10 Lemon
+        20 rival NPCs + every real player · ranked by 3-month Lemon XP
       </p>
 
       {loading && <LemonLoader label="ranking the zestiest…" />}
@@ -77,19 +79,19 @@ export function TopLemonsTab(_props: TopLemonsTabProps) {
         <p className="lemon-club-muted">Could not load Top Lemons: {error}</p>
       )}
 
-      {!loading && view && view.top10.length === 0 && !outside && (
+      {!loading && view && view.entries.length === 0 && !outside && (
         <p className="lemon-club-muted">
-          Leaderboard is loading rivals… play valid runs to climb (distance ÷ 50 = Lemon XP).
+          Play a valid run to appear on the board (distance ÷ 50 = Lemon XP).
         </p>
       )}
 
-      {!loading && view && (view.top10.length > 0 || outside) && (
+      {!loading && view && (view.entries.length > 0 || outside) && (
         <>
-          {view.top10.length > 0 && (
+          {view.entries.length > 0 && (
             <div className="top-lemons-list" role="list">
-              {view.top10.map((entry) => (
+              {view.entries.map((entry) => (
                 <TopLemonsRow
-                  key={`${entry.rank}-${entry.username}`}
+                  key={`${entry.rank}-${entry.isNpc ? 'npc' : 'player'}-${entry.username}`}
                   entry={entry}
                   highlight={entry.isCurrentUser}
                 />

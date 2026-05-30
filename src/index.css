@@ -3710,6 +3710,28 @@ html.dead-screen {
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  max-height: min(52dvh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.top-lemons-row--npc {
+  background: #fafafa;
+}
+
+.top-lemons-npc-tag {
+  display: inline-block;
+  margin: 0 4px;
+  padding: 1px 5px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid #000;
+  background: #eee;
+  vertical-align: middle;
 }
 
 .top-lemons-row {

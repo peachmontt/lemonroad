@@ -2,45 +2,47 @@ import { fetchTopLemonsLeaderboard, type TopLemonsEntry } from './api';
 
 export type { TopLemonsEntry };
 
+/** Must match api/_lib/top-lemons-board.ts */
+export const TOP_LEMONS_LEADERBOARD_SIZE = 100;
+
 export interface TopLemonsLeaderboardView {
-  top10: TopLemonsEntry[];
-  /** Set when the current user is ranked outside the top 10. */
-  currentUserOutsideTop10: TopLemonsEntry | null;
+  /** Up to 100 ranked rows (NPCs interleaved with real players). */
+  entries: TopLemonsEntry[];
+  /** Set when the current user is ranked outside the visible top 100. */
+  currentUserOutside: TopLemonsEntry | null;
 }
 
-/** Split API payload into top 10 list and optional below-the-fold current user. */
+/** Split API payload into the main list and optional pinned current-user row. */
 export function partitionTopLemons(entries: TopLemonsEntry[]): TopLemonsLeaderboardView {
   if (entries.length === 0) {
-    return { top10: [], currentUserOutsideTop10: null };
+    return { entries: [], currentUserOutside: null };
   }
 
   const sorted = [...entries].sort((a, b) => a.rank - b.rank);
   const current = sorted.find((e) => e.isCurrentUser) ?? null;
-  const top10 = sorted.filter((e) => e.rank <= 10).slice(0, 10);
-  const inTop10 = current != null && top10.some((e) => e.isCurrentUser);
+  const main = sorted.filter((e) => e.rank <= TOP_LEMONS_LEADERBOARD_SIZE).slice(0, TOP_LEMONS_LEADERBOARD_SIZE);
+  const inMain = current != null && main.some((e) => e.isCurrentUser);
 
   return {
-    top10,
-    currentUserOutsideTop10: current && !inTop10 ? current : null,
+    entries: main,
+    currentUserOutside: current && !inMain ? current : null,
   };
 }
 
 export interface LoadTopLemonsOptions {
-  /** @deprecated Client totals are ignored; ranks come from the server. */
+  /** @deprecated Ranks come from the server. */
   username?: string;
-  /** @deprecated Client totals are ignored; ranks come from the server. */
+  /** @deprecated Ranks come from the server. */
   totalLemonXp?: number;
 }
 
-/**
- * Load Top Lemons leaderboard (3-month XP from valid game runs in the database).
- */
+/** Load Top Lemons leaderboard (3-month XP from valid runs + NPC rivals). */
 export async function loadTopLemonsLeaderboard(
   _options: LoadTopLemonsOptions = {},
 ): Promise<TopLemonsLeaderboardView> {
   const entries = await fetchTopLemonsLeaderboard();
   if (!Array.isArray(entries)) {
-    return { top10: [], currentUserOutsideTop10: null };
+    return { entries: [], currentUserOutside: null };
   }
   return partitionTopLemons(entries);
 }

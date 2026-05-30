@@ -34,9 +34,6 @@ export default withMethods({
       INNER JOIN players p ON p.id = gr.player_id
       WHERE gr.is_valid = true
       GROUP BY p.id, p.display_name, p.lemon_xp
-      HAVING COALESCE(SUM(FLOOR(gr.distance / ${divisor})) FILTER (
-        WHERE gr.died_at >= ${since}
-      ), 0) > 0
     `;
 
     const byId = new Map(

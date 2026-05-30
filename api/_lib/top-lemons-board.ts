@@ -1,5 +1,8 @@
 import { TOP_LEMONS_NPC_SEED } from './top-lemons-npcs';
 
+/** Visible slots on the Top Lemons tab (NPCs + real players compete for these). */
+export const TOP_LEMONS_LEADERBOARD_SIZE = 100;
+
 export interface TopLemonsRealPlayer {
   playerId: string;
   displayName: string;
@@ -13,6 +16,7 @@ export interface TopLemonsBoardEntry {
   xpGainedLastThreeMonths: number;
   totalLemonXp: number;
   isCurrentUser: boolean;
+  isNpc: boolean;
 }
 
 interface MergeRow {
@@ -62,19 +66,20 @@ export function buildTopLemonsLeaderboard(
     xpGainedLastThreeMonths: row.xpGainedLastThreeMonths,
     totalLemonXp: row.totalLemonXp,
     isCurrentUser: row.isCurrentUser,
+    isNpc: row.isNpc,
   }));
 }
 
 export function formatTopLemonsApiPayload(
   ranked: TopLemonsBoardEntry[],
 ): TopLemonsBoardEntry[] {
-  const top10 = ranked.slice(0, 10);
+  const top = ranked.slice(0, TOP_LEMONS_LEADERBOARD_SIZE);
   const current = ranked.find((e) => e.isCurrentUser);
-  const currentInTop10 =
-    current != null && top10.some((e) => e.isCurrentUser);
+  const currentInTop =
+    current != null && top.some((e) => e.isCurrentUser);
 
-  if (current && !currentInTop10) {
-    return [...top10, current];
+  if (current && !currentInTop) {
+    return [...top, current];
   }
-  return top10;
+  return top;
 }
