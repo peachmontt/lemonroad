@@ -29,6 +29,7 @@ import { buildShareCaption } from '../utils/share';
 import { ShareCard } from './ShareCard';
 import { ShareMenu } from './ShareMenu';
 import { DeathRewardWallet } from './DeathRewardWallet';
+import { LemonLoader } from './LemonLoader';
 import { PostDeathUnlocks } from './PostDeathCard';
 import { DailyResetCountdown } from './DailyResetCountdown';
 import { FreeRewardTrustCopy } from './FreeRewardTrustCopy';
@@ -108,7 +109,7 @@ export function DeathOverlay({
   const [cause] = useState(() => pickCauseOfJuice());
   const [shareLabel] = useState(() => pickShareButtonLabel());
   const [retryLabel] = useState(() => pickRetryButtonLabel());
-  const { entries } = useDailyLeaderboard();
+  const { entries, loading: leaderboardLoading } = useDailyLeaderboard();
   const playerId = player?.playerId;
 
   const deathRank = useMemo(() => {
@@ -141,6 +142,11 @@ export function DeathOverlay({
 
   const linkedWallet = player?.walletPubkey ?? null;
   const walletStatusLoading = playerLoading && !player;
+  const rewardPanelLoading =
+    gameMode === 'free' &&
+    (leaderboardLoading ||
+      walletStatusLoading ||
+      (!runSaved && !saveError));
   const inTop3 = deathRank?.inPrizeZone ?? false;
   const showRewardWallet =
     isDead && gameMode === 'free' && !!onWalletLinked;
@@ -242,51 +248,59 @@ export function DeathOverlay({
                 <p>distance: {meters}m</p>
                 <p>rank: {juiceTitle}</p>
                 {gameMode === 'free' && deathRank && (
-                  <div className="death-reward-panel">
-                    {resultState === 'in_top_3' && deathRank.rank != null ? (
-                      <>
-                        <p>You&apos;re currently #{deathRank.rank}</p>
-                        {getEstimatedReward(deathRank.rank) && (
-                          <p className="death-reward-estimate">
-                            Estimated reward: {getEstimatedReward(deathRank.rank)}
-                          </p>
-                        )}
-                        <p>Stay in Top 3 until daily reset to win</p>
-                      </>
-                    ) : resultState === 'close_to_prize' &&
-                      deathRank.gapFromPrizeZone != null ? (
-                      <>
-                        <p>Almost juicy enough</p>
-                        <p>
-                          Only {deathRank.gapFromPrizeZone}m away from today&apos;s $4 spot
-                        </p>
-                      </>
-                    ) : resultState === 'far_from_prize' &&
-                      deathRank.gapFromPrizeZone != null ? (
-                      <p>Beat {deathRank.gapFromPrizeZone}m to enter today&apos;s rewards</p>
-                    ) : deathRank.rank != null ? (
-                      <p>You&apos;re currently #{deathRank.rank}</p>
+                  <div
+                    className={`death-reward-panel${rewardPanelLoading ? ' death-reward-panel--loading' : ''}`}
+                  >
+                    {rewardPanelLoading ? (
+                      <LemonLoader label="squeezing your rewards…" />
                     ) : (
-                      <p>Play a run to enter today&apos;s board</p>
-                    )}
-                    <DailyResetCountdown nextResetAt={dailyRank?.nextResetAt ?? null} />
-                    <FreeRewardTrustCopy className="free-reward-trust free-reward-trust-panel" />
-                    {showRewardWallet && (
-                      <DeathRewardWallet
-                        walletLoading={walletStatusLoading}
-                        walletPubkey={linkedWallet}
-                        inTop3={inTop3}
-                        dismissed={walletPromptDismissed}
-                        changingWallet={changingWallet}
-                        canPrompt={runSaved}
-                        onSave={async (addr) => {
-                          await onWalletLinked!(addr);
-                          setChangingWallet(false);
-                        }}
-                        onDismiss={() => setWalletPromptDismissed(true)}
-                        onChangeWallet={() => setChangingWallet(true)}
-                        onCancelChange={() => setChangingWallet(false)}
-                      />
+                      <>
+                        {resultState === 'in_top_3' && deathRank.rank != null ? (
+                          <>
+                            <p>You&apos;re currently #{deathRank.rank}</p>
+                            {getEstimatedReward(deathRank.rank) && (
+                              <p className="death-reward-estimate">
+                                Estimated reward: {getEstimatedReward(deathRank.rank)}
+                              </p>
+                            )}
+                            <p>Stay in Top 3 until daily reset to win</p>
+                          </>
+                        ) : resultState === 'close_to_prize' &&
+                          deathRank.gapFromPrizeZone != null ? (
+                          <>
+                            <p>Almost juicy enough</p>
+                            <p>
+                              Only {deathRank.gapFromPrizeZone}m away from today&apos;s $4 spot
+                            </p>
+                          </>
+                        ) : resultState === 'far_from_prize' &&
+                          deathRank.gapFromPrizeZone != null ? (
+                          <p>Beat {deathRank.gapFromPrizeZone}m to enter today&apos;s rewards</p>
+                        ) : deathRank.rank != null ? (
+                          <p>You&apos;re currently #{deathRank.rank}</p>
+                        ) : (
+                          <p>Play a run to enter today&apos;s board</p>
+                        )}
+                        <DailyResetCountdown nextResetAt={dailyRank?.nextResetAt ?? null} />
+                        <FreeRewardTrustCopy className="free-reward-trust free-reward-trust-panel" />
+                        {showRewardWallet && (
+                          <DeathRewardWallet
+                            walletLoading={false}
+                            walletPubkey={linkedWallet}
+                            inTop3={inTop3}
+                            dismissed={walletPromptDismissed}
+                            changingWallet={changingWallet}
+                            canPrompt={runSaved}
+                            onSave={async (addr) => {
+                              await onWalletLinked!(addr);
+                              setChangingWallet(false);
+                            }}
+                            onDismiss={() => setWalletPromptDismissed(true)}
+                            onChangeWallet={() => setChangingWallet(true)}
+                            onCancelChange={() => setChangingWallet(false)}
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                 )}

@@ -2991,6 +2991,22 @@ body:not(.home-screen) .home-meme-stickers {
   border: 2px solid #000;
 }
 
+.death-reward-panel--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+}
+
+.death-reward-panel--loading .lemon-loader {
+  padding: 4px 0;
+}
+
+.death-reward-panel--loading .lemon-loader-label {
+  color: #4a3800;
+  font-weight: 700;
+}
+
 .death-reward-panel p {
   margin: 2px 0;
   font-weight: 700;
