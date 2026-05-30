@@ -1,0 +1,80 @@
+import { TOP_LEMONS_NPC_SEED } from './top-lemons-npcs';
+
+export interface TopLemonsRealPlayer {
+  playerId: string;
+  displayName: string;
+  xpGained3m: number;
+  totalXp: number;
+}
+
+export interface TopLemonsBoardEntry {
+  rank: number;
+  username: string;
+  xpGainedLastThreeMonths: number;
+  totalLemonXp: number;
+  isCurrentUser: boolean;
+}
+
+interface MergeRow {
+  username: string;
+  xpGainedLastThreeMonths: number;
+  totalLemonXp: number;
+  isCurrentUser: boolean;
+  isNpc: boolean;
+}
+
+function compareRows(a: MergeRow, b: MergeRow): number {
+  const xpDiff = b.xpGainedLastThreeMonths - a.xpGainedLastThreeMonths;
+  if (xpDiff !== 0) return xpDiff;
+  if (a.isNpc !== b.isNpc) return a.isNpc ? 1 : -1;
+  return a.username.localeCompare(b.username);
+}
+
+/**
+ * Merge real players (from DB runs) with NPC seed rows, rank by 3-month XP,
+ * and assign global ranks. Real users appear when they beat NPC thresholds.
+ */
+export function buildTopLemonsLeaderboard(
+  realPlayers: TopLemonsRealPlayer[],
+  currentPlayerId: string,
+): TopLemonsBoardEntry[] {
+  const realRows: MergeRow[] = realPlayers.map((p) => ({
+    username: p.displayName,
+    xpGainedLastThreeMonths: p.xpGained3m,
+    totalLemonXp: p.totalXp,
+    isCurrentUser: p.playerId === currentPlayerId,
+    isNpc: false,
+  }));
+
+  const npcRows: MergeRow[] = TOP_LEMONS_NPC_SEED.map((npc) => ({
+    username: npc.username,
+    xpGainedLastThreeMonths: npc.xpGainedLastThreeMonths,
+    totalLemonXp: npc.totalLemonXp,
+    isCurrentUser: false,
+    isNpc: true,
+  }));
+
+  const ranked = [...realRows, ...npcRows].sort(compareRows);
+
+  return ranked.map((row, index) => ({
+    rank: index + 1,
+    username: row.username,
+    xpGainedLastThreeMonths: row.xpGainedLastThreeMonths,
+    totalLemonXp: row.totalLemonXp,
+    isCurrentUser: row.isCurrentUser,
+  }));
+}
+
+export function formatTopLemonsApiPayload(
+  ranked: TopLemonsBoardEntry[],
+): TopLemonsBoardEntry[] {
+  const top10 = ranked.slice(0, 10);
+  const current = ranked.find((e) => e.isCurrentUser);
+  const currentInTop10 =
+    current != null && top10.some((e) => e.isCurrentUser);
+
+  if (current && !currentInTop10) {
+    return [...top10, current];
+  }
+  return top10;
+}

@@ -23,6 +23,7 @@ import {
   prismaOp,
 } from './_lib/prisma-ops';
 import { tryQualifyReferralOnRun } from './_lib/referrals';
+import { xpFromRunDistance } from './_lib/lemon-xp';
 
 const postSchema = z.object({
   mode: z.enum(['free', 'paid']),
@@ -295,6 +296,18 @@ export default withMethods({
             },
           }),
       );
+
+      if (run.isValid) {
+        const runXp = xpFromRunDistance(distance);
+        if (runXp > 0) {
+          await prismaOp('player.update.lemonXp', { playerId: player.id }, () =>
+            prisma.player.update({
+              where: { id: player.id },
+              data: { lemonXp: { increment: runXp } },
+            }),
+          );
+        }
+      }
 
       if (mode === 'free') {
         const dateVal = dayBucketToDate(dayBucket);

@@ -10,7 +10,8 @@ import { loadTopLemonsLeaderboard, type TopLemonsLeaderboardView } from '../lib/
 import { LemonLoader } from './LemonLoader';
 
 interface TopLemonsTabProps {
-  totalLemonXp: number;
+  /** Shown in Missions tab only; leaderboard ranks come from the server. */
+  totalLemonXp?: number;
   displayName?: string;
 }
 
@@ -31,7 +32,7 @@ function TopLemonsRow({ entry, highlight }: { entry: TopLemonsEntry; highlight?:
   );
 }
 
-export function TopLemonsTab({ totalLemonXp, displayName }: TopLemonsTabProps) {
+export function TopLemonsTab(_props: TopLemonsTabProps) {
   const [view, setView] = useState<TopLemonsLeaderboardView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +42,7 @@ export function TopLemonsTab({ totalLemonXp, displayName }: TopLemonsTabProps) {
     setLoading(true);
     setError(null);
 
-    void loadTopLemonsLeaderboard({
-      username: displayName ?? 'You',
-      totalLemonXp,
-    })
+    void loadTopLemonsLeaderboard()
       .then((data) => {
         if (!cancelled) setView(data);
       })
@@ -61,7 +59,7 @@ export function TopLemonsTab({ totalLemonXp, displayName }: TopLemonsTabProps) {
     return () => {
       cancelled = true;
     };
-  }, [displayName, totalLemonXp]);
+  }, []);
 
   const outside = view?.currentUserOutsideTop10;
   const outsideLevel = outside ? getLemonLevel(outside.totalLemonXp) : null;
@@ -79,17 +77,25 @@ export function TopLemonsTab({ totalLemonXp, displayName }: TopLemonsTabProps) {
         <p className="lemon-club-muted">Could not load Top Lemons: {error}</p>
       )}
 
-      {!loading && view && (
+      {!loading && view && view.top10.length === 0 && !outside && (
+        <p className="lemon-club-muted">
+          Leaderboard is loading rivals… play valid runs to climb (distance ÷ 50 = Lemon XP).
+        </p>
+      )}
+
+      {!loading && view && (view.top10.length > 0 || outside) && (
         <>
-          <div className="top-lemons-list" role="list">
-            {view.top10.map((entry) => (
-              <TopLemonsRow
-                key={`${entry.rank}-${entry.username}`}
-                entry={entry}
-                highlight={entry.isCurrentUser}
-              />
-            ))}
-          </div>
+          {view.top10.length > 0 && (
+            <div className="top-lemons-list" role="list">
+              {view.top10.map((entry) => (
+                <TopLemonsRow
+                  key={`${entry.rank}-${entry.username}`}
+                  entry={entry}
+                  highlight={entry.isCurrentUser}
+                />
+              ))}
+            </div>
+          )}
 
           {outside && outsideLevel && (
             <div className="top-lemons-you">
