@@ -347,6 +347,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           open={lemonClubOpen}
           initialTab={lemonClubTab}
           progress={progress}
+          displayName={player?.displayName}
           referralStats={referralStats}
           referralBackendReady={referralBackendReady}
           onClose={() => setLemonClubOpen(false)}

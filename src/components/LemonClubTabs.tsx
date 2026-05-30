@@ -4,7 +4,8 @@ export type LemonClubTab =
   | 'badges'
   | 'referrals'
   | 'weekly'
-  | 'shame';
+  | 'shame'
+  | 'top-lemons';
 
 export const LEMON_CLUB_TABS: { id: LemonClubTab; label: string; shortLabel?: string }[] = [
   { id: 'missions', label: 'Missions' },
@@ -13,6 +14,7 @@ export const LEMON_CLUB_TABS: { id: LemonClubTab; label: string; shortLabel?: st
   { id: 'referrals', label: 'Referrals', shortLabel: 'Refs' },
   { id: 'weekly', label: 'Weekly Cup', shortLabel: 'Cup' },
   { id: 'shame', label: 'Hall of Shame', shortLabel: 'Shame' },
+  { id: 'top-lemons', label: 'Top Lemons', shortLabel: 'Top' },
 ];
 
 interface LemonClubTabsProps {

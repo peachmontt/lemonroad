@@ -9,6 +9,7 @@ import { MissionsTab } from './MissionsTab';
 import { ReferralsTab } from './ReferralsTab';
 import { SkinsTab } from './SkinsTab';
 import { WeeklyCupTab } from './WeeklyCupTab';
+import { TopLemonsTab } from './TopLemonsTab';
 
 import type { ReferralStats } from '../lib/api';
 
@@ -23,6 +24,7 @@ interface LemonClubMenuProps {
   onSelectDeathTitle: (id: DeathTitleId | null) => void;
   onClaimMission: (id: string) => void;
   onSimulateReferral?: () => void;
+  displayName?: string;
 }
 
 export function LemonClubMenu({
@@ -36,6 +38,7 @@ export function LemonClubMenu({
   onSelectDeathTitle,
   onClaimMission,
   onSimulateReferral,
+  displayName,
 }: LemonClubMenuProps) {
   const [tab, setTab] = useState<LemonClubTab>(initialTab);
 
@@ -102,6 +105,12 @@ export function LemonClubMenu({
           )}
           {tab === 'weekly' && <WeeklyCupTab progress={progress} />}
           {tab === 'shame' && <HallOfShameTab />}
+          {tab === 'top-lemons' && (
+            <TopLemonsTab
+              totalLemonXp={progress.lemonXp}
+              displayName={displayName}
+            />
+          )}
         </div>
       </div>
     </div>

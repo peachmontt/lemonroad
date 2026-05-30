@@ -219,3 +219,16 @@ export function attributeReferral(code: string) {
     body: JSON.stringify({ code }),
   });
 }
+
+/** Top 10 Lemon XP gainers over the last 3 months (includes current user row when outside top 10). */
+export interface TopLemonsEntry {
+  rank: number;
+  username: string;
+  xpGainedLastThreeMonths: number;
+  totalLemonXp: number;
+  isCurrentUser: boolean;
+}
+
+export function fetchTopLemonsLeaderboard() {
+  return apiFetch<TopLemonsEntry[]>('/api/lemon-club/top-lemons');
+}

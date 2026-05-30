@@ -1,5 +1,6 @@
 import type { PlayerProgress } from '../game/progression';
 import type { DailyMission } from '../game/missions';
+import { getLemonLevel } from '../lib/lemonLevels';
 
 interface MissionsTabProps {
   progress: PlayerProgress;
@@ -37,10 +38,13 @@ function MissionCard({
 }
 
 export function MissionsTab({ progress, onClaim }: MissionsTabProps) {
+  const level = getLemonLevel(progress.lemonXp);
+
   return (
     <div className="lemon-club-tab-panel">
       <p className="lemon-club-tagline">Do dumb things. Get shiny lemons.</p>
       <p className="lemon-club-stat">Lemon XP: {progress.lemonXp}</p>
+      <p className="lemon-club-stat lemon-club-level">{level.label}</p>
       {progress.streakDays > 0 && (
         <p className="lemon-club-stat">Daily streak: {progress.streakDays} days 🔥</p>
       )}
