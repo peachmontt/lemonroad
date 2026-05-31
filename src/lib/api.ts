@@ -160,6 +160,8 @@ export interface DailyLeaderboardEntry {
   totalRuns: number;
   rewardStatus: DailyLeaderboardStatus | null;
   paidStatus: DailyRewardStatus | null;
+  /** Resolved label for past days (top 3 + paid/rejected rows). */
+  payoutStatus?: DailyRewardStatus | null;
   equippedEmoji: string;
   equippedKind: 'badge' | 'skin' | 'default';
 }

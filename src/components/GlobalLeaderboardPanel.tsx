@@ -20,6 +20,17 @@ interface GlobalLeaderboardPanelProps {
 
 type Tab = 'daily-today' | 'daily-yesterday' | 'global';
 
+function resolveEntryPayoutStatus(
+  entry: DailyLeaderboardResponse['entries'][number],
+): DailyRewardStatus | null {
+  if (entry.payoutStatus) return entry.payoutStatus;
+  if (entry.paidStatus) return entry.paidStatus;
+  if (entry.rewardStatus === 'AWARDED') return 'PENDING';
+  if (entry.rewardStatus === 'REJECTED') return 'REJECTED';
+  if (entry.position <= 3) return 'PENDING';
+  return null;
+}
+
 const PAID_STATUS_LABEL: Record<NonNullable<DailyRewardStatus>, string> = {
   PENDING: 'pending',
   PAID: 'paid',
@@ -101,42 +112,42 @@ export function GlobalLeaderboardPanel({
           ? 'yesterday · results'
           : `best run per player · ${globalMode}`;
 
-  function renderDailyEntries(data: DailyLeaderboardResponse) {
+  function renderDailyEntries(data: DailyLeaderboardResponse, pastDay: boolean) {
     if (data.entries.length === 0) {
       return <p className="leaderboard-empty">no runs yet — be the first lemon</p>;
     }
     const limit = compact ? 10 : 25;
     return (
-      <ol className="leaderboard-list">
-        {data.entries.slice(0, limit).map((e) => {
-          const isMe = currentPlayerId && e.playerId === currentPlayerId;
-          return (
-            <li
-              key={e.playerId}
-              className={isMe ? 'lb-row lb-row-me' : 'lb-row'}
-            >
-              <span className="lb-rank">#{e.position}</span>
-              <EquippedLemonVisual emoji={e.equippedEmoji} kind={e.equippedKind} />
-              <span className="lb-name">
-                {e.displayName}
-                {isMe && <span className="lb-you"> (you)</span>}
-              </span>
-              <span className="lb-dist">{Math.floor(e.bestDistance)}m</span>
-              {e.paidStatus && (
-                <span className={`lb-reward-status ${PAID_STATUS_CLASS[e.paidStatus]}`}>
-                  {PAID_STATUS_LABEL[e.paidStatus]}
+      <>
+        {pastDay && (
+          <p className="leaderboard-rules">Top 3 free rewards · paid / pending / rejected</p>
+        )}
+        <ol className="leaderboard-list">
+          {data.entries.slice(0, limit).map((e) => {
+            const isMe = currentPlayerId && e.playerId === currentPlayerId;
+            const payout = pastDay ? resolveEntryPayoutStatus(e) : null;
+            return (
+              <li
+                key={e.playerId}
+                className={isMe ? 'lb-row lb-row-me' : 'lb-row'}
+              >
+                <span className="lb-rank">#{e.position}</span>
+                <EquippedLemonVisual emoji={e.equippedEmoji} kind={e.equippedKind} />
+                <span className="lb-name">
+                  {e.displayName}
+                  {isMe && <span className="lb-you"> (you)</span>}
                 </span>
-              )}
-              {!e.paidStatus && e.rewardStatus === 'AWARDED' && (
-                <span className="lb-reward-status status-pending">pending</span>
-              )}
-              {!e.paidStatus && e.rewardStatus === 'REJECTED' && (
-                <span className="lb-reward-status status-rejected">rejected</span>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+                <span className="lb-dist">{Math.floor(e.bestDistance)}m</span>
+                {payout && (
+                  <span className={`lb-reward-status ${PAID_STATUS_CLASS[payout]}`}>
+                    {PAID_STATUS_LABEL[payout]}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </>
     );
   }
 
@@ -146,8 +157,8 @@ export function GlobalLeaderboardPanel({
     <p className="leaderboard-empty">could not load: {currentError}</p>
   ) : (
     <>
-      {tab === 'daily-today' && dailyToday && renderDailyEntries(dailyToday)}
-      {tab === 'daily-yesterday' && dailyYesterday && renderDailyEntries(dailyYesterday)}
+      {tab === 'daily-today' && dailyToday && renderDailyEntries(dailyToday, false)}
+      {tab === 'daily-yesterday' && dailyYesterday && renderDailyEntries(dailyYesterday, true)}
       {tab === 'global' && globalData && (
         <>
           <ol className="leaderboard-list">

@@ -32,3 +32,19 @@ export function previousDayPoolBucket(now = new Date()): string {
 export function dayPoolBucketToDate(bucket: string): Date {
   return new Date(Number(bucket) * MS_PER_HOUR);
 }
+
+export type PayoutDisplayStatus = 'PENDING' | 'PAID' | 'REJECTED';
+
+/** User-facing payout label for past daily leaderboard rows. */
+export function resolvePayoutDisplayStatus(
+  position: number,
+  rewardStatus: 'PENDING' | 'AWARDED' | 'REJECTED',
+  paidStatus: string | null | undefined,
+): PayoutDisplayStatus | null {
+  if (paidStatus === 'PAID' || paidStatus === 'PENDING' || paidStatus === 'REJECTED') {
+    return paidStatus;
+  }
+  if (rewardStatus === 'REJECTED') return 'REJECTED';
+  if (position <= 3) return 'PENDING';
+  return null;
+}

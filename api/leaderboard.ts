@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './_lib/db';
 import { currentDayBucket, previousDayBucket, dayBucketToDate, getNextDailyResetAt, RESET_TIMEZONE_LABEL } from './_lib/day';
-import { dayBucketDateOrFilter } from './_lib/daily-pool';
+import { dayBucketDateOrFilter, resolvePayoutDisplayStatus } from './_lib/daily-pool';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
 import { resolveEquippedVisual } from '../shared/lemonVisual';
@@ -171,7 +171,7 @@ async function getDailyLeaderboard(dateStr: string) {
   let rewardMap = new Map<string, { status: string } | null>();
   if (!isToday && entries.length > 0) {
     const rewards = await prisma.dailyReward.findMany({
-      where: { date },
+      where: dayBucketDateOrFilter(dateStr),
       select: { playerId: true, status: true },
     });
     for (const r of rewards) {
@@ -186,14 +186,20 @@ async function getDailyLeaderboard(dateStr: string) {
         e.player.selectedBadge,
         e.player.selectedSkin,
       );
+      const position = e.position ?? i + 1;
+      const paidStatus = isToday ? null : (rewardMap.get(e.playerId)?.status ?? null);
+      const payoutStatus = isToday
+        ? null
+        : resolvePayoutDisplayStatus(position, e.rewardStatus, paidStatus);
       return {
-        position: e.position ?? i + 1,
+        position,
         playerId: e.player.id,
         displayName: e.player.displayName,
         bestDistance: e.bestDistance,
         totalRuns: e.totalRuns,
         rewardStatus: isToday ? null : e.rewardStatus,
-        paidStatus: isToday ? null : (rewardMap.get(e.playerId)?.status ?? null),
+        paidStatus,
+        payoutStatus,
         equippedEmoji: visual.equippedEmoji,
         equippedKind: visual.equippedKind,
       };

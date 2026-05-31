@@ -2373,6 +2373,17 @@ body:not(.home-screen) .home-meme-stickers {
   padding: 2px 0;
 }
 
+.leaderboard-list li.lb-row {
+  display: grid;
+  grid-template-columns: 1.75rem 1.25rem minmax(0, 1fr) auto minmax(3.25rem, auto);
+  align-items: center;
+  column-gap: 6px;
+}
+
+.leaderboard-list li.lb-row .lb-name {
+  min-width: 0;
+}
+
 .lemon-equip-visual {
   display: inline-flex;
   align-items: center;
