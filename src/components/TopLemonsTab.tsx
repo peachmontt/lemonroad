@@ -70,7 +70,7 @@ export function TopLemonsTab(_props: TopLemonsTabProps) {
     <div className="lemon-club-tab-panel top-lemons-panel">
       <h3 className="top-lemons-title">🏆 Top 100 Lemons</h3>
       <p className="lemon-club-muted top-lemons-subtitle">
-        20 rival NPCs + every real player · ranked by 3-month Lemon XP
+        Ranked by Lemon XP
       </p>
 
       {loading && <LemonLoader label="ranking the zestiest…" />}
