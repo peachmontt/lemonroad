@@ -32,6 +32,8 @@ export interface PlayerResponse {
   playerId: string;
   displayName: string;
   walletPubkey: string | null;
+  selectedBadge: string | null;
+  selectedSkin: string | null;
 }
 
 export interface RunRecord {
@@ -58,6 +60,8 @@ export interface PoolLeaderboardResponse {
     displayName: string;
     distance: number;
     diedAt: string;
+    equippedEmoji: string;
+    equippedKind: 'badge' | 'skin' | 'default';
   }[];
   projectedPayouts: {
     place: number;
@@ -80,6 +84,8 @@ export interface GlobalLeaderboardResponse {
     distance: number;
     mode: 'free' | 'paid';
     diedAt: string;
+    equippedEmoji: string;
+    equippedKind: 'badge' | 'skin' | 'default';
   }[];
 }
 
@@ -95,6 +101,16 @@ export function updateProfile(body: {
   walletPubkey?: string;
 }) {
   return apiFetch<PlayerResponse>('/api/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export function syncEquippedVisual(body: {
+  selectedBadge?: string | null;
+  selectedSkin?: string | null;
+}) {
+  return apiFetch<PlayerResponse>('/api/lemon-club/equip', {
     method: 'PATCH',
     body: JSON.stringify(body),
   });
@@ -144,6 +160,8 @@ export interface DailyLeaderboardEntry {
   totalRuns: number;
   rewardStatus: DailyLeaderboardStatus | null;
   paidStatus: DailyRewardStatus | null;
+  equippedEmoji: string;
+  equippedKind: 'badge' | 'skin' | 'default';
 }
 
 export interface DailyLeaderboardResponse {
@@ -228,6 +246,8 @@ export interface TopLemonsEntry {
   totalLemonXp: number;
   isCurrentUser: boolean;
   isNpc: boolean;
+  equippedEmoji: string;
+  equippedKind: 'badge' | 'skin' | 'default';
 }
 
 export function fetchTopLemonsLeaderboard() {

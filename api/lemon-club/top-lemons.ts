@@ -12,6 +12,8 @@ interface PlayerXpRow {
   display_name: string;
   xp_gained_3m: number;
   total_xp: number;
+  selected_badge: string | null;
+  selected_skin: string | null;
 }
 
 export default withMethods({
@@ -29,11 +31,13 @@ export default withMethods({
         COALESCE(SUM(FLOOR(gr.distance / ${divisor})) FILTER (
           WHERE gr.died_at >= ${since}
         ), 0)::int AS xp_gained_3m,
-        p.lemon_xp AS total_xp
+        p.lemon_xp AS total_xp,
+        p.selected_badge,
+        p.selected_skin
       FROM game_runs gr
       INNER JOIN players p ON p.id = gr.player_id
       WHERE gr.is_valid = true
-      GROUP BY p.id, p.display_name, p.lemon_xp
+      GROUP BY p.id, p.display_name, p.lemon_xp, p.selected_badge, p.selected_skin
     `;
 
     const byId = new Map(
@@ -44,6 +48,8 @@ export default withMethods({
           displayName: row.display_name,
           xpGained3m: row.xp_gained_3m,
           totalXp: row.total_xp,
+          selectedBadge: row.selected_badge,
+          selectedSkin: row.selected_skin,
         },
       ]),
     );
@@ -51,7 +57,13 @@ export default withMethods({
     if (!byId.has(player.id)) {
       const me = await prisma.player.findUnique({
         where: { id: player.id },
-        select: { id: true, displayName: true, lemonXp: true },
+        select: {
+          id: true,
+          displayName: true,
+          lemonXp: true,
+          selectedBadge: true,
+          selectedSkin: true,
+        },
       });
       if (me) {
         byId.set(me.id, {
@@ -59,6 +71,8 @@ export default withMethods({
           displayName: me.displayName,
           xpGained3m: 0,
           totalXp: me.lemonXp,
+          selectedBadge: me.selectedBadge,
+          selectedSkin: me.selectedSkin,
         });
       }
     }

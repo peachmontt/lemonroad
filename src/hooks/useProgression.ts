@@ -3,12 +3,13 @@ import {
   completeMissionById,
   getProgress,
   incrementReferralCountDev,
+  selectBadge,
   selectDeathTitle,
   selectSkin,
   type PlayerProgress,
   type UnlockNotification,
 } from '../game/progression';
-import type { DeathTitleId } from '../game/badges';
+import type { BadgeId, DeathTitleId } from '../game/badges';
 import type { SkinId } from '../game/skins';
 
 export function useProgression() {
@@ -19,16 +20,23 @@ export function useProgression() {
     setProgress(getProgress());
   }, []);
 
-  const handleSelectSkin = useCallback(
-    (id: SkinId) => {
-      setProgress(selectSkin(id));
-    },
-    [],
-  );
+  const handleSelectSkin = useCallback((id: SkinId) => {
+    const next = selectSkin(id);
+    setProgress(next);
+    return next;
+  }, []);
+
+  const handleSelectBadge = useCallback((id: BadgeId | null) => {
+    const next = selectBadge(id);
+    setProgress(next);
+    return next;
+  }, []);
 
   const handleSelectDeathTitle = useCallback(
     (id: DeathTitleId | null) => {
-      setProgress(selectDeathTitle(id));
+      const next = selectDeathTitle(id);
+      setProgress(next);
+      return next;
     },
     [],
   );
@@ -51,6 +59,7 @@ export function useProgression() {
     setRecentUnlocks,
     refresh,
     selectSkin: handleSelectSkin,
+    selectBadge: handleSelectBadge,
     selectDeathTitle: handleSelectDeathTitle,
     claimMission: handleClaimMission,
     simulateReferral: handleSimulateReferral,

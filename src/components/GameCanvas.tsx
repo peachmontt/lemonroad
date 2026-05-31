@@ -4,12 +4,13 @@ import { useAccount } from 'wagmi';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { useProgression } from '../hooks/useProgression';
 import { appendRunHistory } from '../game/runHistory';
-import { updateProgressAfterRun } from '../game/progression';
+import { updateProgressAfterRun, getProgress } from '../game/progression';
 import { parseReferralFromUrl, storePendingReferral } from '../game/referrals';
 import type { RunSummary } from '../game/types';
 import { usePaidAttempt } from '../hooks/usePaidAttempt';
 import { useEvmPaidAttempt } from '../hooks/useEvmPaidAttempt';
 import { usePlayer } from '../hooks/usePlayer';
+import { syncEquippedVisual } from '../lib/api';
 import { usePwaOnboarding } from '../hooks/usePwaOnboarding';
 import type { GameMode } from '../types/game';
 import { useDailyRank } from '../hooks/useDailyRank';
@@ -45,6 +46,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     setRecentUnlocks,
     refresh: refreshProgression,
     selectSkin,
+    selectBadge,
     selectDeathTitle,
     claimMission,
     simulateReferral,
@@ -82,10 +84,25 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
 
   const handleSelectSkin = useCallback(
     (id: Parameters<typeof selectSkin>[0]) => {
-      selectSkin(id);
+      const next = selectSkin(id);
       setSelectedSkin(id);
+      void syncEquippedVisual({
+        selectedSkin: next.selectedSkin,
+        selectedBadge: next.selectedBadge,
+      }).catch(() => undefined);
     },
     [selectSkin, setSelectedSkin],
+  );
+
+  const handleSelectBadge = useCallback(
+    (id: Parameters<typeof selectBadge>[0]) => {
+      const next = selectBadge(id);
+      void syncEquippedVisual({
+        selectedSkin: next.selectedSkin,
+        selectedBadge: next.selectedBadge,
+      }).catch(() => undefined);
+    },
+    [selectBadge],
   );
 
   const { publicKey } = useWallet();
@@ -104,6 +121,15 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
   useEffect(() => {
     if (!runsLoading) refreshProgression();
   }, [runsLoading, refreshProgression]);
+
+  useEffect(() => {
+    if (!player || runsLoading) return;
+    const p = getProgress();
+    void syncEquippedVisual({
+      selectedSkin: p.selectedSkin,
+      selectedBadge: p.selectedBadge,
+    }).catch(() => undefined);
+  }, [player, runsLoading]);
 
   const openLemonClub = useCallback((tab: LemonClubTab = 'missions') => {
     setLemonClubTab(tab);
@@ -352,6 +378,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           referralBackendReady={referralBackendReady}
           onClose={() => setLemonClubOpen(false)}
           onSelectSkin={handleSelectSkin}
+          onSelectBadge={handleSelectBadge}
           onSelectDeathTitle={selectDeathTitle}
           onClaimMission={claimMission}
           onSimulateReferral={simulateReferral}

@@ -24,6 +24,7 @@ export interface PlayerProgress {
   unlockedSkins: SkinId[];
   selectedSkin: SkinId;
   unlockedBadges: BadgeId[];
+  selectedBadge: BadgeId | null;
   unlockedDeathTitles: DeathTitleId[];
   selectedDeathTitle: DeathTitleId | null;
   completedMissions: string[];
@@ -60,6 +61,7 @@ function defaultProgress(): PlayerProgress {
     unlockedSkins: ['default'],
     selectedSkin: 'default',
     unlockedBadges: [],
+    selectedBadge: null,
     unlockedDeathTitles: [],
     selectedDeathTitle: null,
     completedMissions: [],
@@ -96,6 +98,12 @@ function mergeProgress(raw: Partial<PlayerProgress>): PlayerProgress {
   };
   if (!merged.unlockedSkins.includes('default')) {
     merged.unlockedSkins.unshift('default');
+  }
+  if (!merged.unlockedSkins.includes(merged.selectedSkin)) {
+    merged.selectedSkin = 'default';
+  }
+  if (merged.selectedBadge && !merged.unlockedBadges.includes(merged.selectedBadge)) {
+    merged.selectedBadge = null;
   }
   if (!merged.referralCode) {
     merged.referralCode = generateReferralCode();
@@ -143,6 +151,20 @@ export function selectSkin(id: SkinId): PlayerProgress {
   const p = getProgress();
   if (p.unlockedSkins.includes(id)) {
     p.selectedSkin = id;
+    saveProgress(p);
+  }
+  return p;
+}
+
+export function selectBadge(id: BadgeId | null): PlayerProgress {
+  const p = getProgress();
+  if (id === null) {
+    p.selectedBadge = null;
+    saveProgress(p);
+    return p;
+  }
+  if (p.unlockedBadges.includes(id)) {
+    p.selectedBadge = id;
     saveProgress(p);
   }
   return p;

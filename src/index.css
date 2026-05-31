@@ -2368,8 +2368,32 @@ body:not(.home-screen) .home-meme-stickers {
 
 .leaderboard-list li {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 2px 0;
+}
+
+.lemon-equip-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.lemon-equip-visual--glow {
+  border-radius: 50%;
+  box-shadow: 0 0 5px 2px rgba(255, 225, 53, 0.55);
+}
+
+.lemon-equip-visual--loading {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  opacity: 0.45;
 }
 
 .lb-rank {
@@ -3746,10 +3770,23 @@ html.dead-screen {
 
 .top-lemons-row-line {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   font-weight: 700;
   font-size: 0.88rem;
   line-height: 1.4;
   word-wrap: break-word;
+}
+
+.top-lemons-you-visual {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.top-lemons-name--placeholder {
+  color: #999;
 }
 
 .top-lemons-rank {

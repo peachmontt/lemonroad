@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchPoolLeaderboard, type PoolLeaderboardResponse } from '../lib/api';
 import { CollapsiblePanel } from './CollapsiblePanel';
 import { DegenPayoutCountdown } from './DailyResetCountdown';
+import { EquippedLemonVisual } from './EquippedLemonVisual';
 import { LemonLoader } from './LemonLoader';
 
 interface LeaderboardPanelProps {
@@ -71,6 +72,7 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
           {data.entries.slice(0, compact ? 5 : 15).map((e) => (
             <li key={e.walletPubkey}>
               <span className="lb-rank">#{e.rank}</span>
+              <EquippedLemonVisual emoji={e.equippedEmoji} kind={e.equippedKind} />
               <span className="lb-name">{e.displayName}</span>
               <span className="lb-dist">{Math.floor(e.distance)}m</span>
             </li>

@@ -30,6 +30,8 @@ export default withMethods({
       playerId: player.id,
       displayName: player.displayName,
       walletPubkey: player.walletPubkey,
+      selectedBadge: player.selectedBadge,
+      selectedSkin: player.selectedSkin,
     });
   },
 });

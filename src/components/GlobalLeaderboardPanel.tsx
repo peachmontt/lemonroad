@@ -8,6 +8,7 @@ import {
 } from '../lib/api';
 import { useDailyLeaderboard } from '../context/DailyLeaderboardContext';
 import { CollapsiblePanel } from './CollapsiblePanel';
+import { EquippedLemonVisual } from './EquippedLemonVisual';
 import { LemonLoader } from './LemonLoader';
 
 interface GlobalLeaderboardPanelProps {
@@ -115,6 +116,7 @@ export function GlobalLeaderboardPanel({
               className={isMe ? 'lb-row lb-row-me' : 'lb-row'}
             >
               <span className="lb-rank">#{e.position}</span>
+              <EquippedLemonVisual emoji={e.equippedEmoji} kind={e.equippedKind} />
               <span className="lb-name">
                 {e.displayName}
                 {isMe && <span className="lb-you"> (you)</span>}
@@ -152,6 +154,7 @@ export function GlobalLeaderboardPanel({
             {globalData.entries.slice(0, compact ? 10 : 25).map((e) => (
               <li key={`${e.rank}-${e.displayName}`} className="lb-row">
                 <span className="lb-rank">#{e.rank}</span>
+                <EquippedLemonVisual emoji={e.equippedEmoji} kind={e.equippedKind} />
                 <span className="lb-name">{e.displayName}</span>
                 <span className={`mode-tag mode-${e.mode}`}>{e.mode}</span>
                 <span className="lb-dist">{Math.floor(e.distance)}m</span>

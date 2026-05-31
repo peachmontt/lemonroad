@@ -13,6 +13,7 @@ assert(npcOnly.length === 20, 'expected 20 NPC rows');
 assert(npcOnly[0]!.username === 'LemonKing', 'top slot is LemonKing');
 assert(npcOnly[0]!.isNpc === true, 'LemonKing is NPC');
 assert(npcOnly[0]!.xpGainedLastThreeMonths === 12400, 'top XP');
+assert(npcOnly[0]!.equippedKind === 'default', 'NPCs use default lemon visual');
 
 const payloadNpc = formatTopLemonsApiPayload(npcOnly);
 assert(payloadNpc.length === 20, 'API returns all 20 NPCs when fewer than 100 rows');
@@ -20,13 +21,22 @@ assert(payloadNpc.every((e) => e.isNpc), 'all NPC payload rows');
 
 const meId = 'real-user';
 const ranked = buildTopLemonsLeaderboard(
-  [{ playerId: meId, displayName: 'MyNick', xpGained3m: 4000, totalXp: 261 }],
+  [{
+    playerId: meId,
+    displayName: 'MyNick',
+    xpGained3m: 4000,
+    totalXp: 261,
+    selectedBadge: 'daily_squeezer',
+    selectedSkin: 'golden',
+  }],
   meId,
 );
 const me = ranked.find((e) => e.isCurrentUser);
 assert(me != null, 'current user in ladder');
 assert(me!.rank === 10, `4000 XP should be #10, got #${me!.rank}`);
 assert(me!.isNpc === false, 'real user is not NPC');
+assert(me!.equippedKind === 'badge', 'badge beats skin for display');
+assert(me!.equippedEmoji === '🔥', 'equipped badge emoji');
 assert(
   ranked[9]!.username === 'MyNick',
   'real user displaces MemeSqueezer at #10',

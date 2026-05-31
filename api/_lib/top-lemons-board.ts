@@ -1,4 +1,5 @@
 import { TOP_LEMONS_NPC_SEED } from './top-lemons-npcs';
+import { resolveEquippedVisual } from '../../shared/lemonVisual';
 
 /** Visible slots on the Top Lemons tab (NPCs + real players compete for these). */
 export const TOP_LEMONS_LEADERBOARD_SIZE = 100;
@@ -8,6 +9,8 @@ export interface TopLemonsRealPlayer {
   displayName: string;
   xpGained3m: number;
   totalXp: number;
+  selectedBadge?: string | null;
+  selectedSkin?: string | null;
 }
 
 export interface TopLemonsBoardEntry {
@@ -17,6 +20,8 @@ export interface TopLemonsBoardEntry {
   totalLemonXp: number;
   isCurrentUser: boolean;
   isNpc: boolean;
+  equippedEmoji: string;
+  equippedKind: 'badge' | 'skin' | 'default';
 }
 
 interface MergeRow {
@@ -25,6 +30,8 @@ interface MergeRow {
   totalLemonXp: number;
   isCurrentUser: boolean;
   isNpc: boolean;
+  selectedBadge?: string | null;
+  selectedSkin?: string | null;
 }
 
 function compareRows(a: MergeRow, b: MergeRow): number {
@@ -48,6 +55,8 @@ export function buildTopLemonsLeaderboard(
     totalLemonXp: p.totalXp,
     isCurrentUser: p.playerId === currentPlayerId,
     isNpc: false,
+    selectedBadge: p.selectedBadge ?? null,
+    selectedSkin: p.selectedSkin ?? null,
   }));
 
   const npcRows: MergeRow[] = TOP_LEMONS_NPC_SEED.map((npc) => ({
@@ -56,18 +65,27 @@ export function buildTopLemonsLeaderboard(
     totalLemonXp: npc.totalLemonXp,
     isCurrentUser: false,
     isNpc: true,
+    selectedBadge: null,
+    selectedSkin: null,
   }));
 
   const ranked = [...realRows, ...npcRows].sort(compareRows);
 
-  return ranked.map((row, index) => ({
-    rank: index + 1,
-    username: row.username,
-    xpGainedLastThreeMonths: row.xpGainedLastThreeMonths,
-    totalLemonXp: row.totalLemonXp,
-    isCurrentUser: row.isCurrentUser,
-    isNpc: row.isNpc,
-  }));
+  return ranked.map((row, index) => {
+    const visual = row.isNpc
+      ? resolveEquippedVisual(null, null)
+      : resolveEquippedVisual(row.selectedBadge, row.selectedSkin);
+    return {
+      rank: index + 1,
+      username: row.username,
+      xpGainedLastThreeMonths: row.xpGainedLastThreeMonths,
+      totalLemonXp: row.totalLemonXp,
+      isCurrentUser: row.isCurrentUser,
+      isNpc: row.isNpc,
+      equippedEmoji: visual.equippedEmoji,
+      equippedKind: visual.equippedKind,
+    };
+  });
 }
 
 export function formatTopLemonsApiPayload(

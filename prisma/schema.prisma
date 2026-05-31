@@ -35,6 +35,10 @@ model Player {
   displayName       String             @default("Anonymous Lemon") @map("display_name")
   /** Lifetime Lemon XP from valid runs (distance ÷ 50); used for level display. */
   lemonXp           Int                @default(0) @map("lemon_xp")
+  /** Equipped Lemon Club badge (shown on leaderboards when set). */
+  selectedBadge     String?            @map("selected_badge")
+  /** Equipped Lemon Club skin (fallback visual when no badge is set). */
+  selectedSkin      String?            @map("selected_skin")
   referralCode      String?            @unique @map("referral_code")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")

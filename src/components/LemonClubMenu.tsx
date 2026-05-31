@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PlayerProgress, UnlockNotification } from '../game/progression';
 import type { SkinId } from '../game/skins';
-import type { DeathTitleId } from '../game/badges';
+import type { BadgeId, DeathTitleId } from '../game/badges';
 import { BadgesTab } from './BadgesTab';
 import { HallOfShameTab } from './HallOfShameTab';
 import { LemonClubTabs, type LemonClubTab } from './LemonClubTabs';
@@ -21,6 +21,7 @@ interface LemonClubMenuProps {
   referralBackendReady?: boolean;
   onClose: () => void;
   onSelectSkin: (id: SkinId) => void;
+  onSelectBadge: (id: BadgeId | null) => void;
   onSelectDeathTitle: (id: DeathTitleId | null) => void;
   onClaimMission: (id: string) => void;
   onSimulateReferral?: () => void;
@@ -35,6 +36,7 @@ export function LemonClubMenu({
   referralBackendReady,
   onClose,
   onSelectSkin,
+  onSelectBadge,
   onSelectDeathTitle,
   onClaimMission,
   onSimulateReferral,
@@ -93,7 +95,11 @@ export function LemonClubMenu({
           )}
           {tab === 'skins' && <SkinsTab progress={progress} onSelect={onSelectSkin} />}
           {tab === 'badges' && (
-            <BadgesTab progress={progress} onSelectTitle={onSelectDeathTitle} />
+            <BadgesTab
+              progress={progress}
+              onSelectBadge={onSelectBadge}
+              onSelectTitle={onSelectDeathTitle}
+            />
           )}
           {tab === 'referrals' && (
             <ReferralsTab

@@ -1,30 +1,53 @@
-import { BADGES, DEATH_TITLES, type DeathTitleId } from '../game/badges';
+import { BADGES, DEATH_TITLES, type BadgeId, type DeathTitleId } from '../game/badges';
 import type { PlayerProgress } from '../game/progression';
 
 interface BadgesTabProps {
   progress: PlayerProgress;
+  onSelectBadge: (id: BadgeId | null) => void;
   onSelectTitle: (id: DeathTitleId | null) => void;
 }
 
-export function BadgesTab({ progress, onSelectTitle }: BadgesTabProps) {
+export function BadgesTab({ progress, onSelectBadge, onSelectTitle }: BadgesTabProps) {
   return (
     <div className="lemon-club-tab-panel">
       <h3 className="lemon-club-section-title">Badges</h3>
       <div className="lemon-club-badge-grid">
         {BADGES.map((badge) => {
           const unlocked = progress.unlockedBadges.includes(badge.id);
+          const selected = progress.selectedBadge === badge.id;
           return (
             <div
               key={badge.id}
-              className={`lemon-club-card lemon-club-badge ${unlocked ? 'unlocked' : 'locked'}`}
+              className={`lemon-club-card lemon-club-badge ${unlocked ? 'unlocked' : 'locked'} ${selected ? 'selected' : ''}`}
             >
               <span className="lemon-club-badge-emoji">{badge.emoji}</span>
               <h4>{badge.name}</h4>
               <p className="lemon-club-muted">{unlocked ? badge.description : badge.unlockHint}</p>
+              {unlocked ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={selected}
+                  onClick={() => onSelectBadge(badge.id)}
+                >
+                  {selected ? 'Equipped' : 'Select'}
+                </button>
+              ) : (
+                <span className="lemon-club-locked-label">Locked</span>
+              )}
             </div>
           );
         })}
       </div>
+      {progress.selectedBadge && (
+        <button
+          type="button"
+          className="footer-link lemon-club-clear-title"
+          onClick={() => onSelectBadge(null)}
+        >
+          Clear badge
+        </button>
+      )}
 
       <h3 className="lemon-club-section-title">Death Titles</h3>
       <div className="lemon-club-title-list">

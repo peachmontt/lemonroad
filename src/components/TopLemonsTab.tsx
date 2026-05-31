@@ -7,6 +7,7 @@ import {
   formatLemonLevelLabel,
 } from '../lib/lemonLevels';
 import { loadTopLemonsLeaderboard, type TopLemonsLeaderboardView } from '../lib/topLemons';
+import { EquippedLemonVisual } from './EquippedLemonVisual';
 import { LemonLoader } from './LemonLoader';
 
 interface TopLemonsTabProps {
@@ -24,11 +25,24 @@ function TopLemonsRow({ entry, highlight }: { entry: TopLemonsEntry; highlight?:
       role="listitem"
     >
       <p className="top-lemons-row-line">
-        <span className="top-lemons-rank">#{entry.rank}</span>{' '}
+        <span className="top-lemons-rank">#{entry.rank}</span>
+        <EquippedLemonVisual emoji={entry.equippedEmoji} kind={entry.equippedKind} />
         <span className="top-lemons-name">{entry.username}</span>
-        {entry.isNpc && <span className="top-lemons-npc-tag">NPC</span>}{' '}
-        <span className="top-lemons-xp">{formatXpGained(entry.xpGainedLastThreeMonths)}</span>{' '}
+        {entry.isNpc && <span className="top-lemons-npc-tag">NPC</span>}
+        <span className="top-lemons-xp">{formatXpGained(entry.xpGainedLastThreeMonths)}</span>
         <span className="top-lemons-level">{formatLemonLevelShort(level.level)}</span>
+      </p>
+    </div>
+  );
+}
+
+function TopLemonsRowSkeleton() {
+  return (
+    <div className="lemon-club-card top-lemons-row" role="listitem" aria-hidden="true">
+      <p className="top-lemons-row-line">
+        <span className="top-lemons-rank">#—</span>
+        <EquippedLemonVisual loading />
+        <span className="top-lemons-name top-lemons-name--placeholder">…</span>
       </p>
     </div>
   );
@@ -73,7 +87,16 @@ export function TopLemonsTab(_props: TopLemonsTabProps) {
         Ranked by Lemon XP
       </p>
 
-      {loading && <LemonLoader label="ranking the zestiest…" />}
+      {loading && (
+        <>
+          <LemonLoader label="ranking the zestiest…" />
+          <div className="top-lemons-list" aria-hidden="true">
+            {Array.from({ length: 5 }, (_, i) => (
+              <TopLemonsRowSkeleton key={i} />
+            ))}
+          </div>
+        </>
+      )}
 
       {!loading && error && !view && (
         <p className="lemon-club-muted">Could not load Top Lemons: {error}</p>
@@ -101,7 +124,14 @@ export function TopLemonsTab(_props: TopLemonsTabProps) {
 
           {outside && outsideLevel && (
             <div className="top-lemons-you">
-              <p className="top-lemons-you-rank">Your rank: #{outside.rank}</p>
+              <p className="top-lemons-you-rank">
+                Your rank: #{outside.rank}
+                <EquippedLemonVisual
+                  emoji={outside.equippedEmoji}
+                  kind={outside.equippedKind}
+                  className="top-lemons-you-visual"
+                />
+              </p>
               <p className="top-lemons-you-xp">
                 Your 3-month XP: {formatXpGained(outside.xpGainedLastThreeMonths)}
               </p>

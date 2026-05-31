@@ -4,6 +4,7 @@ import { currentDayBucket, previousDayBucket, dayBucketToDate, getNextDailyReset
 import { dayBucketDateOrFilter } from './_lib/daily-pool';
 import { badRequest, json, withMethods } from './_lib/http';
 import { computeDistribution, formatUsdt } from './_lib/pool-math';
+import { resolveEquippedVisual } from '../shared/lemonVisual';
 
 type GlobalMode = 'free' | 'paid' | 'all';
 
@@ -17,6 +18,8 @@ async function getGlobalLeaderboard(mode: GlobalMode, limit: number) {
       distance: number;
       mode: string;
       died_at: Date;
+      selected_badge: string | null;
+      selected_skin: string | null;
     }>
   >`
     WITH best AS (
@@ -29,20 +32,25 @@ async function getGlobalLeaderboard(mode: GlobalMode, limit: number) {
       ${modeFilter}
       ORDER BY gr.player_id, gr.distance DESC, gr.died_at ASC
     )
-    SELECT p.display_name, b.distance, b.mode, b.died_at
+    SELECT p.display_name, b.distance, b.mode, b.died_at, p.selected_badge, p.selected_skin
     FROM best b
     JOIN players p ON p.id = b.player_id
     ORDER BY b.distance DESC
     LIMIT ${limit}
   `;
 
-  return rows.map((row, i) => ({
-    rank: i + 1,
-    displayName: row.display_name,
-    distance: row.distance,
-    mode: row.mode as GlobalMode,
-    diedAt: row.died_at.toISOString(),
-  }));
+  return rows.map((row, i) => {
+    const visual = resolveEquippedVisual(row.selected_badge, row.selected_skin);
+    return {
+      rank: i + 1,
+      displayName: row.display_name,
+      distance: row.distance,
+      mode: row.mode as GlobalMode,
+      diedAt: row.died_at.toISOString(),
+      equippedEmoji: visual.equippedEmoji,
+      equippedKind: visual.equippedKind,
+    };
+  });
 }
 
 async function getDailyPoolLeaderboard(dayBucket: string) {
@@ -57,7 +65,13 @@ async function getDailyPoolLeaderboard(dayBucket: string) {
 
   const bestByWallet = new Map<
     string,
-    { distance: number; diedAt: Date; displayName: string }
+    {
+      distance: number;
+      diedAt: Date;
+      displayName: string;
+      selectedBadge: string | null;
+      selectedSkin: string | null;
+    }
   >();
 
   for (const run of runs) {
@@ -69,6 +83,8 @@ async function getDailyPoolLeaderboard(dayBucket: string) {
         distance: run.distance,
         diedAt: run.diedAt,
         displayName: run.player.displayName,
+        selectedBadge: run.player.selectedBadge,
+        selectedSkin: run.player.selectedSkin,
       });
     }
   }
@@ -77,13 +93,18 @@ async function getDailyPoolLeaderboard(dayBucket: string) {
     (a, b) => b[1].distance - a[1].distance,
   );
 
-  const entries = sorted.map(([wallet, data], i) => ({
-    rank: i + 1,
-    walletPubkey: wallet,
-    displayName: data.displayName,
-    distance: data.distance,
-    diedAt: data.diedAt.toISOString(),
-  }));
+  const entries = sorted.map(([wallet, data], i) => {
+    const visual = resolveEquippedVisual(data.selectedBadge, data.selectedSkin);
+    return {
+      rank: i + 1,
+      walletPubkey: wallet,
+      displayName: data.displayName,
+      distance: data.distance,
+      diedAt: data.diedAt.toISOString(),
+      equippedEmoji: visual.equippedEmoji,
+      equippedKind: visual.equippedKind,
+    };
+  });
 
   const pools = await prisma.hourlyPool.findMany({
     where: { hourStart: dayStart },
@@ -123,7 +144,14 @@ async function getDailyLeaderboard(dateStr: string) {
     where: dayBucketDateOrFilter(dateStr),
     orderBy: [{ bestDistance: 'desc' }, { createdAt: 'asc' }],
     include: {
-      player: { select: { id: true, displayName: true } },
+      player: {
+        select: {
+          id: true,
+          displayName: true,
+          selectedBadge: true,
+          selectedSkin: true,
+        },
+      },
     },
   });
 
@@ -153,15 +181,23 @@ async function getDailyLeaderboard(dateStr: string) {
 
   return {
     date: dateStr,
-    entries: entries.map((e, i) => ({
-      position: e.position ?? i + 1,
-      playerId: e.player.id,
-      displayName: e.player.displayName,
-      bestDistance: e.bestDistance,
-      totalRuns: e.totalRuns,
-      rewardStatus: isToday ? null : e.rewardStatus,
-      paidStatus: isToday ? null : (rewardMap.get(e.playerId)?.status ?? null),
-    })),
+    entries: entries.map((e, i) => {
+      const visual = resolveEquippedVisual(
+        e.player.selectedBadge,
+        e.player.selectedSkin,
+      );
+      return {
+        position: e.position ?? i + 1,
+        playerId: e.player.id,
+        displayName: e.player.displayName,
+        bestDistance: e.bestDistance,
+        totalRuns: e.totalRuns,
+        rewardStatus: isToday ? null : e.rewardStatus,
+        paidStatus: isToday ? null : (rewardMap.get(e.playerId)?.status ?? null),
+        equippedEmoji: visual.equippedEmoji,
+        equippedKind: visual.equippedKind,
+      };
+    }),
   };
 }
 
