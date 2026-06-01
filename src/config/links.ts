@@ -3,5 +3,5 @@ export const SITE_URL =
   (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || '';
 
 export const BUY_URL = '#';
-export const CHART_URL = '#';
-export const X_URL = 'https://x.com/multin1x1/status/2056637431659499887/photo/1';
+export const TELEGRAM_URL = 'https://t.me/+Pdbse1S8z2RmMDli';
+export const X_URL = 'https://x.com/Lemonroadgame';
