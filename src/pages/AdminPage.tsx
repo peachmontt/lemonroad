@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
-import { solanaExplorerTxUrl } from '../config/explorer';
 import { ResetCountdown } from '../components/DailyResetCountdown';
 import { currentGameDayBucket, previousGameDayBucket } from '../lib/gameTime';
 
@@ -53,8 +52,16 @@ interface SettleResult {
   participants: number;
   poolTotal: string;
   poolTotalFormatted?: string;
-  payouts: { place: number; wallet: string; amount: string; amountFormatted: string }[];
+  payouts: {
+    place: number;
+    wallet: string;
+    amount: string;
+    amountFormatted: string;
+    paymentChain?: string;
+    status?: string;
+  }[];
   rolloverOut: string;
+  finalizedAt?: string | null;
   settleTx: string | null;
 }
 
@@ -78,6 +85,23 @@ const STATUS_LABELS: Record<DailyRewardRow['status'], string> = {
   PENDING: 'PENDING',
   PAID: 'PAID',
   REJECTED: 'REJECTED',
+};
+
+interface DegenPayoutRow {
+  id: string;
+  day: string;
+  place: number;
+  walletPubkey: string;
+  amountFormatted: string;
+  status: 'CLAIMABLE' | 'PAID' | 'EXPIRED';
+  paymentChain: string;
+  claimTx: string | null;
+}
+
+const DEGEN_STATUS_COLORS: Record<DegenPayoutRow['status'], string> = {
+  CLAIMABLE: '#f5c518',
+  PAID: '#4caf50',
+  EXPIRED: '#e53935',
 };
 
 const STATUS_COLORS: Record<DailyRewardRow['status'], string> = {
@@ -116,6 +140,10 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [settling, setSettling] = useState<string | null>(null);
   const [settleResult, setSettleResult] = useState<SettleResult | null>(null);
+  const [degenPayouts, setDegenPayouts] = useState<DegenPayoutRow[]>([]);
+  const [degenPayoutsLoading, setDegenPayoutsLoading] = useState(false);
+  const [degenPayoutsError, setDegenPayoutsError] = useState<string | null>(null);
+  const [degenActioning, setDegenActioning] = useState<string | null>(null);
 
   // Daily rewards state
   const [rewardsDate, setRewardsDate] = useState(yesterdayGameDay);
@@ -161,6 +189,35 @@ export function AdminPage() {
     }
   };
 
+  const loadDegenPayouts = useCallback(async () => {
+    setDegenPayoutsLoading(true);
+    setDegenPayoutsError(null);
+    try {
+      const data = await apiFetch<{ payouts: DegenPayoutRow[] }>('/api/admin/degen-payouts?limit=50');
+      setDegenPayouts(data.payouts);
+    } catch (e) {
+      setDegenPayoutsError(e instanceof Error ? e.message : 'Failed to load degen payouts');
+    } finally {
+      setDegenPayoutsLoading(false);
+    }
+  }, []);
+
+  const expireDegenPayout = async (id: string) => {
+    if (!confirmRef.current('Mark this Degen payout as EXPIRED?')) return;
+    setDegenActioning(id);
+    try {
+      await apiFetch('/api/admin/degen-payouts', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, status: 'EXPIRED' }),
+      });
+      await loadDegenPayouts();
+    } catch (e) {
+      setDegenPayoutsError(e instanceof Error ? e.message : 'Expire failed');
+    } finally {
+      setDegenActioning(null);
+    }
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -195,7 +252,7 @@ export function AdminPage() {
       setSettleResult(result);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Settle failed');
+      setError(e instanceof Error ? e.message : 'Finalize failed');
     } finally {
       setSettling(null);
     }
@@ -204,9 +261,9 @@ export function AdminPage() {
   useEffect(() => {
     if (authed) {
       void load();
-      void loadRewards(rewardsDate);
+      void loadDegenPayouts();
     }
-  }, [authed, load, loadRewards, rewardsDate]);
+  }, [authed, load, loadRewards, loadDegenPayouts, rewardsDate]);
 
   if (!authed) {
     return (
@@ -285,9 +342,9 @@ export function AdminPage() {
           </section>
 
           <section className="admin-section">
-            <h2>Unsettled Pools ({stats.unsettledPools.length})</h2>
+            <h2>Unfinalized Pools ({stats.unsettledPools.length})</h2>
             {stats.unsettledPools.length === 0 ? (
-              <p className="admin-empty">All pools settled.</p>
+              <p className="admin-empty">All pools finalized.</p>
             ) : (
               <table className="admin-table">
                 <thead>
@@ -313,7 +370,7 @@ export function AdminPage() {
                             onClick={() => void triggerSettle(p.day)}
                             disabled={settling === p.day}
                           >
-                            {settling === p.day ? 'Settling...' : 'Settle'}
+                            {settling === p.day ? 'Finalizing...' : 'Finalize'}
                           </button>
                         </td>
                       </tr>
@@ -325,18 +382,78 @@ export function AdminPage() {
 
           {settleResult && (
             <section className="admin-section admin-settle-result">
-              <h2>Last Settle Result — {settleResult.day}</h2>
+              <h2>Last Finalize Result — {settleResult.day}</h2>
               <p>Players: {settleResult.participants} | Pool: {settleResult.poolTotalFormatted ?? `${settleResult.poolTotal} µUSDT`} | Rollover: {settleResult.rolloverOut} µUSDT</p>
-              {settleResult.settleTx && (
-                <p>TX: <a href={solanaExplorerTxUrl(settleResult.settleTx)} target="_blank" rel="noreferrer">{settleResult.settleTx.slice(0, 16)}…</a></p>
-              )}
+              <p className="admin-muted">Winners claim in-app (Lemon Club → Degen Claims). No batch on-chain tx.</p>
               <ul>
                 {settleResult.payouts.map((p) => (
-                  <li key={p.place}>#{p.place}: {p.wallet.slice(0, 8)}… — {p.amountFormatted}</li>
+                  <li key={p.place}>
+                    #{p.place}: {p.wallet.slice(0, 8)}… — {p.amountFormatted}{' '}
+                    {p.paymentChain ? `(${p.paymentChain})` : ''}{' '}
+                    {p.status ? `[${p.status}]` : ''}
+                  </li>
                 ))}
               </ul>
             </section>
           )}
+
+          <section className="admin-section">
+            <div className="admin-section-header">
+              <h2>Degen Payouts</h2>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => void loadDegenPayouts()}
+                disabled={degenPayoutsLoading}
+              >
+                {degenPayoutsLoading ? 'Loading…' : 'Refresh'}
+              </button>
+            </div>
+            {degenPayoutsError && <p className="admin-error">{degenPayoutsError}</p>}
+            {degenPayouts.length === 0 && !degenPayoutsLoading ? (
+              <p className="admin-empty">No Degen payouts yet.</p>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>Place</th>
+                    <th>Wallet</th>
+                    <th>Amount</th>
+                    <th>Chain</th>
+                    <th>Status</th>
+                    <th>Claim tx</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {degenPayouts.map((p) => (
+                    <tr key={p.id}>
+                      <td>{p.day}</td>
+                      <td>#{p.place}</td>
+                      <td>{p.walletPubkey.slice(0, 8)}…</td>
+                      <td>{p.amountFormatted}</td>
+                      <td>{p.paymentChain}</td>
+                      <td style={{ color: DEGEN_STATUS_COLORS[p.status] }}>{p.status}</td>
+                      <td>{p.claimTx ? `${p.claimTx.slice(0, 10)}…` : '—'}</td>
+                      <td>
+                        {p.status === 'CLAIMABLE' && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={degenActioning === p.id}
+                            onClick={() => void expireDegenPayout(p.id)}
+                          >
+                            Expire
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
 
           <section className="admin-section">
             <div className="admin-section-header">

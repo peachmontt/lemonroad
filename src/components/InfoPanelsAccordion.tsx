@@ -10,12 +10,14 @@ interface InfoPanelsAccordionProps {
   runs: RunRecord[];
   runsLoading?: boolean;
   currentPlayerId?: string | null;
+  playerWalletPubkey?: string | null;
 }
 
 export function InfoPanelsAccordion({
   runs,
   runsLoading = false,
   currentPlayerId,
+  playerWalletPubkey,
 }: InfoPanelsAccordionProps) {
   const [openId, setOpenId] = useState<InfoPanelId | null>(null);
 
@@ -41,6 +43,7 @@ export function InfoPanelsAccordion({
         compact
         open={openId === 'pool'}
         onToggle={() => toggle('pool')}
+        playerWalletPubkey={playerWalletPubkey}
       />
     </div>
   );

@@ -31,6 +31,7 @@ import { NotificationNudgeCard } from './pwa/NotificationNudgeCard';
 import { LemonClubMenu } from './LemonClubMenu';
 import { LemonClubFab } from './LemonClubFab';
 import type { LemonClubTab } from './LemonClubTabs';
+import { useClaimablePayouts } from '../hooks/useClaimablePayouts';
 
 interface GameCanvasProps {
   modalTab: ModalTab | null;
@@ -136,6 +137,10 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
     setLemonClubOpen(true);
     void syncReferrals().then(() => refreshProgression());
   }, [refreshProgression, syncReferrals]);
+
+  const isIdleUi =
+    snapshot.phase === 'idle' || snapshot.phase === 'dying' || snapshot.phase === 'dead';
+  const { claimableCount } = useClaimablePayouts(Boolean(player) && isIdleUi);
 
   const {
     showInstallNudge,
@@ -374,6 +379,7 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
           initialTab={lemonClubTab}
           progress={progress}
           displayName={player?.displayName}
+          playerWalletPubkey={player?.walletPubkey}
           referralStats={referralStats}
           referralBackendReady={referralBackendReady}
           onClose={() => setLemonClubOpen(false)}
@@ -386,7 +392,10 @@ export function GameCanvas({ modalTab, onOpenModal, onCloseModal }: GameCanvasPr
       )}
 
       {showLemonClubFab && (snapshot.phase === 'idle' || isDeadPhase) && (
-        <LemonClubFab onClick={() => openLemonClub('missions')} />
+        <LemonClubFab
+          claimableCount={claimableCount}
+          onClick={() => openLemonClub(claimableCount > 0 ? 'rewards' : 'missions')}
+        />
       )}
 
       {snapshot.phase !== 'playing' && showInstallNudge && (

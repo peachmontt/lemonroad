@@ -14,9 +14,9 @@ export default withMethods({
 
     const result = await settleDayPool(body.day);
     if (result.alreadySettled) {
-      return json(res, { message: 'Already settled', ...result });
+      return json(res, { message: 'Already finalized', ...result });
     }
 
-    json(res, result);
+    json(res, { message: 'Pool finalized — winners can claim', ...result });
   },
 });

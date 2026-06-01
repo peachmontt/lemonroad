@@ -132,7 +132,7 @@ export function StartOverlay({
                 Game mode · Pay 1 USDT to play (Mainnet)
                 {hasPaidDeposit && ' · deposit ready'}
                 <br />
-                Top 3 split today&apos;s pool · 60% / 30% / 10%
+                Top 3 split today&apos;s pool · 60% / 30% / 10% · claim in Lemon Club after finalize
               </p>
               <DegenPayoutCountdown />
             </>
@@ -164,6 +164,7 @@ export function StartOverlay({
           runs={runs}
           runsLoading={runsLoading}
           currentPlayerId={player?.playerId}
+          playerWalletPubkey={player?.walletPubkey}
         />
       </section>
 

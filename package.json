@@ -27,7 +27,7 @@
     "db:push": "prisma db push",
     "postinstall": "prisma generate",
     "icons:generate": "node scripts/generate-pwa-icons.mjs",
-    "backfill:lemon-xp": "ts-node --project tsconfig.api.json scripts/backfill-lemon-xp.ts",
+    "backfill:degen-payout-players": "ts-node --project tsconfig.api.json scripts/backfill-degen-payout-players.ts",
     "test:top-lemons": "ts-node --project tsconfig.api.json scripts/test-top-lemons-board.ts"
   },
   "dependencies": {

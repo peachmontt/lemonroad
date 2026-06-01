@@ -47,6 +47,8 @@ export interface RunRecord {
   hourBucket: string | null;
 }
 
+export type DegenPayoutStatus = 'CLAIMABLE' | 'PAID' | 'EXPIRED';
+
 export interface PoolLeaderboardResponse {
   scope: 'pool';
   day: string;
@@ -62,12 +64,14 @@ export interface PoolLeaderboardResponse {
     diedAt: string;
     equippedEmoji: string;
     equippedKind: 'badge' | 'skin' | 'default';
+    degenPayoutStatus?: DegenPayoutStatus;
   }[];
   projectedPayouts: {
     place: number;
     walletPubkey: string;
     amount: string;
     amountFormatted: string;
+    payoutStatus?: DegenPayoutStatus;
   }[];
   projectedRollover: string;
   previousDay: string;
@@ -219,6 +223,36 @@ export function preparePaidAttempt(
   }>('/api/paid/prepare', {
     method: 'POST',
     body: JSON.stringify({ walletPubkey, paymentChain }),
+  });
+}
+
+export interface ClaimablePayout {
+  id: string;
+  day: string;
+  place: number;
+  walletPubkey: string;
+  amountUsdt: string;
+  amountFormatted: string;
+  paymentChain: 'solana' | 'evm';
+  status: DegenPayoutStatus;
+  claimTx: string | null;
+  claimedAt: string | null;
+}
+
+export function fetchClaimablePayouts() {
+  return apiFetch<{ payouts: ClaimablePayout[] }>('/api/paid/claimable');
+}
+
+export function claimDegenPayout(payoutId: string, walletPubkey: string) {
+  return apiFetch<{
+    id: string;
+    status: 'PAID';
+    claimTx: string;
+    amountFormatted: string;
+    paymentChain: 'solana' | 'evm';
+  }>('/api/paid/claim', {
+    method: 'POST',
+    body: JSON.stringify({ payoutId, walletPubkey }),
   });
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { PlayerProgress, UnlockNotification } from '../game/progression';
 import type { SkinId } from '../game/skins';
 import type { BadgeId, DeathTitleId } from '../game/badges';
+import { ClaimRewardsTab } from './ClaimRewardsTab';
 import { BadgesTab } from './BadgesTab';
 import { HallOfShameTab } from './HallOfShameTab';
 import { LemonClubTabs, type LemonClubTab } from './LemonClubTabs';
@@ -26,6 +27,7 @@ interface LemonClubMenuProps {
   onClaimMission: (id: string) => void;
   onSimulateReferral?: () => void;
   displayName?: string;
+  playerWalletPubkey?: string | null;
 }
 
 export function LemonClubMenu({
@@ -41,6 +43,7 @@ export function LemonClubMenu({
   onClaimMission,
   onSimulateReferral,
   displayName,
+  playerWalletPubkey,
 }: LemonClubMenuProps) {
   const [tab, setTab] = useState<LemonClubTab>(initialTab);
 
@@ -92,6 +95,9 @@ export function LemonClubMenu({
         <div className="lemon-club-body">
           {tab === 'missions' && (
             <MissionsTab progress={progress} onClaim={onClaimMission} />
+          )}
+          {tab === 'rewards' && (
+            <ClaimRewardsTab playerWalletPubkey={playerWalletPubkey ?? null} />
           )}
           {tab === 'skins' && <SkinsTab progress={progress} onSelect={onSelectSkin} />}
           {tab === 'badges' && (

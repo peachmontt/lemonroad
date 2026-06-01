@@ -13,7 +13,7 @@ export function formatCountdown(ms: number): string {
 const RESET_LABELS = {
   daily: (time: string) => `Daily rewards reset in ${time}`,
   weekly: (time: string) => `Weekly cup resets in ${time}`,
-  degen: (time: string) => `Degen payout in ${time}`,
+  degen: (time: string) => `Degen pool finalizes in ${time}`,
 } as const;
 
 type ResetCountdownVariant = keyof typeof RESET_LABELS;

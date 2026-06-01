@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { fetchPoolLeaderboard, type PoolLeaderboardResponse } from '../lib/api';
+import {
+  ClaimRewardCard,
+  DEGEN_PAYOUT_STATUS_CLASS,
+  DEGEN_PAYOUT_STATUS_LABEL,
+} from './ClaimRewardCard';
 import { CollapsiblePanel } from './CollapsiblePanel';
 import { DegenPayoutCountdown } from './DailyResetCountdown';
 import { EquippedLemonVisual } from './EquippedLemonVisual';
@@ -9,9 +14,15 @@ interface LeaderboardPanelProps {
   compact?: boolean;
   open: boolean;
   onToggle: () => void;
+  playerWalletPubkey?: string | null;
 }
 
-export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelProps) {
+export function LeaderboardPanel({
+  compact,
+  open,
+  onToggle,
+  playerWalletPubkey,
+}: LeaderboardPanelProps) {
   const [data, setData] = useState<PoolLeaderboardResponse | null>(null);
   const [day, setDay] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -55,8 +66,9 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
       <p className="leaderboard-empty">could not load pool: {error}</p>
     ) : !data ? null : (
       <>
+        <ClaimRewardCard compact playerWalletPubkey={playerWalletPubkey} />
         <p className="leaderboard-rules">
-          60% / 30% / 10% — 2nd needs 5+ · 3rd needs 15+
+          60% / 30% / 10% — 2nd needs 5+ · 3rd needs 15+ · winners claim USDT in-app
         </p>
         <DegenPayoutCountdown className="daily-reset-countdown degen-payout-countdown" />
         {data.projectedPayouts.length > 0 && (
@@ -64,6 +76,13 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
             {data.projectedPayouts.map((p) => (
               <li key={p.place}>
                 #{p.place}: {p.amountFormatted}
+                {p.payoutStatus && (
+                  <span
+                    className={`lb-degen-status ${DEGEN_PAYOUT_STATUS_CLASS[p.payoutStatus] ?? ''}`}
+                  >
+                    {DEGEN_PAYOUT_STATUS_LABEL[p.payoutStatus] ?? p.payoutStatus}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -75,6 +94,13 @@ export function LeaderboardPanel({ compact, open, onToggle }: LeaderboardPanelPr
               <EquippedLemonVisual emoji={e.equippedEmoji} kind={e.equippedKind} />
               <span className="lb-name">{e.displayName}</span>
               <span className="lb-dist">{Math.floor(e.distance)}m</span>
+              {e.degenPayoutStatus && (
+                <span
+                  className={`lb-degen-status ${DEGEN_PAYOUT_STATUS_CLASS[e.degenPayoutStatus] ?? ''}`}
+                >
+                  {DEGEN_PAYOUT_STATUS_LABEL[e.degenPayoutStatus] ?? e.degenPayoutStatus}
+                </span>
+              )}
             </li>
           ))}
         </ol>

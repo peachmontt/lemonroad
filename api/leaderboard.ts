@@ -128,11 +128,31 @@ async function getDailyPoolLeaderboard(dayBucket: string) {
     winners,
   );
 
+  const poolRow = pools[0];
+  let payoutStatuses: { place: number; status: string }[] | undefined;
+  let payoutByWallet = new Map<string, string>();
+  if (poolRow?.finalizedAt) {
+    const payouts = await prisma.prizePayout.findMany({
+      where: { hourStart: dayStart },
+      orderBy: { place: 'asc' },
+      select: { place: true, status: true, walletPubkey: true },
+    });
+    payoutStatuses = payouts.map((p) => ({ place: p.place, status: p.status }));
+    payoutByWallet = new Map(payouts.map((p) => [p.walletPubkey, p.status]));
+  }
+
+  const entriesWithStatus = entries.map((e) => ({
+    ...e,
+    degenPayoutStatus: payoutByWallet.get(e.walletPubkey) ?? undefined,
+  }));
+
   return {
-    entries,
+    entries: entriesWithStatus,
     poolTotal,
     participants: participants || entries.length,
     distribution,
+    finalized: Boolean(poolRow?.finalizedAt),
+    payoutStatuses,
   };
 }
 
@@ -265,7 +285,7 @@ export default withMethods({
       return badRequest(res, 'Invalid day bucket');
     }
 
-    const { entries, poolTotal, participants, distribution } =
+    const { entries, poolTotal, participants, distribution, finalized, payoutStatuses } =
       await getDailyPoolLeaderboard(dayBucket);
 
     json(res, {
@@ -276,12 +296,16 @@ export default withMethods({
       poolTotal: poolTotal.toString(),
       poolTotalFormatted: formatUsdt(poolTotal),
       entries,
-      projectedPayouts: distribution.payouts.map((p) => ({
-        place: p.place,
-        walletPubkey: p.walletPubkey,
-        amount: p.amount.toString(),
-        amountFormatted: formatUsdt(p.amount),
-      })),
+      projectedPayouts: distribution.payouts.map((p) => {
+        const status = payoutStatuses?.find((s) => s.place === p.place)?.status;
+        return {
+          place: p.place,
+          walletPubkey: p.walletPubkey,
+          amount: p.amount.toString(),
+          amountFormatted: formatUsdt(p.amount),
+          ...(finalized && status ? { payoutStatus: status } : {}),
+        };
+      }),
       projectedRollover: distribution.rolloverOut.toString(),
       previousDay: previousDayBucket(),
       nextResetAt: getNextDailyResetAt().toISOString(),

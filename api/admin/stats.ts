@@ -28,7 +28,7 @@ export default withMethods({
       payoutTotals,
     ] = await Promise.all([
       prisma.hourlyPool.findMany({
-        where: { settledAt: null, participantCount: { gt: 0 } },
+        where: { finalizedAt: null, participantCount: { gt: 0 } },
         orderBy: { hourStart: 'desc' },
         take: 10,
       }),

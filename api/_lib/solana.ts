@@ -195,96 +195,61 @@ export async function verifyDepositTransaction(
   return { ok: true };
 }
 
-export async function buildSettleHourTransaction(
-  hourId: bigint,
-  participantCount: number,
-  winners: [string | null, string | null, string | null],
-  amounts: [bigint, bigint, bigint],
-): Promise<string | null> {
+/** Single-recipient crank payout for claim flow. */
+export async function buildClaimPayoutTransaction(
+  recipientWallet: string,
+  amountMicro: bigint,
+): Promise<string> {
   const programId = getProgramId();
   const crank = getCrankKeypair();
-  if (!programId || !crank) return null;
+  if (!programId || !crank) {
+    throw new Error('Solana pool program or crank not configured');
+  }
+  if (amountMicro <= 0n) {
+    throw new Error('Payout amount must be positive');
+  }
 
   const connection = getConnection();
   const usdtMint = getUsdtMint();
   const config = globalConfigPda(programId);
-  const hourLedger = hourLedgerPda(programId, hourId);
   const vaultAuth = vaultAuthorityPda(programId);
   const vaultAta = vaultTokenPda(programId);
+  const recipient = new PublicKey(recipientWallet);
+  const recipientAta = getAssociatedTokenAddressSync(usdtMint, recipient, false);
 
-  const winnerKeys = winners.map((w) =>
-    w ? new PublicKey(w) : PublicKey.default,
-  );
-  const winnerAtas = winnerKeys.map((w) =>
-    getAssociatedTokenAddressSync(usdtMint, w, false),
-  );
-
-  const data = Buffer.alloc(8 + 8 + 4 + 4 + 32 * 3 + 8 * 3);
+  const data = Buffer.alloc(8 + 8);
   let off = 0;
-  const disc = anchorDiscriminator('settle_hour');
+  const disc = anchorDiscriminator('crank_payout');
   for (let i = 0; i < 8; i++) data[off + i] = disc[i];
   off += 8;
-  data.writeBigInt64LE(hourId, off);
-  off += 8;
-  data.writeUInt32LE(participantCount, off);
-  off += 4;
-  data.writeUInt32LE(3, off);
-  off += 4;
-  for (const w of winnerKeys) {
-    const bytes = w.toBytes();
-    for (let i = 0; i < 32; i++) data[off + i] = bytes[i];
-    off += 32;
-  }
-  for (const a of amounts) {
-    data.writeBigUInt64LE(a, off);
-    off += 8;
-  }
+  data.writeBigUInt64LE(amountMicro, off);
 
   const keys = [
     { pubkey: crank.publicKey, isSigner: true, isWritable: true },
-    { pubkey: config, isSigner: false, isWritable: true },
-    { pubkey: hourLedger, isSigner: false, isWritable: true },
+    { pubkey: config, isSigner: false, isWritable: false },
     { pubkey: vaultAta, isSigner: false, isWritable: true },
     { pubkey: vaultAuth, isSigner: false, isWritable: false },
+    { pubkey: usdtMint, isSigner: false, isWritable: false },
+    { pubkey: recipientAta, isSigner: false, isWritable: true },
     { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-    ...winnerAtas.map((ata) => ({
-      pubkey: ata,
-      isSigner: false,
-      isWritable: true,
-    })),
-    ...winnerKeys.map((w) => ({
-      pubkey: w,
-      isSigner: false,
-      isWritable: false,
-    })),
   ];
 
-  const ix = new TransactionInstruction({
-    programId,
-    keys,
-    data,
-  });
-
+  const ix = new TransactionInstruction({ programId, keys, data });
   const tx = new Transaction().add(ix);
-  const { blockhash, lastValidBlockHeight } =
-    await connection.getLatestBlockhash();
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
   tx.recentBlockhash = blockhash;
   tx.feePayer = crank.publicKey;
 
-  for (const w of winnerKeys) {
-    if (w.equals(PublicKey.default)) continue;
-    const ata = getAssociatedTokenAddressSync(usdtMint, w, false);
-    const info = await connection.getAccountInfo(ata);
-    if (!info) {
-      tx.add(
-        createAssociatedTokenAccountIdempotentInstruction(
-          crank.publicKey,
-          ata,
-          w,
-          usdtMint,
-        ),
-      );
-    }
+  const ataInfo = await connection.getAccountInfo(recipientAta);
+  if (!ataInfo) {
+    tx.add(
+      createAssociatedTokenAccountIdempotentInstruction(
+        crank.publicKey,
+        recipientAta,
+        recipient,
+        usdtMint,
+      ),
+    );
   }
 
   tx.sign(crank);
@@ -292,5 +257,8 @@ export async function buildSettleHourTransaction(
   await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
   return sig;
 }
+
+/** @deprecated Use buildClaimPayoutTransaction */
+export const sendCrankPayoutTransaction = buildClaimPayoutTransaction;
 
 export { ATTEMPT_AMOUNT };

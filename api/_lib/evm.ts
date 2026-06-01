@@ -1,4 +1,5 @@
-import { createPublicClient, http, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, http, parseAbi, type Hex } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { mainnet, polygon, polygonAmoy } from 'viem/chains';
 
 const EVM_CHAIN_ID = Number(process.env.EVM_CHAIN_ID ?? 137);
@@ -87,4 +88,56 @@ export async function verifyEvmDepositTransaction(
   }
 
   return { ok: false, error: 'No valid USDT transfer to vault found in transaction' };
+}
+
+const ERC20_TRANSFER_ABI = parseAbi([
+  'function transfer(address to, uint256 amount) returns (bool)',
+]);
+
+function getEvmVaultAccount() {
+  const pk = process.env.EVM_VAULT_PRIVATE_KEY;
+  if (!pk) return null;
+  const normalized = pk.startsWith('0x') ? pk : `0x${pk}`;
+  return privateKeyToAccount(normalized as Hex);
+}
+
+/** Send USDT from the EVM vault wallet to a winner (claim flow). */
+export async function sendEvmClaimPayout(to: string, amountMicro: bigint): Promise<Hex> {
+  const vaultAddress = getEvmVaultAddress();
+  if (!vaultAddress) {
+    throw new Error('EVM vault not configured (POOL_EVM_VAULT)');
+  }
+  const account = getEvmVaultAccount();
+  if (!account) {
+    throw new Error('EVM vault signer not configured (EVM_VAULT_PRIVATE_KEY)');
+  }
+  if (account.address.toLowerCase() !== vaultAddress.toLowerCase()) {
+    throw new Error('EVM_VAULT_PRIVATE_KEY does not control POOL_EVM_VAULT');
+  }
+  if (amountMicro <= 0n) {
+    throw new Error('Payout amount must be positive');
+  }
+  if (!EVM_RPC_URL) {
+    throw new Error('EVM_RPC_URL not configured');
+  }
+
+  const client = getClient();
+  const walletClient = createWalletClient({
+    account,
+    chain: getEvmChain(),
+    transport: http(EVM_RPC_URL),
+  });
+
+  const hash = await walletClient.writeContract({
+    address: EVM_USDT_ADDRESS,
+    abi: ERC20_TRANSFER_ABI,
+    functionName: 'transfer',
+    args: [to as Hex, amountMicro],
+  });
+
+  const receipt = await client.waitForTransactionReceipt({ hash });
+  if (receipt.status === 'reverted') {
+    throw new Error('EVM claim payout transaction reverted');
+  }
+  return hash;
 }

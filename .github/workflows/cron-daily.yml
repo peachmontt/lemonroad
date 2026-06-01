@@ -25,18 +25,18 @@ jobs:
             exit 22
           fi
 
-      - name: Settle previous degen day pool
+      - name: Finalize previous degen day pool
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
           body=$(mktemp)
           code=$(curl -s -o "$body" -w "%{http_code}" \
-            -X GET https://www.lemonroad.xyz/api/cron/settle-hour \
+            -X GET https://www.lemonroad.xyz/api/cron/finalize-degen-pool \
             -H "Authorization: Bearer $CRON_SECRET")
           echo "HTTP $code"
           cat "$body"
           if [ "$code" -ge 400 ]; then
-            echo "degen settle failed"
+            echo "degen finalize failed"
             exit 22
           fi

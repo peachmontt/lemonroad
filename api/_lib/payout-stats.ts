@@ -32,11 +32,11 @@ export async function getPayoutTotals(): Promise<{
     }),
     prisma.prizePayout.aggregate({
       _sum: { amountUsdt: true },
-      where: { txSignature: { not: null } },
+      where: { status: 'PAID' },
     }),
     prisma.prizePayout.aggregate({
       _sum: { amountUsdt: true },
-      where: { txSignature: null },
+      where: { status: 'CLAIMABLE' },
     }),
   ]);
 

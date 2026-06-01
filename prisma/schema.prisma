@@ -27,6 +27,12 @@ enum ReferralStatus {
   REJECTED
 }
 
+enum PrizePayoutStatus {
+  CLAIMABLE
+  PAID
+  EXPIRED
+}
+
 model Player {
   id                String             @id @default(uuid())
   sessionId         String             @unique @map("session_id")
@@ -67,6 +73,7 @@ model GameRun {
   hourBucket     String?  @map("hour_bucket")
   dayBucket      String?  @map("day_bucket")
   walletPubkey   String?  @map("wallet_pubkey")
+  paymentChain   String   @default("solana") @map("payment_chain")
   deviceType     String?  @map("device_type")
   antiCheatScore Int      @default(0) @map("anti_cheat_score")
   isValid        Boolean  @default(true) @map("is_valid")
@@ -137,6 +144,7 @@ model HourlyPool {
   rolloverIn       BigInt   @default(0) @map("rollover_in")
   rolloverOut      BigInt   @default(0) @map("rollover_out")
   settledAt        DateTime? @map("settled_at")
+  finalizedAt      DateTime? @map("finalized_at")
   settleTx         String?  @map("settle_tx")
   payouts          PrizePayout[]
 
@@ -144,15 +152,21 @@ model HourlyPool {
 }
 
 model PrizePayout {
-  id            String     @id @default(uuid())
-  hourStart     DateTime   @map("hour_start")
-  hour          HourlyPool @relation(fields: [hourStart], references: [hourStart], onDelete: Cascade)
+  id            String            @id @default(uuid())
+  hourStart     DateTime          @map("hour_start")
+  hour          HourlyPool        @relation(fields: [hourStart], references: [hourStart], onDelete: Cascade)
   place         Int
-  walletPubkey  String     @map("wallet_pubkey")
-  amountUsdt    BigInt     @map("amount_usdt")
-  txSignature   String?    @map("tx_signature")
+  walletPubkey  String            @map("wallet_pubkey")
+  amountUsdt    BigInt            @map("amount_usdt")
+  status        PrizePayoutStatus @default(CLAIMABLE)
+  paymentChain  String            @default("solana") @map("payment_chain")
+  playerId      String?           @map("player_id")
+  claimedAt     DateTime?         @map("claimed_at")
+  claimTx       String?           @map("claim_tx")
+  txSignature   String?           @map("tx_signature")
 
   @@unique([hourStart, place])
+  @@index([playerId, status])
   @@map("prize_payouts")
 }
 

@@ -3301,6 +3301,130 @@ body.lemon-club-open .lemon-club-body {
   color: #444;
 }
 
+.claim-rewards-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.claim-rewards-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.claim-reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.claim-reward-meta {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.claim-reward-chain {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.claim-reward-chain--solana {
+  background: rgba(153, 69, 255, 0.2);
+  color: #c4a0ff;
+}
+
+.claim-reward-chain--evm {
+  background: rgba(130, 170, 255, 0.2);
+  color: #a8c4ff;
+}
+
+.claim-reward-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #f5c518;
+  color: #1a1a1a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.claim-reward-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.claim-rewards-error {
+  color: #ff8a80;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.claim-rewards-success {
+  color: #81c784;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.claim-rewards-saved-wallet {
+  font-size: 0.8rem;
+}
+
+.claim-rewards-tab--compact {
+  margin-bottom: 10px;
+}
+
+.claim-rewards-compact-lead {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f5c518;
+}
+
+.lb-degen-status,
+.status-claimable {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.status-claimable,
+.lb-degen-status.status-claimable {
+  color: #f5c518;
+}
+
+.lemon-club-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e53935;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
 /* Floating action button */
 :root {
   --lemon-club-fab-bottom: 24px;

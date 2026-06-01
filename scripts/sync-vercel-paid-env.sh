@@ -23,9 +23,9 @@ fi
 
 # shellcheck disable=SC1091
 set -a
-source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR|EVM_CHAIN_ID|VITE_EVM_CHAIN_ID|EVM_RPC_URL|POOL_EVM_VAULT|VITE_EVM_VAULT_ADDRESS)=' .env | sed 's/\r$//' | sed 's/^export //')
+source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR|EVM_CHAIN_ID|VITE_EVM_CHAIN_ID|EVM_RPC_URL|POOL_EVM_VAULT|VITE_EVM_VAULT_ADDRESS|EVM_VAULT_PRIVATE_KEY)=' .env | sed 's/\r$//' | sed 's/^export //')
 # Strip accidental quotes/newlines from .env values
-for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR EVM_CHAIN_ID VITE_EVM_CHAIN_ID EVM_RPC_URL POOL_EVM_VAULT VITE_EVM_VAULT_ADDRESS; do
+for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR EVM_CHAIN_ID VITE_EVM_CHAIN_ID EVM_RPC_URL POOL_EVM_VAULT VITE_EVM_VAULT_ADDRESS EVM_VAULT_PRIVATE_KEY; do
   declare "${_var}=${!_var//\"/}"
   declare "${_var}=$(printf '%s' "${!_var}" | tr -d '\n')"
 done
@@ -89,7 +89,12 @@ for target in $TARGETS; do
   if [[ -n "${CRANK_KEYPAIR:-}" ]]; then
     upsert_env "CRANK_KEYPAIR" "$CRANK_KEYPAIR" "$target" true
   else
-    echo "  ⚠ CRANK_KEYPAIR empty in .env — skipping (hourly settlement disabled)"
+    echo "  ⚠ CRANK_KEYPAIR empty in .env — skipping (Solana claims disabled)"
+  fi
+  if [[ -n "${EVM_VAULT_PRIVATE_KEY:-}" ]]; then
+    upsert_env "EVM_VAULT_PRIVATE_KEY" "$EVM_VAULT_PRIVATE_KEY" "$target" true
+  else
+    echo "  ⚠ EVM_VAULT_PRIVATE_KEY empty — EVM claims disabled until set"
   fi
   upsert_env "EVM_CHAIN_ID" "${EVM_CHAIN_ID:-137}" "$target"
   upsert_env "VITE_EVM_CHAIN_ID" "${VITE_EVM_CHAIN_ID:-137}" "$target"

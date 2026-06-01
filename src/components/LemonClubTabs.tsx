@@ -1,5 +1,6 @@
 export type LemonClubTab =
   | 'missions'
+  | 'rewards'
   | 'skins'
   | 'badges'
   | 'referrals'
@@ -9,6 +10,7 @@ export type LemonClubTab =
 
 export const LEMON_CLUB_TABS: { id: LemonClubTab; label: string; shortLabel?: string }[] = [
   { id: 'missions', label: 'Missions' },
+  { id: 'rewards', label: 'Degen Claims', shortLabel: 'Claims' },
   { id: 'skins', label: 'Skins' },
   { id: 'badges', label: 'Badges' },
   { id: 'referrals', label: 'Referrals', shortLabel: 'Refs' },

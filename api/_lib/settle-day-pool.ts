@@ -1,8 +1,6 @@
 import { prisma } from './db';
 import { currentDayBucket, dayBucketToDate, previousDayBucket } from './day';
-import { dayPoolBucketToDate } from './daily-pool';
 import { computeDistribution, formatUsdt } from './pool-math';
-import { buildSettleHourTransaction } from './solana';
 
 export interface SettleDayPoolResult {
   day: string;
@@ -15,11 +13,22 @@ export interface SettleDayPoolResult {
     wallet: string;
     amount: string;
     amountFormatted: string;
+    paymentChain: string;
+    status: string;
   }[];
   rolloverOut: string;
+  finalizedAt: string | null;
+  /** @deprecated No on-chain batch tx; claims are per-winner. */
   settleTx: string | null;
   alreadySettled?: boolean;
 }
+
+type WinnerMeta = {
+  distance: number;
+  diedAt: Date;
+  playerId: string;
+  paymentChain: 'solana' | 'evm';
+};
 
 async function getWinnersForGameDay(dayBucket: string) {
   const dayStart = dayBucketToDate(dayBucket);
@@ -30,13 +39,18 @@ async function getWinnersForGameDay(dayBucket: string) {
     orderBy: [{ distance: 'desc' }, { diedAt: 'asc' }],
   });
 
-  const bestByWallet = new Map<string, { distance: number; diedAt: Date }>();
+  const bestByWallet = new Map<string, WinnerMeta>();
   for (const run of runs) {
     const wallet = run.walletPubkey;
     if (!wallet) continue;
     const existing = bestByWallet.get(wallet);
     if (!existing || run.distance > existing.distance) {
-      bestByWallet.set(wallet, { distance: run.distance, diedAt: run.diedAt });
+      bestByWallet.set(wallet, {
+        distance: run.distance,
+        diedAt: run.diedAt,
+        playerId: run.playerId,
+        paymentChain: run.paymentChain === 'evm' ? 'evm' : 'solana',
+      });
     }
   }
 
@@ -46,6 +60,7 @@ async function getWinnersForGameDay(dayBucket: string) {
 
   return {
     participants: sorted.length,
+    winnerMeta: bestByWallet,
     winners: [
       sorted[0]?.[0] ?? null,
       sorted[1]?.[0] ?? null,
@@ -54,53 +69,52 @@ async function getWinnersForGameDay(dayBucket: string) {
   };
 }
 
+/** Finalize a degen day pool: compute winners and create CLAIMABLE payout rows (no on-chain batch). */
 export async function settleDayPool(dayBucket: string): Promise<SettleDayPoolResult> {
   const poolStart = dayBucketToDate(dayBucket);
   const poolBucket = String(Math.floor(poolStart.getTime() / 3_600_000));
 
   const existing = await prisma.hourlyPool.findUnique({ where: { hourStart: poolStart } });
-  if (existing?.settledAt) {
+  if (existing?.finalizedAt) {
+    const payouts = await prisma.prizePayout.findMany({
+      where: { hourStart: poolStart },
+      orderBy: { place: 'asc' },
+    });
     return {
       day: dayBucket,
       poolBucket,
       participants: existing.participantCount,
       poolTotal: (existing.depositedUsdt + existing.rolloverIn).toString(),
       poolTotalFormatted: formatUsdt(existing.depositedUsdt + existing.rolloverIn),
-      payouts: [],
+      payouts: payouts.map((p) => ({
+        place: p.place,
+        wallet: p.walletPubkey,
+        amount: p.amountUsdt.toString(),
+        amountFormatted: formatUsdt(p.amountUsdt),
+        paymentChain: p.paymentChain,
+        status: p.status,
+      })),
       rolloverOut: existing.rolloverOut.toString(),
-      settleTx: existing.settleTx,
+      finalizedAt: existing.finalizedAt.toISOString(),
+      settleTx: null,
       alreadySettled: true,
     };
   }
 
-  const { participants, winners } = await getWinnersForGameDay(dayBucket);
+  const { participants, winners, winnerMeta } = await getWinnersForGameDay(dayBucket);
 
   const prevPoolStart = new Date(poolStart.getTime() - 86_400_000);
-  const prevSettled = await prisma.hourlyPool.findUnique({ where: { hourStart: prevPoolStart } });
+  const prevFinalized = await prisma.hourlyPool.findUnique({ where: { hourStart: prevPoolStart } });
 
   const rolloverIn =
     existing?.rolloverIn ??
-    (prevSettled?.settledAt ? prevSettled.rolloverOut : 0n);
+    (prevFinalized?.finalizedAt ? prevFinalized.rolloverOut : 0n);
 
   const deposited = existing?.depositedUsdt ?? 0n;
   const poolTotal = deposited + rolloverIn;
 
   const distribution = computeDistribution(poolTotal, participants, winners);
-
-  const amounts: [bigint, bigint, bigint] = [0n, 0n, 0n];
-  for (const p of distribution.payouts) {
-    amounts[p.place - 1] = p.amount;
-  }
-
-  let settleTx: string | null = null;
-  if (poolTotal > 0n && distribution.payouts.length > 0) {
-    settleTx = await buildSettleHourTransaction(
-      BigInt(poolBucket),
-      participants,
-      winners,
-      amounts,
-    );
-  }
+  const finalizedAt = new Date();
 
   await prisma.hourlyPool.upsert({
     where: { hourStart: poolStart },
@@ -110,19 +124,21 @@ export async function settleDayPool(dayBucket: string): Promise<SettleDayPoolRes
       depositedUsdt: deposited,
       rolloverIn,
       rolloverOut: distribution.rolloverOut,
-      settledAt: new Date(),
-      settleTx,
+      finalizedAt,
+      settledAt: finalizedAt,
     },
     update: {
       participantCount: participants,
       rolloverIn,
       rolloverOut: distribution.rolloverOut,
-      settledAt: new Date(),
-      settleTx,
+      finalizedAt,
+      settledAt: finalizedAt,
+      settleTx: null,
     },
   });
 
   for (const p of distribution.payouts) {
+    const meta = winnerMeta.get(p.walletPubkey);
     await prisma.prizePayout.upsert({
       where: { hourStart_place: { hourStart: poolStart, place: p.place } },
       create: {
@@ -130,11 +146,15 @@ export async function settleDayPool(dayBucket: string): Promise<SettleDayPoolRes
         place: p.place,
         walletPubkey: p.walletPubkey,
         amountUsdt: p.amount,
-        txSignature: settleTx,
+        status: 'CLAIMABLE',
+        paymentChain: meta?.paymentChain ?? 'solana',
+        playerId: meta?.playerId ?? null,
       },
       update: {
         amountUsdt: p.amount,
-        txSignature: settleTx,
+        status: 'CLAIMABLE',
+        paymentChain: meta?.paymentChain ?? 'solana',
+        playerId: meta?.playerId ?? null,
       },
     });
   }
@@ -154,14 +174,20 @@ export async function settleDayPool(dayBucket: string): Promise<SettleDayPoolRes
     participants,
     poolTotal: poolTotal.toString(),
     poolTotalFormatted: formatUsdt(poolTotal),
-    payouts: distribution.payouts.map((p) => ({
-      place: p.place,
-      wallet: p.walletPubkey,
-      amount: p.amount.toString(),
-      amountFormatted: formatUsdt(p.amount),
-    })),
+    payouts: distribution.payouts.map((p) => {
+      const meta = winnerMeta.get(p.walletPubkey);
+      return {
+        place: p.place,
+        wallet: p.walletPubkey,
+        amount: p.amount.toString(),
+        amountFormatted: formatUsdt(p.amount),
+        paymentChain: meta?.paymentChain ?? 'solana',
+        status: 'CLAIMABLE',
+      };
+    }),
     rolloverOut: distribution.rolloverOut.toString(),
-    settleTx,
+    finalizedAt: finalizedAt.toISOString(),
+    settleTx: null,
   };
 }
 

@@ -290,6 +290,7 @@ export default withMethods({
               hourBucket,
               dayBucket,
               walletPubkey: mode === 'paid' ? walletPubkey : null,
+              paymentChain: mode === 'paid' ? paymentChain : 'solana',
               deviceType,
               antiCheatScore: antiCheat.antiCheatScore,
               isValid: antiCheat.isValid,

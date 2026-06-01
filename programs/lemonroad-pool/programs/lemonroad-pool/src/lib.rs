@@ -105,6 +105,32 @@ pub mod lemonroad_pool {
 
         Ok(())
     }
+
+    /// Crank-only single-recipient payout for claim flow (server DB is source of truth for amounts).
+    pub fn crank_payout(ctx: Context<CrankPayout>, amount: u64) -> Result<()> {
+        require_keys_eq!(ctx.accounts.crank.key(), ctx.accounts.global_config.crank);
+        require!(amount > 0, PoolError::InvalidAmount);
+
+        let seeds = &[
+            b"vault_authority".as_ref(),
+            &[ctx.accounts.global_config.vault_bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let cpi = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.vault.to_account_info(),
+                mint: ctx.accounts.usdt_mint.to_account_info(),
+                to: ctx.accounts.recipient_token.to_account_info(),
+                authority: ctx.accounts.vault_authority.to_account_info(),
+            },
+            signer,
+        );
+        token::transfer_checked(cpi, amount, USDT_DECIMALS)?;
+
+        Ok(())
+    }
 }
 
 fn compute_splits(pool: u64, participants: u32) -> [u64; 3] {
@@ -226,6 +252,28 @@ pub struct SettleHour<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+#[derive(Accounts)]
+pub struct CrankPayout<'info> {
+    pub crank: Signer<'info>,
+
+    #[account(seeds = [b"global_config"], bump = global_config.bump)]
+    pub global_config: Account<'info, GlobalConfig>,
+
+    #[account(mut, address = global_config.vault)]
+    pub vault: Account<'info, TokenAccount>,
+
+    /// CHECK: vault authority PDA
+    #[account(seeds = [b"vault_authority"], bump = global_config.vault_bump)]
+    pub vault_authority: UncheckedAccount<'info>,
+
+    pub usdt_mint: Account<'info, Mint>,
+
+    #[account(mut)]
+    pub recipient_token: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct GlobalConfig {
@@ -254,4 +302,6 @@ pub enum PoolError {
     AlreadySettled,
     #[msg("Payout amounts do not match pool rules")]
     InvalidSplit,
+    #[msg("Payout amount must be greater than zero")]
+    InvalidAmount,
 }
