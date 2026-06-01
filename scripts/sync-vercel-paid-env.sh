@@ -23,11 +23,13 @@ fi
 
 # shellcheck disable=SC1091
 set -a
-source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR|EVM_CHAIN_ID|VITE_EVM_CHAIN_ID|EVM_RPC_URL|POOL_EVM_VAULT|VITE_EVM_VAULT_ADDRESS|EVM_VAULT_PRIVATE_KEY)=' .env | sed 's/\r$//' | sed 's/^export //')
+source <(grep -E '^(PROGRAM_ID|VITE_PROGRAM_ID|USDT_MINT|VITE_USDT_MINT|SOLANA_RPC_URL|VITE_SOLANA_RPC_URL|VITE_SOLANA_CLUSTER|CRANK_KEYPAIR|EVM_CHAIN_ID|VITE_EVM_CHAIN_ID|EVM_RPC_URL|VITE_EVM_RPC_URL_POLYGON|POOL_EVM_VAULT|VITE_EVM_VAULT_ADDRESS|EVM_VAULT_PRIVATE_KEY)=' .env | sed 's/\r$//' | sed 's/^export //')
 # Strip accidental quotes/newlines from .env values
-for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR EVM_CHAIN_ID VITE_EVM_CHAIN_ID EVM_RPC_URL POOL_EVM_VAULT VITE_EVM_VAULT_ADDRESS EVM_VAULT_PRIVATE_KEY; do
-  declare "${_var}=${!_var//\"/}"
-  declare "${_var}=$(printf '%s' "${!_var}" | tr -d '\n')"
+for _var in PROGRAM_ID VITE_PROGRAM_ID USDT_MINT VITE_USDT_MINT SOLANA_RPC_URL VITE_SOLANA_RPC_URL VITE_SOLANA_CLUSTER CRANK_KEYPAIR EVM_CHAIN_ID VITE_EVM_CHAIN_ID EVM_RPC_URL VITE_EVM_RPC_URL_POLYGON POOL_EVM_VAULT VITE_EVM_VAULT_ADDRESS EVM_VAULT_PRIVATE_KEY; do
+  val="${!_var:-}"
+  val="${val//\"/}"
+  val="$(printf '%s' "$val" | tr -d '\n')"
+  declare "${_var}=${val}"
 done
 set +a
 
@@ -68,9 +70,8 @@ upsert_env() {
   echo "  ✓ $key → $target"
 }
 
-# Production + Development sync non-interactively. Preview needs an empty branch
-# at the prompt (all preview deploys) — run VERCEL_ENV_TARGETS="preview" interactively.
-TARGETS="${VERCEL_ENV_TARGETS:-production development}"
+# Production is required for live claims. Development skips sensitive secrets (Vercel policy).
+TARGETS="${VERCEL_ENV_TARGETS:-production}"
 
 echo "Syncing paid-mode env to Vercel project (lemonroad)..."
 for target in $TARGETS; do
@@ -87,12 +88,20 @@ for target in $TARGETS; do
   upsert_env "VITE_SOLANA_RPC_URL" "$VITE_SOLANA_RPC_URL" "$target"
   upsert_env "VITE_SOLANA_CLUSTER" "$VITE_SOLANA_CLUSTER" "$target"
   if [[ -n "${CRANK_KEYPAIR:-}" ]]; then
-    upsert_env "CRANK_KEYPAIR" "$CRANK_KEYPAIR" "$target" true
+    if [[ "$target" == "development" ]]; then
+      echo "  ⚠ CRANK_KEYPAIR skipped on development (Vercel sensitive vars are production/preview only)"
+    else
+      upsert_env "CRANK_KEYPAIR" "$CRANK_KEYPAIR" "$target" true
+    fi
   else
     echo "  ⚠ CRANK_KEYPAIR empty in .env — skipping (Solana claims disabled)"
   fi
   if [[ -n "${EVM_VAULT_PRIVATE_KEY:-}" ]]; then
-    upsert_env "EVM_VAULT_PRIVATE_KEY" "$EVM_VAULT_PRIVATE_KEY" "$target" true
+    if [[ "$target" == "development" ]]; then
+      echo "  ⚠ EVM_VAULT_PRIVATE_KEY skipped on development (Vercel sensitive vars are production/preview only)"
+    else
+      upsert_env "EVM_VAULT_PRIVATE_KEY" "$EVM_VAULT_PRIVATE_KEY" "$target" true
+    fi
   else
     echo "  ⚠ EVM_VAULT_PRIVATE_KEY empty — EVM claims disabled until set"
   fi
@@ -100,6 +109,13 @@ for target in $TARGETS; do
   upsert_env "VITE_EVM_CHAIN_ID" "${VITE_EVM_CHAIN_ID:-137}" "$target"
   if [[ -n "${EVM_RPC_URL:-}" ]]; then
     upsert_env "EVM_RPC_URL" "$EVM_RPC_URL" "$target"
+    if [[ -n "${VITE_EVM_RPC_URL_POLYGON:-}" ]]; then
+      upsert_env "VITE_EVM_RPC_URL_POLYGON" "$VITE_EVM_RPC_URL_POLYGON" "$target"
+    elif [[ "${EVM_CHAIN_ID:-137}" == "137" ]]; then
+      upsert_env "VITE_EVM_RPC_URL_POLYGON" "$EVM_RPC_URL" "$target"
+    fi
+  else
+    echo "  ⚠ EVM_RPC_URL empty — EVM deposits/claims disabled until set"
   fi
   if [[ -n "${POOL_EVM_VAULT:-}" ]]; then
     upsert_env "POOL_EVM_VAULT" "$POOL_EVM_VAULT" "$target"
