@@ -3,6 +3,13 @@ import { SOLANA_CLUSTER } from './solana';
 const IS_SOLANA_MAINNET =
   SOLANA_CLUSTER === 'mainnet-beta' || SOLANA_CLUSTER === 'mainnet';
 
+/** When false, Degen Mode pay/play stays disabled in the UI. */
+export const PAID_MODE_ENABLED = false;
+
+/** Shown in paid mode when the wallet is connected but play is not open yet. */
+export const PAID_MODE_COMING_SOON_MESSAGE =
+  "What's next: Degen Mode is in test mode. Estimated release June 10. Use Free Run until then.";
+
 /** Shown in the game UI when paid mode is not configured or prepare fails. */
 export const PAYMENT_UNAVAILABLE_MESSAGE =
   'Payment is temporarily unavailable. Please try again later.';

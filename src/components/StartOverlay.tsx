@@ -1,6 +1,7 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { BUY_URL, CHART_URL, X_URL } from '../config/links';
+import { PAID_MODE_COMING_SOON_MESSAGE, PAID_MODE_ENABLED } from '../config/payment';
 import type { GameMode } from '../types/game';
 import type { ModalTab } from './FakeModal';
 import { InfoPanelsAccordion } from './InfoPanelsAccordion';
@@ -138,13 +139,22 @@ export function StartOverlay({
             </>
           )}
 
-          {paidError && <p className="tilt-msg mode-error">{paidError}</p>}
+          {gameMode === 'paid' && !PAID_MODE_ENABLED && isReadyToPay && (
+            <p className="paid-hint paid-coming-soon">{PAID_MODE_COMING_SOON_MESSAGE}</p>
+          )}
+
+          {paidError && PAID_MODE_ENABLED && (
+            <p className="tilt-msg mode-error">{paidError}</p>
+          )}
 
           <button
             type="button"
             className="btn btn-primary start-primary-btn"
             onClick={handlePrimary}
-            disabled={gameMode === 'paid' && (!isReadyToPay || paidPending)}
+            disabled={
+              gameMode === 'paid' &&
+              (!PAID_MODE_ENABLED || !isReadyToPay || paidPending)
+            }
           >
             {paidPending
               ? 'PROCESSING PAYMENT...'
