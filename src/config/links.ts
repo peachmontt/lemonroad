@@ -4,5 +4,5 @@ export const SITE_URL =
 
 export const BUY_URL =
   'https://pump.fun/coin/J1AQZhrQTcaGWJojTwnau9Vy16bAMnBHN1RAci99Mfx1';
-export const TELEGRAM_URL = 'https://t.me/+Pdbse1S8z2RmMDli';
+export const TELEGRAM_URL = 'https://t.me/+CYFneXq4XZ0wNmY6';
 export const X_URL = 'https://x.com/Lemonroadgame';
