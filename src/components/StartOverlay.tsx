@@ -1,6 +1,6 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
-import { BUY_URL, TELEGRAM_URL, X_URL } from '../config/links';
+import { TELEGRAM_URL, X_URL } from '../config/links';
 import { PAID_MODE_COMING_SOON_MESSAGE, PAID_MODE_ENABLED } from '../config/payment';
 import type { GameMode } from '../types/game';
 import type { ModalTab } from './FakeModal';
@@ -180,9 +180,6 @@ export function StartOverlay({
 
       <section className="actions-section">
         <div className="cta-row">
-          <a href={BUY_URL} className="btn btn-secondary" target="_blank" rel="noreferrer">
-            BUY $LEMON
-          </a>
           <a href={TELEGRAM_URL} className="btn btn-secondary" target="_blank" rel="noreferrer">
             TELEGRAM
           </a>
