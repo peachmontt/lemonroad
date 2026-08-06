@@ -1,5 +1,5 @@
 # Lemon Road
-
+https://www.lemonroad.xyz/
 Vite + React game with **Vercel serverless API**, **Postgres** (run history, display names), and optional **Solana** paid mode (1 USDT per attempt, daily degen prize pool).
 
 ## Quick local enable (database + API + UI)
